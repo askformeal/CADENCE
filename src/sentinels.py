@@ -13,5 +13,6 @@ class Sentinels:
         self.ALIAS_EXISTS = Sentinel('Alias Already Exists')
         self.ALIAS_NOT_FOUND = Sentinel('Alias Not Found')
         self.DONE = Sentinel('Action Successfully Done') # when you don't have anything to return on success but something to return on failure
+        self.NOT_IN_LIB = Sentinel('Song Not in Library')
 
 SENTINELS = Sentinels()

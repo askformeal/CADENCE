@@ -66,6 +66,20 @@ class Database:
         else:
             return SENTINELS.SONG_NOT_FOUND
 
+    def get_song_via_alias(self, alias):
+        row = self.execute('SELECT song_id FROM aliases JOIN songs ON aliases.song_id = songs.id WHERE name = ?', alias).fetchone()
+        if row is not None:
+            return row['song_id']
+        else:
+            return SENTINELS.ALIAS_NOT_FOUND
+
+    def get_song_via_path(self, path):
+        row = self.execute('SELECT id FROM songs WHERE path = ?', path).fetchone()
+        if row is not None:
+            return row['id']
+        else:
+            return SENTINELS.SONG_NOT_FOUND
+
     def add_song(self, path) -> tuple[int, bool]: # return id of the song + whether it already exists and is ignored.
         cursor = self.execute('INSERT OR IGNORE INTO songs(path) VALUES (?)', path)
         ignored = cursor.rowcount != 1
@@ -90,14 +104,6 @@ class Database:
             return False
         else:
             return True
-
-    def search_via_alias(self, alias):
-        row = self.execute('SELECT song_id FROM aliases JOIN songs ON aliases.song_id = songs.id WHERE name = ?', alias).fetchone()
-
-        if row is None:
-            return SENTINELS.ALIAS_NOT_FOUND
-        else:
-            return row['song_id']
 
     def add_alias(self, name, id):
         if self.song_exists(id):

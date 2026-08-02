@@ -3,6 +3,7 @@ import vlc
 from time import sleep
 from src.constants import PLAYER_TIMEOUT, PLAYER_POLL_INTERVAL
 from src.response import response_template
+from src.sentinels import SENTINELS
 
 logger = logging.getLogger(__name__)
 class Player():
@@ -21,14 +22,35 @@ class Player():
     def _on_end(self, event):
         self.buffer({'action':'next'})
 
+    def get_progress(self):
+        length = self.player.get_length()
+        time = self.player.get_time()
+        return {'length': length, 'time': time}
+
+    def switch_prev(self):
+        return self.load_number(self.number - 1)
+
     def switch_next(self):
-        self.number += 1
-        if self.number >= len(self.medias):
-            self.number = 0
-        self.player.set_media(self.medias[self.number])
-        return self.play()
+        return self.load_number(self.number + 1)
+
+    def load_number(self, num):
+        if len(self.medias) > 0:
+            if num < 0:
+                self.number = 0
+            elif num >= len(self.medias):
+                self.number = len(self.medias) - 1
+            else:
+                self.number = num
+
+            self.player.set_media(self.medias[self.number])
+            return self.play()
+        else:
+            return response_template.SWITCH_FAILED
 
     def load_paths(self, paths):
+        if not isinstance(paths, (list, tuple)):
+            paths = [paths]
+
         if len(paths) == 0:
             logger.error('Can not load empty path list')
             return response_template.EMPTY_PATHS
@@ -49,6 +71,20 @@ class Player():
                 return self.play()
 
             self.medias = []
+            return response_template.VLC_ERROR
+
+    def stop(self):
+        self.player.stop()
+        result = self._wait_state([vlc.State.Stopped])
+        if result is None:
+            return response_template.EVENT_TIMEOUT
+
+        elif result == vlc.State.Stopped:
+            logger.info('Stopped playing')
+            return response_template.SUCCESS
+        
+        elif result == vlc.State.Error:
+            logger.error('Failed to stop playing')
             return response_template.VLC_ERROR
 
     def _wait_state(self, target_states):
@@ -87,31 +123,39 @@ class Player():
             return response_template.TOGGLE_FAILED
 
     def pause(self):
-        self.player.set_pause(1)
-        result = self._wait_state([vlc.State.Paused])
-        if result is None:
-            return response_template.EVENT_TIMEOUT
+        if self.player.get_state() == vlc.State.Playing:
+            self.player.set_pause(1)
+            result = self._wait_state([vlc.State.Paused])
+            if result is None:
+                return response_template.EVENT_TIMEOUT
 
-        elif result == vlc.State.Paused:
-            logger.info('Paused')
-            return response_template.SUCCESS
+            elif result == vlc.State.Paused:
+                logger.info('Paused')
+                return response_template.SUCCESS
 
-        elif result == vlc.State.Error:
-            logger.error('Failed to pause audio')
-            return response_template.VLC_ERROR
+            elif result == vlc.State.Error:
+                logger.error('Failed to pause audio')
+                return response_template.VLC_ERROR
+        else:
+            logger.error('Can not pause because player is not playing')
+            return response_template.PAUSE_FAILED
 
     def resume(self):
-        self.player.set_pause(0)
-        result = self._wait_state([vlc.State.Playing])
-        if result is None:
-            return response_template.EVENT_TIMEOUT
-        elif result == vlc.State.Playing:
-            logger.info('Resumed')
-            return response_template.SUCCESS
+        if self.player.get_state() == vlc.State.Paused:
+            self.player.set_pause(0)
+            result = self._wait_state([vlc.State.Playing])
+            if result is None:
+                return response_template.EVENT_TIMEOUT
+            elif result == vlc.State.Playing:
+                logger.info('Resumed')
+                return response_template.SUCCESS
 
-        elif result == vlc.State.Error:
-            logger.info('Failed to resume audio')
-            return response_template.VLC_ERROR
+            elif result == vlc.State.Error:
+                logger.info('Failed to resume audio')
+                return response_template.VLC_ERROR
+        else:
+            logger.error('Can not resume because player is not paused')
+            return response_template.RESUME_FAILED
 
     def on_exit(self):
         self.player.stop()

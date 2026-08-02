@@ -4,6 +4,8 @@ from threading import Thread
 import socket
 import queue
 from time import sleep
+from pathlib import Path
+import vlc
 
 from src import version
 from src.constants import LOG_PATH, FILE_LOG_LEVEL, CONSOLE_LOG_LEVEL, LOG_ENCODING
@@ -23,6 +25,8 @@ class Backend:
     def __init__(self):
         self._setup_logging()
         self.running = True
+        self.current_song_info = None
+        self.current_song_in_lib = False # Use this to prevent KeyError
         self.dispatch_buffer = queue.Queue() # single way
         try:
             self.database = Database()
@@ -87,6 +91,7 @@ class Backend:
                 response = response_template.gen_dispatch_failed(e)
 
             if connection is not None:
+                logger.debug(f'Send response: {response}')
                 send_json(connection, response)
                 connection.close()
 
@@ -101,15 +106,69 @@ class Backend:
                     response = response_template.gen_missing_key(action, key)
                     break
             else:
-                if action == 'open':
-                    response = self.player.load_paths([request['path']])
+                if action == 'status':
+                    player_status = {
+                        vlc.State.Playing: 'playing',
+                        vlc.State.Paused: 'paused',
+                        vlc.State.Stopped: 'stopped'
+                    }.get(self.player.player.get_state(), 'unknown')
+
+                    if self.current_song_info is None:
+                        path = 'none'
+                    else:
+                        path = self.current_song_info['path']
+                    status = {
+                        'path': path,
+                        'in_library': self.current_song_in_lib,
+                        'player_status': player_status,
+                    }
+                    progress = self.player.get_progress()
+                    status['length'] = progress['length']
+                    status['time'] = progress['time']
+                    response = response_template.SUCCESS.copy()
+                    response['attachment'] = status
+                    
+                elif action == 'open':
+                    song = request['path']
+                    id = self._get_open(song)
+                    if id is not SENTINELS.NOT_IN_LIB:
+                        self.current_song_info = self.database.get_song_info(id)
+                        logger.debug(f'Current song info set to {self.current_song_info}')
+                        self.current_song_in_lib = True
+                        response = self.player.load_paths(self.current_song_info['path'])
+                    else:
+                        # Not in library, try to open as path
+                        if Path(song).is_file():
+                            self.current_song_info = {'path': song}
+                            logger.debug(f'The opened song is not in library and current song info set to {self.current_song_info}')
+                            self.current_song_in_lib = False
+                            response = self.player.load_paths(song)
+                        else:
+                            logger.warning(f'Can not open {song}')
+                            response = response_template.gen_invalid_path(song)
+
+                elif action == 'stop':
+                    response = self.player.stop()
+
                 elif action == 'pause':
                     response = self.player.pause()
+
+                elif action == 'resume':
+                    response = self.player.resume()
+
+                elif action == 'toggle':
+                    response = self.player.toggle()
+
+                elif action == 'prev':
+                    response = self.player.switch_prev()
+
                 elif action == 'next':
                     response = self.player.switch_next()
+
                 elif action == 'exit':
                     self.exit()
                     response = response_template.SUCCESS
+
                 else:
                     logger.error(f'Invalid \"action\" value received: {action}')
                     response = response_template.INVALID_ACTION
@@ -118,6 +177,19 @@ class Backend:
             response =  response_template.MISSING_ACTION
 
         return response
+
+    def _get_open(self, song): # try to get song id from database
+        id = self.database.get_song_via_alias(song)
+        if id is not SENTINELS.ALIAS_NOT_FOUND:
+            logger.debug(f'Got ID {id} via alias {song}')
+            return id
+        else:
+            id = self.database.get_song_via_path(song)
+            if id is not SENTINELS.SONG_NOT_FOUND:
+                logger.debug(f'Got ID {id} via path {song}')
+                return id
+            else:
+                return SENTINELS.NOT_IN_LIB
 
     def _listen(self):
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

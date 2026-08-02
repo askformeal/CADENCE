@@ -1,20 +1,28 @@
 class Response:
     def __init__(self):
-        self.SUCCESS = {'code': 0, 'msg': 'success', 'attachment': {}}
-        self.INVALID_ACTION = {'code': 1, 'msg': 'invalid action', 'attachment': {}}
-        self.MISSING_ACTION = {'code': 1, 'msg': '\"action\" key not found', 'attachment': {}}
-        self.VLC_ERROR = {'code': 1, 'msg': 'vlc error', 'attachment': {}}
-        self.EVENT_TIMEOUT = {'code': 1, 'msg': 'timeout waiting for completion', 'attachment': {}}
-        self.TOGGLE_FAILED = {'code': 1, 'msg': 'invalid player state, can not toggle', 'attachment': {}}
-        self.EMPTY_PATHS = {'code': 1, 'msg': 'can not load empty path list', 'attachment': {}}
+        self.SUCCESS = self.gen_response(code=0, msg='success')
+        self.INVALID_ACTION = self.gen_response(msg='invalid action')
+        self.MISSING_ACTION = self.gen_response(msg='\"action\" key not found')
+        self.VLC_ERROR = self.gen_response(msg='vlc error')
+        self.EVENT_TIMEOUT = self.gen_response(msg='timeout waiting for completion')
+        self.TOGGLE_FAILED = self.gen_response(msg='invalid player state, can not toggle')
+        self.PAUSE_FAILED = self.gen_response(msg='can not pause because player is not playing')
+        self.RESUME_FAILED = self.gen_response(msg='can not resume because player is not paused')
+        self.EMPTY_PATHS = self.gen_response(msg='can not load empty path list')
+        self.SWITCH_FAILED = self.gen_response(msg='can not switch music because the current playlist is empty')
+
+    def gen_invalid_path(self, song):
+        return self.gen_response(msg=f'can not open \"{song}\" because it can not be parsed as a valid path')
 
     def gen_missing_key(self, action, key):
-        return {'code': 1, 'msg': f'\"{action}\" action requires key \"{key}\" but it is not received', 'attachment': {}}
+        return self.gen_response(msg=f'\"{action}\" action requires key \"{key}\" but it is not received')
 
     def gen_dispatch_failed(self, error):
-        return {'code': 1, 'msg': f'failed to dispatch request: {error}', 'attachment': {}}
+        return self.gen_response(msg=f'failed to dispatch request: {error}')
 
-    def gen_response(self, code=1, msg='', attachment={}):
+    def gen_response(self, code=1, msg='', attachment=None):
+        if attachment is None:
+            attachment = {}
         return {'code': code, 'msg': msg, 'attachment': attachment}
 
 response_template = Response()
