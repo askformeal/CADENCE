@@ -29,5 +29,6 @@ PLAYER_TIMEOUT = 1
 PLAYER_POLL_INTERVAL = 0.05
 
 ACTION_KEYS = {
-    'open': ['path']
+    'open': ['song'],
+    'lib.add': ['path']
 }

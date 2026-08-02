@@ -87,7 +87,7 @@ class Database:
             song_id = self.execute('SELECT id FROM songs WHERE path = ?', path).fetchone()['id']
         else:
             song_id = cursor.lastrowid
-
+        logger.info(f'Tried to add song to library, path: {path}, ignored: {ignored}')
         return (song_id, ignored)
 
     def delete_song(self, id):

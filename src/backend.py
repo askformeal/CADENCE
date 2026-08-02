@@ -98,95 +98,121 @@ class Backend:
     def dispatch(self, request):
         response = {}
         action = request.get('action', None)
-        if action is not None:
-            keys_required = ACTION_KEYS.get(action, [])
-            for key in keys_required:
-                if key not in request.keys():
-                    logger.error(f'Missed key for action \"{action}\": \"{key}\"')
-                    response = response_template.gen_missing_key(action, key)
-                    break
-            else:
-                if action == 'status':
-                    player_status = {
-                        vlc.State.Playing: 'playing',
-                        vlc.State.Paused: 'paused',
-                        vlc.State.Stopped: 'stopped'
-                    }.get(self.player.player.get_state(), 'unknown')
-
-                    if self.current_song_info is None:
-                        path = 'none'
-                    else:
-                        path = self.current_song_info['path']
-                    status = {
-                        'path': path,
-                        'in_library': self.current_song_in_lib,
-                        'player_status': player_status,
-                    }
-                    progress = self.player.get_progress()
-                    status['length'] = progress['length']
-                    status['time'] = progress['time']
-                    response = response_template.SUCCESS.copy()
-                    response['attachment'] = status
-                    
-                elif action == 'open':
-                    song = request['path']
-                    id = self._get_open(song)
-                    if id is not SENTINELS.NOT_IN_LIB:
-                        self.current_song_info = self.database.get_song_info(id)
-                        logger.debug(f'Current song info set to {self.current_song_info}')
-                        self.current_song_in_lib = True
-                        response = self.player.load_paths(self.current_song_info['path'])
-                    else:
-                        # Not in library, try to open as path
-                        if Path(song).is_file():
-                            self.current_song_info = {'path': song}
-                            logger.debug(f'The opened song is not in library and current song info set to {self.current_song_info}')
-                            self.current_song_in_lib = False
-                            response = self.player.load_paths(song)
-                        else:
-                            logger.warning(f'Can not open {song}')
-                            response = response_template.gen_invalid_path(song)
-
-                elif action == 'stop':
-                    response = self.player.stop()
-
-                elif action == 'pause':
-                    response = self.player.pause()
-
-                elif action == 'resume':
-                    response = self.player.resume()
-
-                elif action == 'toggle':
-                    response = self.player.toggle()
-
-                elif action == 'prev':
-                    response = self.player.switch_prev()
-
-                elif action == 'next':
-                    response = self.player.switch_next()
-
-                elif action == 'exit':
-                    self.exit()
-                    response = response_template.SUCCESS
-
+        cwd = request.get('cwd', None)
+        if cwd is not None:
+            if action is not None:
+                keys_required = ACTION_KEYS.get(action, [])
+                for key in keys_required:
+                    if key not in request.keys():
+                        logger.error(f'Missed key for action \"{action}\": \"{key}\"')
+                        response = response_template.gen_missing_key(action, key)
+                        break
                 else:
-                    logger.error(f'Invalid \"action\" value received: {action}')
-                    response = response_template.INVALID_ACTION
+
+                    # ----------------------------------------------------------------
+
+                    if action == 'status':
+                        player_status = {
+                            vlc.State.Playing: 'playing',
+                            vlc.State.Paused: 'paused',
+                            vlc.State.Stopped: 'stopped'
+                        }.get(self.player.player.get_state(), 'unknown')
+
+                        if self.current_song_info is None:
+                            path = 'none'
+                        else:
+                            path = self.current_song_info['path']
+                        status = {
+                            'path': path,
+                            'in_library': self.current_song_in_lib,
+                            'player_status': player_status,
+                        }
+                        progress = self.player.get_progress()
+                        status['length'] = progress['length']
+                        status['time'] = progress['time']
+                        response = response_template.SUCCESS.copy()
+                        response['attachment'] = status
+                        
+                    elif action == 'open':
+                        song = request['song']
+                        path = Path(cwd) / song
+                        id = self._get_open(song, str(path))
+                        if id is not SENTINELS.NOT_IN_LIB:
+                            self.current_song_info = self.database.get_song_info(id)
+                            logger.debug(f'Current song info set to {self.current_song_info}')
+                            self.current_song_in_lib = True
+                            response = self.player.load_paths(self.current_song_info['path'])
+                        else:
+                            # Not in library, try to open as path
+                            if path.is_file():
+                                self.current_song_info = {'path': str(path)}
+                                logger.debug(f'The opened song is not in library and current song info set to {self.current_song_info}')
+                                self.current_song_in_lib = False
+                                response = self.player.load_paths(str(path))
+                            else:
+                                logger.warning(f'Can not open {path}')
+                                response = response_template.gen_invalid_path(str(path))
+
+                    elif action == 'stop':
+                        response = self.player.stop()
+
+                    elif action == 'pause':
+                        response = self.player.pause()
+
+                    elif action == 'resume':
+                        response = self.player.resume()
+
+                    elif action == 'toggle':
+                        response = self.player.toggle()
+
+                    elif action == 'prev':
+                        response = self.player.switch_prev()
+
+                    elif action == 'next':
+                        response = self.player.switch_next()
+
+                    elif action == 'lib.list':
+                        info = self.database.get_all_song_info()
+                        response = response_template.SUCCESS.copy()
+                        response['attachment'] = info
+
+                    elif action == 'lib.add':
+                        path = request['path']
+                        if Path(path).is_file():
+                            ignored = self.database.add_song(path)[1]
+                            if not ignored:
+                                response = response_template.SUCCESS
+                            else:
+                                response = response_template.gen_song_exists(path)
+                        else:
+                            response = response_template.gen_invalid_path(path)
+
+                    elif action == 'exit':
+                        self.exit()
+                        response = response_template.SUCCESS
+
+                    else:
+                        logger.error(f'Invalid \"action\" value received: {action}')
+                        response = response_template.INVALID_ACTION
+            else:
+                logger.error('Not \"action\" key found in request')
+                response =  response_template.gen_missing_key('all', 'action')
         else:
-            logger.error('Not \"action\" key found in request')
-            response =  response_template.MISSING_ACTION
+            logger.error('Not \"cwd\" key found in request')
+            response =  response_template.gen_missing_key('all', 'cwd')
+
 
         return response
 
-    def _get_open(self, song): # try to get song id from database
-        id = self.database.get_song_via_alias(song)
+    def _get_open(self, alias, path): # try to get song id from database
+        id = self.database.get_song_via_alias(alias)
         if id is not SENTINELS.ALIAS_NOT_FOUND:
-            logger.debug(f'Got ID {id} via alias {song}')
+            logger.debug(f'Got ID {id} via alias {alias}')
             return id
         else:
-            id = self.database.get_song_via_path(song)
+            id = self.database.get_song_via_path(path)
             if id is not SENTINELS.SONG_NOT_FOUND:
-                logger.debug(f'Got ID {id} via path {song}')
+                logger.debug(f'Got ID {id} via path {path}')
                 return id
             else:
                 return SENTINELS.NOT_IN_LIB
