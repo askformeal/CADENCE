@@ -2,7 +2,9 @@ import logging
 import json
 
 from src.constants import HEADER_LEN, CONNECTION_ENCODING, MAX_JSON_SIZE
-from src.constants import LOST
+from src.sentinels import SENTINELS
+
+logger = logging.getLogger(__name__)
 
 def send_json(connection, data):
     try:
@@ -12,35 +14,35 @@ def send_json(connection, data):
         connection.sendall(data_bytes)
         return True
     except (BrokenPipeError, ConnectionResetError, TimeoutError, OSError) as e:
-        logging.error(f'A socket error occurred during sending: {e}')
+        logger.error(f'A socket error occurred during sending: {e}')
         return False
 
 def recv_json(connection):
     raw_len = _recv_exact(connection, HEADER_LEN)
-    if raw_len is LOST:
+    if raw_len is SENTINELS.LOST:
         return None
     else:
         length = int.from_bytes(raw_len, byteorder='big')
         
         if length > MAX_JSON_SIZE:
-            logging.error(f'JSON length {length} claimed in header is too large')
+            logger.error(f'JSON length {length} claimed in header is too large')
             return None
 
         elif length <= 0:
-            logging.error(f'JSON length {length} claimed in header is invalid')
+            logger.error(f'JSON length {length} claimed in header is invalid')
             return None
 
         else:
             raw_data = _recv_exact(connection, length)
-            if raw_data is LOST:
-                logging.error('Connection lost')
+            if raw_data is SENTINELS.LOST:
+                logger.error('Connection lost')
                 return None
             else:
                 data = raw_data.decode(CONNECTION_ENCODING)
                 try:
                     json_data = json.loads(data)
                 except (UnicodeDecodeError, json.JSONDecodeError):
-                    logging.error('Invalid JSON received')
+                    logger.error('Invalid JSON received')
                     return None
                 else:
                     return json_data
@@ -51,11 +53,11 @@ def _recv_exact(connection, length):
         try:
             chunk = connection.recv(length - len(data))
         except (ConnectionResetError, TimeoutError, OSError) as e:
-            logging.error(f'A socket error occurred during receiving: {e}')
-            return LOST
+            logger.error(f'A socket error occurred during receiving: {e}')
+            return SENTINELS.LOST
         else:
             if not chunk:
-                return LOST
+                return SENTINELS.LOST
             data += chunk
     return data
 

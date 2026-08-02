@@ -4,6 +4,8 @@ import socket
 from src.constants import HOST, PORT, TIMEOUT
 from src.connection import send_json, recv_json
 
+logger = logging.getLogger(__name__)
+
 def send_request(**kwargs):
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -16,10 +18,10 @@ def send_request(**kwargs):
                 return response
             else:
                 sock.close()
-                logging.error('Failed receive response from CADENCE backend')
+                logger.error('Failed receive response from CADENCE backend')
         else:
             sock.close()
-            logging.error('Failed to send message to CADENCE backend')
+            logger.error('Failed to send message to CADENCE backend')
 
     except (ConnectionRefusedError, OSError) as e:
         return {
