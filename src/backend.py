@@ -212,10 +212,18 @@ class Backend:
                             result = self.database.bind_alias(id, request['alias'])
                             response = {
                                 SENTINELS.ALIAS_EXISTS: response_template.gen_alias_exists(request['alias']),
-                                SENTINELS.DONE: response_template.SUCCESS
+                                SENTINELS.DONE: response_template.SUCCESS,
+                                SENTINELS.SONG_NOT_FOUND: response_template.gen_song_not_exist(f'bind alias to {song}') # not really necessary, but Monica insists
                             }[result]
                         else:
                             response = response_template.gen_song_not_exist(f'bind alias to {song}')
+
+                    elif action == 'lib.alias.del':
+                        result = self.database.delete_alias(request['alias'])
+                        if result is not SENTINELS.ALIAS_NOT_FOUND:
+                            response = response_template.SUCCESS
+                        else:
+                            response = response_template.gen_alias_not_exists(f'delete {request["alias"]}')
 
                     elif action == 'exit':
                         self.exit()

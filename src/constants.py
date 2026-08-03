@@ -33,5 +33,6 @@ ACTION_KEYS = {
     'lib.add': ['path'],
     'lib.del': ['song'],
     'lib.alias.list': ['song'],
-    'lib.alias.bind': ['song', 'alias']
+    'lib.alias.bind': ['song', 'alias'],
+    'lib.alias.del': ['alias'],
 }

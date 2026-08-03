@@ -40,6 +40,9 @@ alias_bind_parser = alias_sub.add_parser('bind')
 alias_bind_parser.add_argument('song', type=str)
 alias_bind_parser.add_argument('alias', type=str)
 
+alias_del_parser = alias_sub.add_parser('del')
+alias_del_parser.add_argument('alias', type=str)
+
 exit_parser = command_sub.add_parser('exit')
 
 args = vars(parser.parse_args())
@@ -58,7 +61,7 @@ response = send_request(**args)
 
 
 if response['code'] == 0:
-    print('Succeeded')
+    print('[Succeeded]')
     if args['action'] == 'status':
         status = response['attachment']
         time = status['time']
@@ -87,22 +90,29 @@ if response['code'] == 0:
 
     elif args['action'] == 'lib.list':
         info = response['attachment']
-        for song in info:
-            texts = [
-                f'Path: {song["path"]}'
-            ]
-            max_len = max(map(len, texts))
-            print('-'*(max_len))
-            print(f'#{song["id"]}.')
-            print('\n'.join(texts))
-            print('-'*(max_len))
-            print()
+        if len(info) > 0:
+            for song in info:
+                texts = [
+                    f'Path: {song["path"]}'
+                ]
+                max_len = max(map(len, texts))
+                print('-'*(max_len))
+                print(f'#{song["id"]}.')
+                print('\n'.join(texts))
+                print('-'*(max_len))
+                print()
+        else:
+            print('Library Empty')
 
     elif args['action'] == 'lib.alias.list':
         aliases = response['attachment']
-        print(aliases)
+        if len(aliases) > 0:
+            print('Alias(es):')
+            print(f'  {"\n  ".join(aliases)}')
+        else:
+            print('No aliases are bound to this song')
 
 else:
-    print(f'Failed: {response['msg']}')
+    print(f'[Failed]: {response['msg']}')
 
 sys.exit(response['code'])
