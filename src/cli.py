@@ -26,6 +26,8 @@ lib_parser = command_sub.add_parser('lib')
 lib_sub = lib_parser.add_subparsers(dest='lib_action', required=True)
 
 lib_list_parser = lib_sub.add_parser('list')
+lib_list_parser.add_argument('-a', '--show-aliases', action='store_true')
+
 lib_add_parser = lib_sub.add_parser('add')
 lib_add_parser.add_argument('path', type=_path)
 lib_del_parser = lib_sub.add_parser('del')
@@ -95,6 +97,8 @@ if response['code'] == 0:
                 texts = [
                     f'Path: {song["path"]}'
                 ]
+                if args['show_aliases']:
+                    texts.append(f'Aliases: {', '.join(song['aliases'])}')
                 max_len = max(map(len, texts))
                 print('-'*(max_len))
                 print(f'#{song["id"]}.')

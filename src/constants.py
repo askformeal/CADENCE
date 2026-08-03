@@ -28,7 +28,7 @@ MAX_JSON_SIZE = 10 * 1024 * 1024
 PLAYER_TIMEOUT = 1
 PLAYER_POLL_INTERVAL = 0.05
 
-ACTION_KEYS = {
+REQUIRED_KEYS = {
     'open': ['song'],
     'lib.add': ['path'],
     'lib.del': ['song'],

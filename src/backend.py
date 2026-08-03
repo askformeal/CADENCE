@@ -9,7 +9,7 @@ import vlc
 
 from src import version
 from src.constants import LOG_PATH, FILE_LOG_LEVEL, CONSOLE_LOG_LEVEL, LOG_ENCODING
-from src.constants import HOST, PORT, BACKLOG, ACTION_KEYS, SERVER_TIMEOUT
+from src.constants import HOST, PORT, BACKLOG, REQUIRED_KEYS, SERVER_TIMEOUT
 from src.constants import MAIN_LOOP_INTERVAL
 from src.sentinels import SENTINELS
 from src.connection import recv_json, send_json
@@ -97,7 +97,7 @@ class Backend:
         cwd = request.get('cwd', None)
         if cwd is not None:
             if action is not None:
-                keys_required = ACTION_KEYS.get(action, [])
+                keys_required = REQUIRED_KEYS.get(action, [])
                 for key in keys_required:
                     if key not in request.keys():
                         logger.error(f'Missed key for action \"{action}\": \"{key}\"')
@@ -168,6 +168,11 @@ class Backend:
 
                     elif action == 'lib.list':
                         info = self.database.get_all_song_info()
+                        if request.get('show_aliases', False):
+                            for row in info:
+                                aliases = self.database.get_song_aliases(row['id'])
+                                row['aliases'] = aliases
+
                         response = response_template.SUCCESS.copy()
                         response['attachment'] = info
 

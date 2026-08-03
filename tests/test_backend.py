@@ -110,17 +110,33 @@ def test_lib_add_missing_file(backend):
 
 
 def test_lib_list_empty(backend):
-    response = _request(backend, 'lib.list')
+    response = _request(backend, 'lib.list', show_aliases=False)
     assert response['code'] == 0
     assert response['attachment'] == []
 
 
 def test_lib_list_after_add(backend, audio_file):
     _request(backend, 'lib.add', path=audio_file)
-    response = _request(backend, 'lib.list')
+    response = _request(backend, 'lib.list', show_aliases=False)
     assert response['code'] == 0
     assert len(response['attachment']) == 1
     assert response['attachment'][0]['path'] == audio_file
+    assert 'aliases' not in response['attachment'][0]
+
+
+def test_lib_list_with_show_aliases(backend, audio_file):
+    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.alias.bind', song=audio_file, alias='favorite')
+    response = _request(backend, 'lib.list', show_aliases=True)
+    assert response['code'] == 0
+    assert response['attachment'][0]['aliases'] == ['favorite']
+
+
+def test_lib_list_show_aliases_empty(backend, audio_file):
+    _request(backend, 'lib.add', path=audio_file)
+    response = _request(backend, 'lib.list', show_aliases=True)
+    assert response['code'] == 0
+    assert response['attachment'][0]['aliases'] == []
 
 
 def test_lib_del_by_path(backend, audio_file):
