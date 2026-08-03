@@ -10,14 +10,17 @@ class Response:
         self.EMPTY_PATHS = self.gen_response(msg='can not load empty path list')
         self.SWITCH_FAILED = self.gen_response(msg='can not switch music because the current playlist is empty')
 
-    def gen_del_not_exist(self, song):
-        return self.gen_response(msg=f'can not delete {song} because it does not exist in the library')
-
     def gen_invalid_path(self, song):
         return self.gen_response(msg=f'\"{song}\" can not be parsed as a valid and existing path')
 
     def gen_song_exists(self, path):
         return self.gen_response(msg=f'can not add {path} because a song of the same path already exists in the library')
+
+    def gen_song_not_exist(self, action):
+        return self.gen_response(msg=f'can not {action} because it does not exist in the library')
+
+    def gen_alias_exists(self, alias):
+        return self.gen_response(msg=f'can not bind alias {alias} because it is already bound to another song in library')
 
     def gen_missing_key(self, action, key):
         return self.gen_response(msg=f'\"{action}\" action(s) requires key \"{key}\" but it is not received')

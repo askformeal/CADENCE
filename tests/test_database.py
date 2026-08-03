@@ -36,31 +36,40 @@ def test_get_song_info(database):
     assert database.get_song_info(9999) is SENTINELS.SONG_NOT_FOUND
 
 
-def test_add_alias(database):
+def test_bind_alias(database):
     song_id, _ = database.add_song(r'C:\music\song.flac')
-    assert database.add_alias('song', song_id) is SENTINELS.DONE
+    assert database.bind_alias(song_id, 'song') is SENTINELS.DONE
 
 
-def test_add_alias_duplicate(database):
+def test_bind_alias_duplicate(database):
     song_id, _ = database.add_song(r'C:\music\song.flac')
-    database.add_alias('song', song_id)
-    assert database.add_alias('song', song_id) is SENTINELS.ALIAS_EXISTS
+    database.bind_alias(song_id, 'song')
+    assert database.bind_alias(song_id, 'song') is SENTINELS.ALIAS_EXISTS
 
 
-def test_add_alias_to_missing_song(database):
-    assert database.add_alias('song', 9999) is SENTINELS.SONG_NOT_FOUND
+def test_bind_alias_to_missing_song(database):
+    assert database.bind_alias(9999, 'song') is SENTINELS.SONG_NOT_FOUND
+
+
+def test_get_song_aliases(database):
+    song_id, _ = database.add_song(r'C:\music\song.flac')
+    assert database.get_song_aliases(song_id) == []
+    database.bind_alias(song_id, 'song')
+    database.bind_alias(song_id, 'other')
+    assert database.get_song_aliases(song_id) == ['song', 'other']
+    assert database.get_song_aliases(9999) is SENTINELS.SONG_NOT_FOUND
 
 
 def test_get_song_via_alias(database):
     song_id, _ = database.add_song(r'C:\music\song.flac')
-    database.add_alias('song', song_id)
+    database.bind_alias(song_id, 'song')
     assert database.get_song_via_alias('song') == song_id
     assert database.get_song_via_alias('missing') is SENTINELS.ALIAS_NOT_FOUND
 
 
 def test_delete_alias(database):
     song_id, _ = database.add_song(r'C:\music\song.flac')
-    database.add_alias('song', song_id)
+    database.bind_alias(song_id, 'song')
     assert database.delete_alias('song') is SENTINELS.DONE
     assert database.delete_alias('song') is SENTINELS.ALIAS_NOT_FOUND
 
@@ -74,7 +83,7 @@ def test_delete_song(database):
 
 def test_delete_song_cascades_aliases(database):
     song_id, _ = database.add_song(r'C:\music\song.flac')
-    database.add_alias('song', song_id)
+    database.bind_alias(song_id, 'song')
     assert database.get_song_via_alias('song') == song_id
     assert database.delete_song(song_id) is SENTINELS.DONE
     assert database.get_song_via_alias('song') is SENTINELS.ALIAS_NOT_FOUND

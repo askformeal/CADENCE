@@ -105,10 +105,10 @@ class Database:
         else:
             return True
 
-    def add_alias(self, name, id):
+    def bind_alias(self, id, alias):
         if self.song_exists(id):
-            if not self.alias_exists(name):
-                self.execute('INSERT INTO aliases(name, song_id) VALUES (?, ?)', name, id)
+            if not self.alias_exists(alias):
+                self.execute('INSERT INTO aliases(name, song_id) VALUES (?, ?)', alias, id)
                 return SENTINELS.DONE
             else:
                 return SENTINELS.ALIAS_EXISTS

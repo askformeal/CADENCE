@@ -73,7 +73,7 @@ def test_open_via_library_path(backend, audio_file):
 def test_open_via_alias(backend, audio_file):
     database = backend.database
     song_id, _ = database.add_song(audio_file)
-    database.add_alias('test_alias', song_id)
+    database.bind_alias(song_id, 'test_alias')
     response = _request(backend, 'open', song='test_alias')
     assert response['code'] == 0
     assert backend.current_song_in_lib is True
@@ -84,7 +84,7 @@ def test_open_alias_priority_over_path(backend, audio_file, tmp_path):
     """Alias lookup must win even if the alias string is not a real path."""
     database = backend.database
     song_id, _ = database.add_song(audio_file)
-    database.add_alias('test_alias', song_id)
+    database.bind_alias(song_id, 'test_alias')
     response = _request(backend, 'open', song='test_alias')
     assert response['code'] == 0
     assert backend.current_song_info['id'] == song_id
@@ -133,7 +133,7 @@ def test_lib_del_by_path(backend, audio_file):
 def test_lib_del_by_alias(backend, audio_file):
     database = backend.database
     song_id, _ = database.add_song(audio_file)
-    database.add_alias('test_alias', song_id)
+    database.bind_alias(song_id, 'test_alias')
     response = _request(backend, 'lib.del', song='test_alias')
     assert response['code'] == 0
     assert backend.database.song_exists(song_id) is False
@@ -167,6 +167,42 @@ def test_lib_del_current_song_resets_state(backend, audio_file):
 def test_lib_del_cascades_alias(backend, audio_file):
     database = backend.database
     song_id, _ = database.add_song(audio_file)
-    database.add_alias('test_alias', song_id)
+    database.bind_alias(song_id, 'test_alias')
     _request(backend, 'lib.del', song=audio_file)
     assert database.get_song_via_alias('test_alias') is SENTINELS.ALIAS_NOT_FOUND
+
+
+def test_lib_alias_bind(backend, audio_file):
+    _request(backend, 'lib.add', path=audio_file)
+    response = _request(backend, 'lib.alias.bind', song=audio_file, alias='favorite')
+    assert response['code'] == 0
+    assert backend.database.get_song_via_alias('favorite') == 1
+
+
+def test_lib_alias_bind_duplicate(backend, audio_file):
+    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.alias.bind', song=audio_file, alias='favorite')
+    response = _request(backend, 'lib.alias.bind', song=audio_file, alias='favorite')
+    assert response['code'] == 1
+    assert 'already' in response['msg']
+
+
+def test_lib_alias_bind_missing_song(backend):
+    response = _request(backend, 'lib.alias.bind', song='ghost_song', alias='favorite')
+    assert response['code'] == 1
+    assert 'does not exist' in response['msg']
+
+
+def test_lib_alias_list(backend, audio_file):
+    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.alias.bind', song=audio_file, alias='favorite')
+    _request(backend, 'lib.alias.bind', song=audio_file, alias='workout')
+    response = _request(backend, 'lib.alias.list', song=audio_file)
+    assert response['code'] == 0
+    assert response['attachment'] == ['favorite', 'workout']
+
+
+def test_lib_alias_list_missing_song(backend):
+    response = _request(backend, 'lib.alias.list', song='ghost_song')
+    assert response['code'] == 1
+    assert 'does not exist' in response['msg']

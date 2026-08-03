@@ -131,8 +131,7 @@ class Backend:
                         
                     elif action == 'open':
                         song = request['song']
-                        path = Path(cwd) / song
-                        id = self._get_song(song, path)
+                        id, path = self._get_song(song, cwd)
                         if id is not SENTINELS.NOT_IN_LIB:
                             self.current_song_info = self.database.get_song_info(id)
                             logger.debug(f'Current song info set to {self.current_song_info}')
@@ -185,8 +184,7 @@ class Backend:
 
                     elif action == 'lib.del':
                         song = request['song']
-                        path = Path(cwd) / song
-                        id = self._get_song(song, path)
+                        id, path = self._get_song(song, cwd)
                         if id is not SENTINELS.NOT_IN_LIB:
                             path = self.database.get_song_info(id)['path']
                             if self.current_song_info is not None and self.current_song_info.get('id', None) == id:
@@ -195,13 +193,33 @@ class Backend:
                             self.database.delete_song(id)
                             response = response_template.SUCCESS
                         else:
-                            response = response_template.gen_del_not_exist(song)
+                            response = response_template.gen_song_not_exist(f'delete {song}')
 
+                    elif action == 'lib.alias.list':
+                        song = request['song']
+                        id, path = self._get_song(song, cwd)
+                        if id is not SENTINELS.NOT_IN_LIB:
+                            aliases = self.database.get_song_aliases(id)
+                            response = response_template.SUCCESS.copy()
+                            response['attachment'] = aliases
+                        else:
+                            response = response_template.gen_song_not_exist(f'show aliases of {song}')
+
+                    elif action == 'lib.alias.bind':
+                        song = request['song']
+                        id, path = self._get_song(song, cwd)
+                        if id is not SENTINELS.NOT_IN_LIB:
+                            result = self.database.bind_alias(id, request['alias'])
+                            response = {
+                                SENTINELS.ALIAS_EXISTS: response_template.gen_alias_exists(request['alias']),
+                                SENTINELS.DONE: response_template.SUCCESS
+                            }[result]
+                        else:
+                            response = response_template.gen_song_not_exist(f'bind alias to {song}')
 
                     elif action == 'exit':
                         self.exit()
                         response = response_template.SUCCESS
-
                     else:
                         logger.error(f'Invalid \"action\" value received: {action}')
                         response = response_template.INVALID_ACTION
@@ -215,19 +233,19 @@ class Backend:
 
         return response
 
-    def _get_song(self, alias, path): # try to get song id from database
-        path = str(path)
+    def _get_song(self, alias, cwd): # try to get song id from database
+        path = Path(cwd) / alias
         id = self.database.get_song_via_alias(alias)
         if id is not SENTINELS.ALIAS_NOT_FOUND:
             logger.debug(f'Got ID {id} via alias {alias}')
-            return id
+            return (id, path)
         else:
-            id = self.database.get_song_via_path(path)
+            id = self.database.get_song_via_path(str(path))
             if id is not SENTINELS.SONG_NOT_FOUND:
                 logger.debug(f'Got ID {id} via path {path}')
-                return id
+                return (id, path)
             else:
-                return SENTINELS.NOT_IN_LIB
+                return (SENTINELS.NOT_IN_LIB, path)
 
     def _listen(self):
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

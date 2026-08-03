@@ -31,5 +31,7 @@ PLAYER_POLL_INTERVAL = 0.05
 ACTION_KEYS = {
     'open': ['song'],
     'lib.add': ['path'],
-    'lib.del': ['song']
+    'lib.del': ['song'],
+    'lib.alias.list': ['song'],
+    'lib.alias.bind': ['song', 'alias']
 }
