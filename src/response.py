@@ -10,6 +10,9 @@ class Response:
         self.EMPTY_PATHS = self.gen_response(msg='can not load empty path list')
         self.SWITCH_FAILED = self.gen_response(msg='can not switch music because the current playlist is empty')
 
+    def gen_del_not_exist(self, song):
+        return self.gen_response(msg=f'can not delete {song} because it does not exist in the library')
+
     def gen_invalid_path(self, song):
         return self.gen_response(msg=f'\"{song}\" can not be parsed as a valid and existing path')
 

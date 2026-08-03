@@ -28,6 +28,8 @@ lib_sub = lib_parser.add_subparsers(dest='lib_action')
 lib_list_parser = lib_sub.add_parser('list')
 lib_add_parser = lib_sub.add_parser('add')
 lib_add_parser.add_argument('path', type=_path)
+lib_del_parser = lib_sub.add_parser('del')
+lib_del_parser.add_argument('song', type=str)
 
 # alias_parser = command_sub.add_parser('alias')
 # alias_sub = alias_parser.add_subparsers(dest='alias_action')

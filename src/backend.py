@@ -23,6 +23,7 @@ console.setLevel(CONSOLE_LOG_LEVEL)
 logger = logging.getLogger(__name__)
 class Backend:
     def __init__(self):
+        self.exit_code = 0
         self._setup_logging()
         self.running = True
         self.current_song_info = None
@@ -54,8 +55,11 @@ class Backend:
             self._flush_thread = Thread(target=self._flush_buffer, daemon=True)
             self._flush_thread.start()
 
-            while self.running:
-                sleep(MAIN_LOOP_INTERVAL)
+            try:
+                while self.running:
+                    sleep(MAIN_LOOP_INTERVAL)
+            except KeyboardInterrupt:
+                ...
 
             logger.info('Exit')
             self.dispatch_buffer.put((SENTINELS.EXIT_FLUSHING, SENTINELS.EXIT_FLUSHING))
@@ -63,18 +67,10 @@ class Backend:
             self.database.on_exit()
             self.player.on_exit()
             logging.shutdown()
-            sys.exit(0)
+            sys.exit(self.exit_code)
 
         else:
             sys.exit(1)
-            
-    def exit(self, error=False, error_msg=None):
-        if error_msg is not None:
-            if error:
-                logger.critical(error_msg)
-            else:
-                logger.info(error_msg)
-        self.running = False
 
     def buffer_request(self, request, connection=None):
         self.dispatch_buffer.put((request, connection))
@@ -91,7 +87,7 @@ class Backend:
                 response = response_template.gen_dispatch_failed(e)
 
             if connection is not None:
-                logger.debug(f'Send response: {response}')
+                logger.info(f'Send response: {response}')
                 send_json(connection, response)
                 connection.close()
 
@@ -136,7 +132,7 @@ class Backend:
                     elif action == 'open':
                         song = request['song']
                         path = Path(cwd) / song
-                        id = self._get_open(song, str(path))
+                        id = self._get_song(song, path)
                         if id is not SENTINELS.NOT_IN_LIB:
                             self.current_song_info = self.database.get_song_info(id)
                             logger.debug(f'Current song info set to {self.current_song_info}')
@@ -187,6 +183,21 @@ class Backend:
                         else:
                             response = response_template.gen_invalid_path(path)
 
+                    elif action == 'lib.del':
+                        song = request['song']
+                        path = Path(cwd) / song
+                        id = self._get_song(song, path)
+                        if id is not SENTINELS.NOT_IN_LIB:
+                            path = self.database.get_song_info(id)['path']
+                            if self.current_song_info is not None and self.current_song_info.get('id', None) == id:
+                                self.current_song_info = {'path': path} 
+                                self.current_song_in_lib = False
+                            self.database.delete_song(id)
+                            response = response_template.SUCCESS
+                        else:
+                            response = response_template.gen_del_not_exist(song)
+
+
                     elif action == 'exit':
                         self.exit()
                         response = response_template.SUCCESS
@@ -204,7 +215,8 @@ class Backend:
 
         return response
 
-    def _get_open(self, alias, path): # try to get song id from database
+    def _get_song(self, alias, path): # try to get song id from database
+        path = str(path)
         id = self.database.get_song_via_alias(alias)
         if id is not SENTINELS.ALIAS_NOT_FOUND:
             logger.debug(f'Got ID {id} via alias {alias}')
@@ -220,23 +232,37 @@ class Backend:
     def _listen(self):
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.settimeout(SERVER_TIMEOUT)
-        server.bind((HOST, PORT))
-        server.listen(BACKLOG)
-        logger.info(f'started listening on {HOST}:{PORT}')
-        while self.running:
-            try:
-                connection, address = server.accept()
-            except socket.timeout:
-                continue
+        try:
+            server.bind((HOST, PORT))
+        except OSError as e:
+            self.exit(True, f'Failed to bind to {HOST}:{PORT}: {e}')
+        else:
+            server.listen(BACKLOG)
+            logger.info(f'started listening on {HOST}:{PORT}')
+            while self.running:
+                try:
+                    connection, address = server.accept()
+                except socket.timeout:
+                    continue
 
-            logger.info(f'Received connection from {address}')
-            Thread(target=self._handle_connection, args=(connection,), daemon=True).start()
+                logger.info(f'Received connection from {address}')
+                Thread(target=self._handle_connection, args=(connection,), daemon=True).start()
 
     def _handle_connection(self, connection):
         request = recv_json(connection)
         if request is not None:
             logger.info(f'Received request: {request}')
             self.buffer_request(request, connection)
+
+    def exit(self, error=False, msg=None):
+        if msg is not None:
+            if error:
+                logger.critical(msg)
+                self.exit_code = 1
+            else:
+                logger.info(msg)
+                self.exit_code = 0
+        self.running = False
 
 if __name__ == '__main__':
     Backend().run()
