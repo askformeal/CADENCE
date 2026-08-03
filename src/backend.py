@@ -58,7 +58,7 @@ class Backend:
             try:
                 while self.running:
                     sleep(MAIN_LOOP_INTERVAL)
-            except KeyboardInterrupt:
+            except KeyboardInterrupt: # I know this suppose to run in background, but it's useful in developing
                 ...
 
             logger.info('Exit')
