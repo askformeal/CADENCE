@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cadence"
+version = "0.1.0"
+description = "Command-line Audio Decoding Engine with Navigation and Continuous Execution"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = [
+    "platformdirs>=4.0",
+    "python-vlc>=3.0",
+]
+
+[project.scripts]
+cadence = "src.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["src*"]
