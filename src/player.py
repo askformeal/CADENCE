@@ -20,7 +20,7 @@ class Player():
         manager.event_attach(vlc.EventType.MediaPlayerEndReached, self._on_end)
 
     def _on_end(self, event):
-        self.buffer({'action':'next'})
+        self.buffer({'action':'next', 'source': 'backend IPC from player'})
 
     def get_progress(self):
         length = self.player.get_length()

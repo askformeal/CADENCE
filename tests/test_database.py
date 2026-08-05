@@ -30,10 +30,13 @@ def test_get_song_via_path(database):
 
 def test_get_song_info(database):
     song_id, _ = database.add_song(r'C:\music\song.flac')
+    second_id, _ = database.add_song(r'C:\music\another.flac')
     info = database.get_song_info(song_id)
-    assert info['id'] == song_id
-    assert info['path'] == r'C:\music\song.flac'
-    assert database.get_song_info(9999) is SENTINELS.SONG_NOT_FOUND
+    assert info[0]['id'] == song_id
+    assert info[0]['path'] == r'C:\music\song.flac'
+    assert database.get_song_info(9999) == []
+    batch = database.get_song_info([song_id, second_id])
+    assert len(batch) == 2
 
 
 def test_bind_alias(database):

@@ -25,6 +25,9 @@ class Response:
     def gen_alias_not_exists(self, action):
         return self.gen_response(msg=f'can not {action} because it does not exist in library')
 
+    def gen_playlist_empty(self, name):
+        return self.gen_response(msg=f'can not open playlist \"{name}\" because it is empty')
+
     def gen_missing_key(self, action, key):
         return self.gen_response(msg=f'\"{action}\" action(s) requires key \"{key}\" but it is not received')
 

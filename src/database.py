@@ -67,12 +67,12 @@ class Database:
 
         return info
 
-    def get_song_info(self, id):
-        row = self.execute('SELECT * from songs where id = ?', id).fetchone()
-        if row is not None:
-            return dict(row)
-        else:
-            return SENTINELS.SONG_NOT_FOUND
+    def get_song_info(self, ids):
+        if not isinstance(ids, list):
+            ids = [ids]
+        rows = self.execute(f'SELECT * from songs WHERE id IN ({', '.join('?'*len(ids))})', *ids).fetchall()
+        info = list(map(lambda row: dict(row), rows))
+        return info
 
     def get_song_aliases(self, id):
         if self.song_exists(id):

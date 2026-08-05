@@ -19,9 +19,10 @@ def test_status_before_open(backend):
 
 
 def test_status_missing_cwd(backend):
-    response = backend.dispatch({'action': 'status'})
-    assert response['code'] == 1
-    assert 'cwd' in response['msg']
+    # cwd validation now lives inside actions that need it (open/lib.*),
+    # not at the global dispatch gate; status never needs cwd.
+    response = _request(backend, 'status')
+    assert response['code'] == 0
 
 
 def test_invalid_action(backend):
@@ -77,7 +78,7 @@ def test_open_via_alias(backend, audio_file):
     response = _request(backend, 'open', song='test_alias')
     assert response['code'] == 0
     assert backend.current_song_in_lib is True
-    assert backend.current_song_info['path'] == audio_file
+    assert backend.current_song_info[0]['path'] == audio_file
 
 
 def test_open_alias_priority_over_path(backend, audio_file, tmp_path):
@@ -87,7 +88,7 @@ def test_open_alias_priority_over_path(backend, audio_file, tmp_path):
     database.bind_alias(song_id, 'test_alias')
     response = _request(backend, 'open', song='test_alias')
     assert response['code'] == 0
-    assert backend.current_song_info['id'] == song_id
+    assert backend.current_song_info[0]['id'] == song_id
 
 
 def test_lib_add(backend, audio_file):
@@ -177,7 +178,7 @@ def test_lib_del_current_song_resets_state(backend, audio_file):
     response = _request(backend, 'lib.del', song=audio_file)
     assert response['code'] == 0
     assert backend.current_song_in_lib is False
-    assert backend.current_song_info == {'path': audio_file}
+    assert backend.current_song_info[0] == {'path': audio_file}
 
 
 def test_lib_del_cascades_alias(backend, audio_file):

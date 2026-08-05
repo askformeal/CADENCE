@@ -61,6 +61,7 @@ def main():
             print(f'CADENCE backend is already running')
         elif result is SENTINELS.FAILED_START_BACKEND:
             print(f'Failed to start CADENCE backend')
+   
     else:
         if args.get('alias_action') is not None:
             args['lib_action'] = f"{args['lib_action']}.{args['alias_action']}"
@@ -70,6 +71,7 @@ def main():
             args['action'] = f'{args["action"]}.{args['lib_action']}'
             del args['lib_action']
 
+        args['source'] = 'teletypewriter interface (non-interactive)'
         args['cwd'] = str(Path.cwd())
 
         response = send_request(**args)

@@ -17,6 +17,7 @@ class Sentinels:
         self.ALIAS_NOT_FOUND = Sentinel('Alias Not Found')
         self.DONE = Sentinel('Action Successfully Done') # when you don't have anything to return on success but something to return on failure
         self.NOT_IN_LIB = Sentinel('Song Not in Library')
+        self.MISSING_CWD = Sentinel('CWD is Needed but Missing')
         self.BACKEND_ALREADY_RUNNING = Sentinel('Backend is Already Running')
         self.BACKEND_STARTED = Sentinel('Backend Started')
         self.FAILED_START_BACKEND = Sentinel('Failed to Start Backend')
