@@ -14,40 +14,44 @@ def main():
 
     command_sub = parser.add_subparsers(dest='action', required=True)
 
-    start_parser = command_sub.add_parser('start')
-    status_parser = command_sub.add_parser('status')
-    open_parser = command_sub.add_parser('open')
+    start_parser = command_sub.add_parser('start', help='Start CADENCE backend')
+    status_parser = command_sub.add_parser('status', help='Show CADENCE status')
+    open_parser = command_sub.add_parser('open', help='Open a song or playlist. Supports alias, file path and playlist name')
     open_parser.add_argument('song', type=str)
-    pause_parser = command_sub.add_parser('pause')
-    resume_parser = command_sub.add_parser('resume')
-    toggle_parser = command_sub.add_parser('toggle')
-    stop_parser = command_sub.add_parser('stop')
-    prev_parser = command_sub.add_parser('prev')
-    next_parser = command_sub.add_parser('next')
+    pause_parser = command_sub.add_parser('pause', help='Pause playing media')
+    resume_parser = command_sub.add_parser('resume', help='Resume paused media')
+    toggle_parser = command_sub.add_parser('toggle', help='Switch between playing and paused')
+    stop_parser = command_sub.add_parser('stop', help='Stop playing')
+    prev_parser = command_sub.add_parser('prev', help='Switch to the previous song in current playlist')
+    next_parser = command_sub.add_parser('next',help='Switch to the next song in current playlist')
 
-    lib_parser = command_sub.add_parser('lib')
+    lib_parser = command_sub.add_parser('lib', help='Manage library')
 
     lib_sub = lib_parser.add_subparsers(dest='lib_action', required=True)
 
-    lib_list_parser = lib_sub.add_parser('list')
+    lib_list_parser = lib_sub.add_parser('list', help='Show all songs in library')
     lib_list_parser.add_argument('-a', '--show-aliases', action='store_true')
 
-    lib_add_parser = lib_sub.add_parser('add')
+    lib_add_parser = lib_sub.add_parser('add', help='Add a new song to library')
     lib_add_parser.add_argument('path', type=_path)
-    lib_del_parser = lib_sub.add_parser('del')
+    lib_del_parser = lib_sub.add_parser('del', help='Delete a song from library')
     lib_del_parser.add_argument('song', type=str)
 
-    alias_parser = lib_sub.add_parser('alias')
+    alias_parser = lib_sub.add_parser('alias', help='Manage aliases of songs in library')
     alias_sub = alias_parser.add_subparsers(dest='alias_action', required=True)
-    alias_list_parser = alias_sub.add_parser('list')
+    alias_list_parser = alias_sub.add_parser('list', help='Show all bound aliases of a song in library')
     alias_list_parser.add_argument('song', type=str)
 
-    alias_bind_parser = alias_sub.add_parser('bind')
+    alias_bind_parser = alias_sub.add_parser('bind', help='Bind an alias to a song in library')
     alias_bind_parser.add_argument('song', type=str)
     alias_bind_parser.add_argument('alias', type=str)
 
-    alias_del_parser = alias_sub.add_parser('del')
+    alias_del_parser = alias_sub.add_parser('unbind', help='Unbind an alias from a song in library')
     alias_del_parser.add_argument('alias', type=str)
+
+    playlist_parser = lib_sub.add_parser('playlist', help='Manage playlists')
+    playlist_sub = playlist_parser.add_subparsers(dest='playlist_action', )
+    playlist_list_parser = playlist_sub.add_parser('list', help='Show all playlists in library')
 
     exit_parser = command_sub.add_parser('exit')
 
@@ -63,9 +67,13 @@ def main():
             print(f'Failed to start CADENCE backend')
    
     else:
-        if args.get('alias_action') is not None:
+        if args.get('alias_action', None) is not None:
             args['lib_action'] = f"{args['lib_action']}.{args['alias_action']}"
             del args['alias_action']
+
+        if args.get('playlist_action', None) is not None:
+            args['lib_action'] = f"{args['lib_action']}.{args['playlist_action']}"
+            del args['playlist_action']
 
         if args.get('lib_action', None) is not None:
             args['action'] = f'{args["action"]}.{args['lib_action']}'
@@ -130,6 +138,10 @@ def main():
                     print(f'  {"\n  ".join(aliases)}')
                 else:
                     print('No aliases are bound to this song')
+
+            elif args['action'] == 'lib.playlist.list':
+                playlists = response['attachment']
+                print(playlists) # will prettify output latter
 
         else:
             print(f'[Failed]: {response['msg']}')

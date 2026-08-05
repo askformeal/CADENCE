@@ -239,12 +239,17 @@ class Backend:
                     else:
                         response = response_template.gen_song_not_exist(f'bind alias to {song}')
 
-                elif action == 'lib.alias.del':
-                    result = self.database.delete_alias(request['alias'])
+                elif action == 'lib.alias.unbind':
+                    result = self.database.unbind_alias(request['alias'])
                     if result is not SENTINELS.ALIAS_NOT_FOUND:
                         response = response_template.SUCCESS
                     else:
-                        response = response_template.gen_alias_not_exists(f'delete {request["alias"]}')
+                        response = response_template.gen_alias_not_exists(f'unbind {request["alias"]}')
+
+                elif action == 'lib.playlist.list':
+                    playlists = self.database.get_all_playlists()
+                    response = response_template.SUCCESS.copy()
+                    response['attachment'] = playlists
 
                 elif action == 'exit':
                     self.exit()

@@ -135,7 +135,7 @@ class Database:
         else:
             return SENTINELS.SONG_NOT_FOUND
 
-    def delete_alias(self, alias):
+    def unbind_alias(self, alias):
         if self.alias_exists(alias):
             self.execute('DELETE FROM aliases WHERE name = ?', alias)
             return SENTINELS.DONE

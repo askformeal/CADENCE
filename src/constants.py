@@ -36,5 +36,5 @@ REQUIRED_KEYS = {
     'lib.del': ['song'],
     'lib.alias.list': ['song'],
     'lib.alias.bind': ['song', 'alias'],
-    'lib.alias.del': ['alias'],
+    'lib.alias.unbind': ['alias'],
 }

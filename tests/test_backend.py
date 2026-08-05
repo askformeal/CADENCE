@@ -228,7 +228,7 @@ def test_lib_alias_list_missing_song(backend):
 def test_lib_alias_del(backend, audio_file):
     _request(backend, 'lib.add', path=audio_file)
     _request(backend, 'lib.alias.bind', song=audio_file, alias='favorite')
-    response = _request(backend, 'lib.alias.del', alias='favorite')
+    response = _request(backend, 'lib.alias.unbind', alias='favorite')
     assert response['code'] == 0
     assert backend.database.get_song_via_alias('favorite') is SENTINELS.ALIAS_NOT_FOUND
 
@@ -237,11 +237,11 @@ def test_lib_alias_del_keeps_song(backend, audio_file):
     """Deleting an alias must not delete the song it was bound to."""
     _request(backend, 'lib.add', path=audio_file)
     _request(backend, 'lib.alias.bind', song=audio_file, alias='favorite')
-    _request(backend, 'lib.alias.del', alias='favorite')
+    _request(backend, 'lib.alias.unbind', alias='favorite')
     assert backend.database.get_song_via_path(audio_file) == 1
 
 
 def test_lib_alias_del_not_exist(backend):
-    response = _request(backend, 'lib.alias.del', alias='ghost_alias')
+    response = _request(backend, 'lib.alias.unbind', alias='ghost_alias')
     assert response['code'] == 1
     assert 'does not exist' in response['msg']

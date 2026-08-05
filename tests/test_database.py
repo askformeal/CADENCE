@@ -73,8 +73,8 @@ def test_get_song_via_alias(database):
 def test_delete_alias(database):
     song_id, _ = database.add_song(r'C:\music\song.flac')
     database.bind_alias(song_id, 'song')
-    assert database.delete_alias('song') is SENTINELS.DONE
-    assert database.delete_alias('song') is SENTINELS.ALIAS_NOT_FOUND
+    assert database.unbind_alias('song') is SENTINELS.DONE
+    assert database.unbind_alias('song') is SENTINELS.ALIAS_NOT_FOUND
 
 
 def test_delete_song(database):
