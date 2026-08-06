@@ -21,6 +21,12 @@ console = logging.StreamHandler()
 console.setLevel(CONSOLE_LOG_LEVEL)
 
 logger = logging.getLogger(__name__)
+
+class FlushFileHandler(logging.FileHandler):
+    def emit(self, record):
+        super().emit(record)
+        self.flush()
+
 class Backend:
     def __init__(self):
         self.exit_code = 0
@@ -44,9 +50,10 @@ class Backend:
         level=FILE_LOG_LEVEL,
         format="%(asctime)s [%(levelname)s] [%(name)s] %(message)s",
         handlers=[
-            logging.FileHandler(LOG_PATH, encoding=LOG_ENCODING),
+            FlushFileHandler(LOG_PATH, encoding=LOG_ENCODING),
             console
             ])
+        logger.info(f'Logging to file: {LOG_PATH}')
 
     def run(self):
         if self.running:
