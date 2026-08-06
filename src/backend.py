@@ -266,6 +266,24 @@ class Backend:
                     else:
                         response = response_template.gen_playlist_exists(name)
 
+                elif action == 'lib.playlist.add':
+                    playlist = self.database.get_playlist_via_name(request['playlist'])
+                    if playlist is not SENTINELS.PLAYLIST_NOT_FOUND:
+                        song = self._get_song(request['song'], cwd)
+                        if song is SENTINELS.MISSING_CWD:
+                            response = response_template.gen_missing_key('lib.playlist.add', 'cwd')
+                        elif song is not SENTINELS.NOT_IN_LIB:
+                            ignored = self.database.add_song_to_playlist(playlist, song)
+                            if not ignored:
+                                response = response_template.SUCCESS
+                            else:
+                                response = response_template.gen_playlist_song_exists(request['song'], request['playlist'])
+                        else:
+                            response = response_template.gen_song_not_exist(f'add song \"{request['song']}\" to playlist \"{request['playlist']}\"')
+                    else:
+                        response = response_template.gen_playlist_not_exist(request['playlist'])
+
+
                 elif action == 'exit':
                     self.exit()
                     response = response_template.SUCCESS

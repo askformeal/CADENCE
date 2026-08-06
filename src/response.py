@@ -28,8 +28,14 @@ class Response:
     def gen_playlist_empty(self, name):
         return self.gen_response(msg=f'can not open playlist \"{name}\" because it is empty')
 
+    def gen_playlist_not_exist(self, name):
+        return self.gen_response(msg=f'can not add song to playlist \"{name}\" because it does not exist in library')
+
     def gen_playlist_exists(self, name):
-        return self.gen_response(msg=f'can not create \"{name}\" because a playlist of the same name already exists')
+        return self.gen_response(msg=f'can not create \"{name}\" because a playlist of the same name already exists in library')
+
+    def gen_playlist_song_exists(self, song, playlist):
+        return self.gen_response(msg=f'can not add song \"{song}\" to playlist \"{playlist}\" because it is already in the playlist')
 
     def gen_missing_key(self, action, key):
         return self.gen_response(msg=f'\"{action}\" action(s) requires key \"{key}\" but it is not received')
