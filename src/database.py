@@ -16,7 +16,6 @@ class Database:
         except sqlite3.Error as e:
             raise RuntimeError(f'Failed to connect to database: {e}') from e
         else:
-            self.connection.execute("PRAGMA foreign_keys = ON")
             self.connection.execute("PRAGMA journal_mode = WAL").fetchone()
             self.connection.row_factory = sqlite3.Row
 
@@ -24,6 +23,7 @@ class Database:
             self._init_database()
 
     def _init_database(self):
+        self.execute("PRAGMA foreign_keys = ON")
         self.execute('''CREATE TABLE IF NOT EXISTS songs (
                             id INTEGER NOT NULL PRIMARY KEY,
                             path TEXT NOT NULL UNIQUE COLLATE NOCASE
@@ -218,6 +218,14 @@ class Database:
                 return SENTINELS.PLAYLIST_NOT_FOUND
         else:
             return SENTINELS.SONG_NOT_FOUND
+
+    def reset(self):
+        self.execute("PRAGMA foreign_keys = OFF")
+        rows = self.execute('SELECT name FROM sqlite_master WHERE type = \'table\'').fetchall()
+        tables = list(map(lambda row: row['name'], rows))
+        for table in tables:
+            self.execute(f'DROP TABLE IF EXISTS {table}')
+        self._init_database()
         
     def execute(self, sql, *parameters):
         parameters = tuple(parameters)

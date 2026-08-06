@@ -211,6 +211,13 @@ class Backend:
                     else:
                         response = response_template.gen_song_not_exist(f'delete {song}')
 
+                elif action == 'lib.reset':
+                    self.database.reset()
+                    if self.current_song_in_lib:
+                        path = self.current_song_info[self.current_song_num]['path']
+                        self._set_current_song({'path': path}, False)
+                    response = response_template.SUCCESS
+
                 elif action == 'lib.alias.list':
                     song = request['song']
                     id = self._get_song(song, cwd)
@@ -251,6 +258,14 @@ class Backend:
                     response = response_template.SUCCESS.copy()
                     response['attachment'] = playlists
 
+                elif action == 'lib.playlist.create':
+                    name = request['name']
+                    ignored = self.database.create_playlist(name)[1]
+                    if not ignored:
+                        response = response_template.SUCCESS
+                    else:
+                        response = response_template.gen_playlist_exists(name)
+
                 elif action == 'exit':
                     self.exit()
                     response = response_template.SUCCESS
@@ -269,6 +284,8 @@ class Backend:
         return response_template.gen_missing_key(action, key)
 
     def _set_current_song(self, info, in_lib=True):
+        if not isinstance(info, list):
+            info = [info]
         self.current_song_info = info
         self.current_song_in_lib = in_lib
         self.current_song_num = 0

@@ -1,6 +1,7 @@
 import argparse
 import sys
 from pathlib import Path
+import readchar
 
 from src.sentinels import SENTINELS
 from src.client import send_request
@@ -36,6 +37,7 @@ def main():
     lib_add_parser.add_argument('path', type=_path)
     lib_del_parser = lib_sub.add_parser('del', help='Delete a song from library')
     lib_del_parser.add_argument('song', type=str)
+    lib_reset_parser = lib_sub.add_parser('reset', help='Reset library and delete all data')
 
     alias_parser = lib_sub.add_parser('alias', help='Manage aliases of songs in library')
     alias_sub = alias_parser.add_subparsers(dest='alias_action', required=True)
@@ -51,7 +53,12 @@ def main():
 
     playlist_parser = lib_sub.add_parser('playlist', help='Manage playlists')
     playlist_sub = playlist_parser.add_subparsers(dest='playlist_action', )
+
     playlist_list_parser = playlist_sub.add_parser('list', help='Show all playlists in library')
+    
+    playlist_create_parser = playlist_sub.add_parser('create', help='Create a new playlist')
+    playlist_create_parser.add_argument('name', type=str)
+
 
     exit_parser = command_sub.add_parser('exit')
 
@@ -82,8 +89,17 @@ def main():
         args['source'] = 'teletypewriter interface (non-interactive)'
         args['cwd'] = str(Path.cwd())
 
-        response = send_request(**args)
+        if args['action'] == 'lib.reset':
+            answer = ''
+            while answer not in ('y', 'n'):
+                print('This action will reset the database and all data including songs and playlists will be permanently lost. Continue? [Y/N]', end='', flush=True)
+                answer = readchar.readkey().lower()
+                print()
+            if answer == 'n':
+                print('Cancelled')
+                return
 
+        response = send_request(**args)
 
         if response['code'] == 0:
             print('[Succeeded]')
