@@ -261,9 +261,21 @@ class Backend:
                         response = response_template.gen_alias_not_exists(f'unbind {request["alias"]}')
 
                 elif action == 'lib.playlist.list':
-                    playlists = self.database.get_all_playlists()
                     response = response_template.SUCCESS.copy()
-                    response['attachment'] = playlists
+
+                    playlist = request.get('playlist', None)
+                    if playlist is not None:
+                        info = self._get_playlist_songs(playlist)
+                        if info is SENTINELS.PLAYLIST_NOT_FOUND:
+                            response = response_template.gen_playlist_not_exist(f'list songs of playlist \"{playlist}\"')
+                        elif info is SENTINELS.PLAYLIST_EMPTY:
+                            response['attachment'] = []
+                        else:
+                            response['attachment'] = info
+                            
+                    else:
+                        playlists = self.database.get_all_playlists()
+                        response['attachment'] = playlists
 
                 elif action == 'lib.playlist.create':
                     name = request['name']
@@ -288,7 +300,7 @@ class Backend:
                         else:
                             response = response_template.gen_song_not_exist(f'add song \"{request['song']}\" to playlist \"{request['playlist']}\"')
                     else:
-                        response = response_template.gen_playlist_not_exist(request['playlist'])
+                        response = response_template.gen_playlist_not_exist(f'add song to playlist \"{request['playlist']}\"')
 
 
                 elif action == 'exit':

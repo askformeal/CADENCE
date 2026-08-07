@@ -55,7 +55,8 @@ def main():
     playlist_parser = lib_sub.add_parser('playlist', help='Manage playlists')
     playlist_sub = playlist_parser.add_subparsers(dest='playlist_action', required=True)
 
-    playlist_list_parser = playlist_sub.add_parser('list', help='Show all playlists in library')
+    playlist_list_parser = playlist_sub.add_parser('list', help='Show all songs in a playlist. Show names of all playlists in library if no playlists are given')
+    playlist_list_parser.add_argument('playlist', type=str, nargs='?', default=None, help='Name of playlist to list')
     
     playlist_create_parser = playlist_sub.add_parser('create', help='Create a new playlist')
     playlist_create_parser.add_argument('name', type=str, help='Name of playlist to create')
@@ -149,7 +150,7 @@ def main():
                         print('-'*(max_len))
                         print()
                 else:
-                    print('Library Empty')
+                    print('No songs in library')
 
             elif args['action'] == 'lib.alias.list':
                 aliases = response['attachment']
@@ -160,8 +161,22 @@ def main():
                     print('No aliases are bound to this song')
 
             elif args['action'] == 'lib.playlist.list':
-                playlists = response['attachment']
-                print(playlists) # will prettify output latter
+                results = response['attachment']
+                if args['playlist'] is not None:
+                    if len(results) > 0:
+                        print(f'Found {len(results)} song(s) in playlist:')
+                        for song in results:
+                            print(f'  {song['path']}')
+                    else:
+                        print('Playlist Empty')
+                else:
+                    if len(results) > 0:
+                        print(f'Found {len(results)} playlist(s) in library:')
+                        for playlist in results:
+                            print(f'  {playlist['name']}')
+                    else:
+                        print('No playlists in library')
+                        
 
         else:
             print(f'[Failed]: {response['msg']}')
