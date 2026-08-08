@@ -38,5 +38,6 @@ REQUIRED_KEYS = {
     'lib.alias.bind': ['song', 'alias'],
     'lib.alias.unbind': ['alias'],
     'lib.playlist.create': ['name'],
-    'lib.playlist.add': ['song', 'playlist']
+    'lib.playlist.add': ['song', 'playlist'],
+    'lib.playlist.kick': ['song', 'playlist'],
 }

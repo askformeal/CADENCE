@@ -245,3 +245,52 @@ def test_lib_alias_del_not_exist(backend):
     response = _request(backend, 'lib.alias.unbind', alias='ghost_alias')
     assert response['code'] == 1
     assert 'does not exist' in response['msg']
+
+
+def _create_playlist_with_song(backend, audio_file, playlist_name):
+    """Seed a song + playlist + playlist membership for playlist tests."""
+    database = backend.database
+    song_id, _ = database.add_song(audio_file)
+    playlist_id = database.create_playlist(playlist_name)[0]
+    database.add_song_to_playlist(playlist_id, song_id)
+    return song_id, playlist_id
+
+
+def test_lib_playlist_kick(backend, audio_file):
+    song_id, playlist_id = _create_playlist_with_song(backend, audio_file, 'workout')
+    response = _request(backend, 'lib.playlist.kick', song=audio_file, playlist='workout')
+    assert response['code'] == 0
+    assert backend.database.get_playlist_songs(playlist_id) is SENTINELS.PLAYLIST_EMPTY
+    assert backend.database.song_exists(song_id)
+
+
+def test_lib_playlist_kick_by_alias(backend, audio_file):
+    database = backend.database
+    song_id, playlist_id = _create_playlist_with_song(backend, audio_file, 'workout')
+    database.bind_alias(song_id, 'workout_song')
+    response = _request(backend, 'lib.playlist.kick', song='workout_song', playlist='workout')
+    assert response['code'] == 0
+    assert backend.database.get_playlist_songs(playlist_id) is SENTINELS.PLAYLIST_EMPTY
+
+
+def test_lib_playlist_kick_song_not_in_playlist(backend, audio_file):
+    _create_playlist_with_song(backend, audio_file, 'workout')
+    other_file = audio_file.replace('test_audio', 'test_other')
+    song_id, _ = backend.database.add_song(other_file)
+    response = _request(backend, 'lib.playlist.kick', song=other_file, playlist='workout')
+    assert response['code'] == 1
+    assert 'not in the playlist' in response['msg']
+    assert backend.database.song_exists(song_id)
+
+
+def test_lib_playlist_kick_song_not_in_library(backend):
+    _request(backend, 'lib.playlist.create', name='workout')
+    response = _request(backend, 'lib.playlist.kick', song='ghost_song', playlist='workout')
+    assert response['code'] == 1
+    assert 'does not exist' in response['msg']
+
+
+def test_lib_playlist_kick_playlist_not_found(backend, audio_file):
+    response = _request(backend, 'lib.playlist.kick', song=audio_file, playlist='ghost_playlist')
+    assert response['code'] == 1
+    assert 'does not exist' in response['msg']

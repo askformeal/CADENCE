@@ -65,6 +65,10 @@ def main():
     playlist_add_parser.add_argument('song', help='Song to add to playlist')
     playlist_add_parser.add_argument('playlist', help='Playlist to add song to')
 
+    playlist_kick_parser = playlist_sub.add_parser('kick', help='Remove a song from a playlist')
+    playlist_kick_parser.add_argument('song', help='Song to remove from playlist')
+    playlist_kick_parser.add_argument('playlist', help='Playlist to remove song from')
+
     exit_parser = command_sub.add_parser('exit')
 
     args = vars(parser.parse_args())

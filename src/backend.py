@@ -93,7 +93,7 @@ class Backend:
                 response = self.dispatch(request)
             except Exception as e:
                 logger.error(f'Failed to dispatch request: {e}')
-                response = response_template.gen_dispatch_failed(e)
+                response = response_template.gen_response(msg=f'failed to dispatch request: \"{e}\"')
 
             if connection is not None:
                 logger.info(f'Send response: {response}')
@@ -148,7 +148,7 @@ class Backend:
                         path = Path(cwd) / song
                         info = self._get_playlist_songs(song)
                         if info is SENTINELS.PLAYLIST_EMPTY:
-                            response = response_template.gen_playlist_empty(song)
+                            response = response_template.gen_response(msg=f'can not open playlist \"{song}\" because it is empty')
                         elif info is not SENTINELS.PLAYLIST_NOT_FOUND:
                             self._set_current_song(info)
                             paths = list(map(lambda i: i['path'], info))
@@ -199,7 +199,7 @@ class Backend:
                         if not ignored:
                             response = response_template.SUCCESS
                         else:
-                            response = response_template.gen_song_exists(path)
+                            response = response_template.gen_response(msg=f'can not add \"{path}\" because a song of the same path already exists in library')
                     else:
                         response = response_template.gen_invalid_path(path)
 
@@ -246,7 +246,7 @@ class Backend:
                     elif id is not SENTINELS.NOT_IN_LIB:
                         result = self.database.bind_alias(id, request['alias'])
                         response = {
-                            SENTINELS.ALIAS_EXISTS: response_template.gen_alias_exists(request['alias']),
+                            SENTINELS.ALIAS_EXISTS: response_template.gen_response(msg=f'can not bind alias \"{request['alias']}\" because it is already bound to another song in library'),
                             SENTINELS.DONE: response_template.SUCCESS,
                             SENTINELS.SONG_NOT_FOUND: response_template.gen_song_not_exist(f'bind alias to {song}') # not really necessary, but Monica insists
                         }[result]
@@ -258,7 +258,7 @@ class Backend:
                     if result is not SENTINELS.ALIAS_NOT_FOUND:
                         response = response_template.SUCCESS
                     else:
-                        response = response_template.gen_alias_not_exists(f'unbind {request["alias"]}')
+                        response = response_template.gen_response(msg=f'can not unbind {request["alias"]} because it does not exist in library')
 
                 elif action == 'lib.playlist.list':
                     response = response_template.SUCCESS.copy()
@@ -283,7 +283,7 @@ class Backend:
                     if not ignored:
                         response = response_template.SUCCESS
                     else:
-                        response = response_template.gen_playlist_exists(name)
+                        response = response_template.gen_response(msg=f'can not create \"{name}\" because a playlist of the same name already exists in library')
 
                 elif action == 'lib.playlist.add':
                     playlist = self.database.get_playlist_via_name(request['playlist'])
@@ -291,16 +291,37 @@ class Backend:
                         song = self._get_song(request['song'], cwd)
                         if song is SENTINELS.MISSING_CWD:
                             response = response_template.gen_missing_key('lib.playlist.add', 'cwd')
-                        elif song is not SENTINELS.NOT_IN_LIB:
+                        elif song is SENTINELS.NOT_IN_LIB:
+                            response = response_template.gen_song_not_exist(f'add song \"{request['song']}\" to playlist \"{request['playlist']}\"')
+                        else:
                             ignored = self.database.add_song_to_playlist(playlist, song)
                             if not ignored:
                                 response = response_template.SUCCESS
                             else:
-                                response = response_template.gen_playlist_song_exists(request['song'], request['playlist'])
-                        else:
-                            response = response_template.gen_song_not_exist(f'add song \"{request['song']}\" to playlist \"{request['playlist']}\"')
+                                response = response_template.gen_response(msg=f'can not add song \"{request['song']}\" to playlist \"{request['playlist']}\" because it is already in the playlist')
                     else:
                         response = response_template.gen_playlist_not_exist(f'add song to playlist \"{request['playlist']}\"')
+
+                elif action == 'lib.playlist.kick':
+                    playlist_id = self.database.get_playlist_via_name(request['playlist'])
+                    if playlist_id is not SENTINELS.PLAYLIST_NOT_FOUND:
+                        song_id = self._get_song(request['song'], cwd)
+                        if song_id is SENTINELS.MISSING_CWD:
+                            response = response_template.gen_missing_key('lib.playlist.kick', 'cwd')
+                        elif song_id is SENTINELS.NOT_IN_LIB:
+                            response = response_template.gen_song_not_exist(f'kick song \"{request['song']}\" from playlist \"{request['playlist']}\"')
+                        else:
+                            result = self.database.del_song_from_playlist(playlist_id, song_id)
+                            if result is SENTINELS.PLAYLIST_SONG_NOT_FOUND:
+                                response = response_template.gen_response(msg=f"can not remove song \"{request['song']}\" from playlist \"{request['playlist']}\" because the song is not in the playlist")
+                            elif result is SENTINELS.SONG_NOT_FOUND:
+                                response = response_template.gen_song_not_exist(f'kick song \"{request['song']}\" from playlist \"{request['playlist']}\"')
+                            elif result is SENTINELS.PLAYLIST_NOT_FOUND:
+                                response = response_template.gen_playlist_not_exist(f"remove song {request['song']} from playlist {request['playlist']}")
+                            else:
+                                response = response_template.SUCCESS
+                    else:
+                        response = response_template.gen_playlist_not_exist(f"remove song {request['song']} from playlist {request['playlist']}")
 
 
                 elif action == 'exit':
