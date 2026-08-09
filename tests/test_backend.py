@@ -294,3 +294,29 @@ def test_lib_playlist_kick_playlist_not_found(backend, audio_file):
     response = _request(backend, 'lib.playlist.kick', song=audio_file, playlist='ghost_playlist')
     assert response['code'] == 1
     assert 'does not exist' in response['msg']
+
+
+def test_lib_playlist_del(backend):
+    _request(backend, 'lib.playlist.create', name='workout')
+    response = _request(backend, 'lib.playlist.del', playlist='workout')
+    assert response['code'] == 0
+    assert backend.database.get_playlist_via_name('workout') is SENTINELS.PLAYLIST_NOT_FOUND
+
+
+def test_lib_playlist_del_cascades_membership(backend, audio_file):
+    _create_playlist_with_song(backend, audio_file, 'workout')
+    response = _request(backend, 'lib.playlist.del', playlist='workout')
+    assert response['code'] == 0
+    assert backend.database.get_all_playlists() == []
+
+
+def test_lib_playlist_del_playlist_not_found(backend):
+    response = _request(backend, 'lib.playlist.del', playlist='ghost_playlist')
+    assert response['code'] == 1
+    assert 'does not exist' in response['msg']
+
+
+def test_lib_playlist_del_missing_key(backend):
+    response = _request(backend, 'lib.playlist.del')
+    assert response['code'] == 1
+    assert 'playlist' in response['msg']

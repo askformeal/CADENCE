@@ -162,3 +162,22 @@ def test_del_song_from_playlist_song_not_found(database):
 def test_del_song_from_playlist_playlist_not_found(database):
     song_id, _ = database.add_song(r'C:\music\song.flac')
     assert database.del_song_from_playlist(9999, song_id) is SENTINELS.PLAYLIST_NOT_FOUND
+
+
+def test_del_playlist(database):
+    playlist_id, _ = database.create_playlist('work')
+    assert database.del_playlist(playlist_id) is SENTINELS.DONE
+    assert database.get_playlist_via_name('work') is SENTINELS.PLAYLIST_NOT_FOUND
+
+
+def test_del_playlist_cascades_membership(database):
+    song_id, _ = database.add_song(r'C:\music\song.flac')
+    playlist_id, _ = database.create_playlist('work')
+    database.add_song_to_playlist(playlist_id, song_id)
+    database.del_playlist(playlist_id)
+    assert database.get_playlist_songs(playlist_id) is SENTINELS.PLAYLIST_NOT_FOUND
+    assert database.song_exists(song_id)
+
+
+def test_del_playlist_not_found(database):
+    assert database.del_playlist(9999) is SENTINELS.PLAYLIST_NOT_FOUND

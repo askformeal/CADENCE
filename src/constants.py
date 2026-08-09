@@ -40,4 +40,5 @@ REQUIRED_KEYS = {
     'lib.playlist.create': ['name'],
     'lib.playlist.add': ['song', 'playlist'],
     'lib.playlist.kick': ['song', 'playlist'],
+    'lib.playlist.del': ['playlist'],
 }

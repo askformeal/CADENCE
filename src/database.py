@@ -227,6 +227,13 @@ class Database:
         logger.debug(f'Tried to add playlist to library, name: {name}, ignored: {ignored}')
         return playlist_id, ignored
 
+    def del_playlist(self, playlist_id):
+        if self.playlist_exists(playlist_id):
+            self.execute('DELETE FROM playlists WHERE id=?', playlist_id)
+            return SENTINELS.DONE
+        else:
+            return SENTINELS.PLAYLIST_NOT_FOUND
+
     def add_song_to_playlist(self, playlist_id, song_id):
         if self.song_exists(song_id):
             if self.playlist_exists(playlist_id):

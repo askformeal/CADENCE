@@ -309,20 +309,23 @@ class Backend:
                         if song_id is SENTINELS.MISSING_CWD:
                             response = response_template.gen_missing_key('lib.playlist.kick', 'cwd')
                         elif song_id is SENTINELS.NOT_IN_LIB:
-                            response = response_template.gen_song_not_exist(f'kick song \"{request['song']}\" from playlist \"{request['playlist']}\"')
+                            response = response_template.gen_song_not_exist(f'remove song \"{request['song']}\" from playlist \"{request['playlist']}\"')
                         else:
                             result = self.database.del_song_from_playlist(playlist_id, song_id)
                             if result is SENTINELS.PLAYLIST_SONG_NOT_FOUND:
                                 response = response_template.gen_response(msg=f"can not remove song \"{request['song']}\" from playlist \"{request['playlist']}\" because the song is not in the playlist")
-                            elif result is SENTINELS.SONG_NOT_FOUND:
-                                response = response_template.gen_song_not_exist(f'kick song \"{request['song']}\" from playlist \"{request['playlist']}\"')
-                            elif result is SENTINELS.PLAYLIST_NOT_FOUND:
-                                response = response_template.gen_playlist_not_exist(f"remove song {request['song']} from playlist {request['playlist']}")
                             else:
                                 response = response_template.SUCCESS
                     else:
                         response = response_template.gen_playlist_not_exist(f"remove song {request['song']} from playlist {request['playlist']}")
 
+                elif action == 'lib.playlist.del':
+                    playlist_id = self.database.get_playlist_via_name(request['playlist'])
+                    if playlist_id is not SENTINELS.PLAYLIST_NOT_FOUND:
+                        self.database.del_playlist(playlist_id)
+                        response = response_template.SUCCESS
+                    else:
+                        response = response_template.gen_playlist_not_exist(f'delete playlist \"{request['playlist']}\"')
 
                 elif action == 'exit':
                     self.exit()
