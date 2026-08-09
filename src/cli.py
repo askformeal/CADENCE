@@ -25,6 +25,8 @@ def main():
     toggle_parser = command_sub.add_parser('toggle', help='Switch between playing and paused')
     stop_parser = command_sub.add_parser('stop', help='Stop playing')
     list_parser = command_sub.add_parser('list', help='Show current playlist')
+    switch_parser = command_sub.add_parser('switch', help='Switch to a song in current playlist via number')
+    switch_parser.add_argument('number', type=int, help='Number in playlist of song to switch. Negative number means count from the last')
     prev_parser = command_sub.add_parser('prev', help='Switch to the previous song in current playlist')
     next_parser = command_sub.add_parser('next',help='Switch to the next song in current playlist')
 
@@ -144,7 +146,7 @@ def main():
 
             elif args['action'] == 'list':
                 info = response['attachment']
-                _show_song_info(info, 'No songs are being played')
+                _show_song_info(info, 'No songs are being played', show_num=True)
 
             elif args['action'] == 'lib.list':
                 info = response['attachment']
@@ -176,9 +178,10 @@ def main():
 
         sys.exit(response['code'])
 
-def _show_song_info(info, empty_msg, show_aliases=False):
+def _show_song_info(info, empty_msg, show_aliases=False, show_num=False):
     if len(info) > 0:
-        for song in info:
+        for i in range(len(info)):
+            song = info[i]
             texts = [
                 f'Path: {song["path"]}'
             ]
@@ -190,6 +193,8 @@ def _show_song_info(info, empty_msg, show_aliases=False):
                     texts.append('No aliases are bound to this song')
             max_len = max(map(len, texts))
             print('-'*(max_len))
+            if show_num:
+                print(f'{i+1}.')
             print('\n'.join(texts))
             print('-'*(max_len))
             print()
@@ -198,3 +203,4 @@ def _show_song_info(info, empty_msg, show_aliases=False):
 
 if __name__ == '__main__':
     main()
+    

@@ -32,6 +32,7 @@ PLAYER_POLL_INTERVAL = 0.05
 
 REQUIRED_KEYS = {
     'open': ['song'],
+    'switch': ['number'],
     'lib.add': ['path'],
     'lib.del': ['song'],
     'lib.alias.list': ['song'],

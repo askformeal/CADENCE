@@ -215,11 +215,32 @@ class Backend:
                     else:
                         response['attachment'] = []
 
+                elif action == 'switch':
+                    num = request['number']
+                    max_num = len(self.player.medias)
+
+                    if num == 0:
+                        num_to_load = 0
+                    elif num > max_num:
+                        num_to_load = max_num - 1 # 9999999999 will switch the last song
+                    elif num < 0:
+                        num_to_load = max(max_num + num, 0) # -3 will switch the third from last song, -9999999999 will switch to the first song
+                    else:
+                        num_to_load = num - 1
+                    result = self.player.load_number(num_to_load)
+                    response = {
+                        SENTINELS.SUCCESS: response_template.SUCCESS,
+                        SENTINELS.PLAYER_EMPTY: response_template.gen_player_empty(f'switch to the {num}th song in current playlist'),
+                        SENTINELS.VLC_ERROR: response_template.gen_vlc_error(f'switch to the {num}th song in current playlist'),
+                        SENTINELS.PLAYER_TIMEOUT: response_template.gen_player_timeout(f'switch to the {num}th song in current playlist'),
+                    }[result]
+                    self.current_song_num = self.player.number
+
                 elif action == 'prev':
                     result = self.player.switch_prev()
                     response = {
                         SENTINELS.SUCCESS: response_template.SUCCESS,
-                        SENTINELS.PLAYER_EMPTY: response_template.gen_response(msg='can not switch to previous song because no song is being played'),
+                        SENTINELS.PLAYER_EMPTY: response_template.gen_player_empty('switch to previous song'),
                         SENTINELS.VLC_ERROR: response_template.gen_vlc_error('switch to previous song'),
                         SENTINELS.PLAYER_TIMEOUT: response_template.gen_player_timeout('switch to previous song')
                     }[result]
@@ -229,7 +250,7 @@ class Backend:
                     result = self.player.switch_next()
                     response = {
                         SENTINELS.SUCCESS: response_template.SUCCESS,
-                        SENTINELS.PLAYER_EMPTY: response_template.gen_response(msg='can not switch to next song because no song is being played'),
+                        SENTINELS.PLAYER_EMPTY: response_template.gen_player_empty('switch to next song'),
                         SENTINELS.VLC_ERROR: response_template.gen_vlc_error('switch to next song'),
                         SENTINELS.PLAYER_TIMEOUT: response_template.gen_player_timeout('switch to next song')
                     }[result]

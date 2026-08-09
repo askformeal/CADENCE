@@ -1,4 +1,5 @@
 import os
+import wave
 
 import pytest
 
@@ -79,6 +80,85 @@ def test_list_after_open_playlist(backend, audio_file):
     assert response['code'] == 0
     assert len(response['attachment']) == 1
     assert response['attachment'][0]['path'] == audio_file
+
+
+def test_switch_missing_number(backend):
+    response = _request(backend, 'switch')
+    assert response['code'] == 1
+    assert 'number' in response['msg']
+
+
+def test_switch_before_open(backend):
+    response = _request(backend, 'switch', number=1)
+    assert response['code'] == 1
+    assert 'no songs are being played' in response['msg']
+
+
+def _open_two_song_playlist(backend, audio_file, tmp_path):
+    """Open a playlist with two songs sorted as [a, b] by basename."""
+    first = audio_file
+    second = str(tmp_path / 'test_b.wav')
+    _make_wav(second)
+    _open_playlist_with_songs(backend, [first, second], 'pair')
+    return first, second
+
+
+def test_switch_to_number(backend, audio_file, tmp_path):
+    first, second = _open_two_song_playlist(backend, audio_file, tmp_path)
+    response = _request(backend, 'switch', number=1)
+    assert response['code'] == 0
+    assert backend.current_song_num == 0
+    status = _request(backend, 'status')
+    assert status['attachment']['path'] == first
+
+    response = _request(backend, 'switch', number=2)
+    assert response['code'] == 0
+    assert backend.current_song_num == 1
+    status = _request(backend, 'status')
+    assert status['attachment']['path'] == second
+
+
+def test_switch_zero_means_first(backend, audio_file, tmp_path):
+    first, _ = _open_two_song_playlist(backend, audio_file, tmp_path)
+    response = _request(backend, 'switch', number=0)
+    assert response['code'] == 0
+    assert backend.current_song_num == 0
+    status = _request(backend, 'status')
+    assert status['attachment']['path'] == first
+
+
+def test_switch_too_large_goes_to_last(backend, audio_file, tmp_path):
+    _, second = _open_two_song_playlist(backend, audio_file, tmp_path)
+    response = _request(backend, 'switch', number=999999)
+    assert response['code'] == 0
+    assert backend.current_song_num == 1
+    status = _request(backend, 'status')
+    assert status['attachment']['path'] == second
+
+
+def test_switch_negative_counts_from_last(backend, audio_file, tmp_path):
+    first, second = _open_two_song_playlist(backend, audio_file, tmp_path)
+
+    response = _request(backend, 'switch', number=-1)
+    assert response['code'] == 0
+    assert backend.current_song_num == 1
+    status = _request(backend, 'status')
+    assert status['attachment']['path'] == second
+
+    response = _request(backend, 'switch', number=-2)
+    assert response['code'] == 0
+    assert backend.current_song_num == 0
+    status = _request(backend, 'status')
+    assert status['attachment']['path'] == first
+
+
+def test_switch_negative_too_large_goes_to_first(backend, audio_file, tmp_path):
+    first, _ = _open_two_song_playlist(backend, audio_file, tmp_path)
+    response = _request(backend, 'switch', number=-999)
+    assert response['code'] == 0
+    assert backend.current_song_num == 0
+    status = _request(backend, 'status')
+    assert status['attachment']['path'] == first
 
 
 def test_open_raw_path(backend, audio_file):
@@ -286,6 +366,26 @@ def _create_playlist_with_song(backend, audio_file, playlist_name):
     playlist_id = database.create_playlist(playlist_name)[0]
     database.add_song_to_playlist(playlist_id, song_id)
     return song_id, playlist_id
+
+
+def _make_wav(path):
+    """Write a short silent WAV file (mirrors the conftest audio_file fixture)."""
+    with wave.open(str(path), 'wb') as f:
+        f.setnchannels(1)
+        f.setsampwidth(2)
+        f.setframerate(8000)
+        f.writeframes(b'\x00\x00' * (8000 * 3))
+
+
+def _open_playlist_with_songs(backend, paths, playlist_name):
+    """Seed a playlist from existing files and open it."""
+    database = backend.database
+    playlist_id = database.create_playlist(playlist_name)[0]
+    for path in paths:
+        song_id, _ = database.add_song(path)
+        database.add_song_to_playlist(playlist_id, song_id)
+    response = _request(backend, 'open', song=playlist_name)
+    assert response['code'] == 0
 
 
 def test_lib_playlist_kick(backend, audio_file):
