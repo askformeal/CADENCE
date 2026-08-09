@@ -137,49 +137,102 @@ class Backend:
                     response['attachment'] = status
                     
                 elif action == 'open':
+                    paths_to_load = None
                     song = request['song']
-                    id= self._get_song(song, cwd)
+                    id = self._get_song(song, cwd)
                     if id is SENTINELS.MISSING_CWD:
                         response = self._missing_key('open', 'cwd')
                     elif id is not SENTINELS.NOT_IN_LIB:
                         self._set_current_song(self.database.get_song_info(id))
-                        response = self.player.load_paths(self.current_song_info[0]['path'])
+                        paths_to_load = self.current_song_info[0]['path']
                     else:
                         path = Path(cwd) / song
                         info = self._get_playlist_songs(song)
                         if info is SENTINELS.PLAYLIST_EMPTY:
                             response = response_template.gen_response(msg=f'can not open playlist \"{song}\" because it is empty')
+
                         elif info is not SENTINELS.PLAYLIST_NOT_FOUND:
                             self._set_current_song(info)
-                            paths = list(map(lambda i: i['path'], info))
-                            response = self.player.load_paths(paths)
+                            paths_to_load = list(map(lambda i: i['path'], info))
+
                         else:
                             # Not in library, try to open as path
                             if path.is_file():
                                 self._set_current_song([{'path': str(path)}], False)
-                                response = self.player.load_paths(str(path))
+                                paths_to_load = str(path)
                             else:
                                 logger.warning(f'Can not open {path}')
                                 response = response_template.gen_invalid_path(str(path))
 
+                    if paths_to_load is not None:
+                        result = self.player.load_paths(paths_to_load)
+                        response = {
+                            SENTINELS.SUCCESS: response_template.SUCCESS,
+                            SENTINELS.PLAYER_LOAD_EMPTY: response_template.gen_response(msg='can not load empty list of songs'),
+                            SENTINELS.VLC_ERROR: response_template.gen_vlc_error('load path(s)'),
+                            SENTINELS.PLAYER_TIMEOUT: response_template.gen_player_timeout('load path(s)'),
+                        }[result]
+
                 elif action == 'stop':
-                    response = self.player.stop()
+                    result = self.player.stop()
+                    response = {
+                        SENTINELS.SUCCESS: response_template.SUCCESS,
+                        SENTINELS.VLC_ERROR: response_template.gen_vlc_error('stop player'),
+                        SENTINELS.PLAYER_TIMEOUT: response_template.gen_player_timeout('stop player')
+                    }[result]
 
                 elif action == 'pause':
-                    response = self.player.pause()
+                    result = self.player.pause()
+                    response = {
+                        SENTINELS.SUCCESS: response_template.SUCCESS,
+                        SENTINELS.INVALID_PLAYER_STATE: response_template.gen_response(msg='can not pause player because player is not playing'),
+                        SENTINELS.VLC_ERROR: response_template.gen_vlc_error('pause player'),
+                        SENTINELS.PLAYER_TIMEOUT: response_template.gen_player_timeout('pause player')
+                    }[result]
 
                 elif action == 'resume':
-                    response = self.player.resume()
+                    result = self.player.resume()
+                    response = {
+                        SENTINELS.SUCCESS: response_template.SUCCESS,
+                        SENTINELS.INVALID_PLAYER_STATE: response_template.gen_response(msg='can not resume player because player is not paused'),
+                        SENTINELS.VLC_ERROR: response_template.gen_vlc_error('resume player'),
+                        SENTINELS.PLAYER_TIMEOUT: response_template.gen_player_timeout('resume player')
+                    }[result]
 
                 elif action == 'toggle':
-                    response = self.player.toggle()
+                    result = self.player.toggle()
+                    response = {
+                        SENTINELS.SUCCESS: response_template.SUCCESS,
+                        SENTINELS.INVALID_PLAYER_STATE: response_template.gen_response(msg='can not toggle player because player is neither playing nor paused'),
+                        SENTINELS.VLC_ERROR: response_template.gen_vlc_error('toggle player'),
+                        SENTINELS.PLAYER_TIMEOUT: response_template.gen_player_timeout('toggle player')
+                    }[result]
+
+                elif action == 'list':
+                    response = response_template.SUCCESS.copy()
+                    if self.current_song_info is not None:
+                        response['attachment'] = self.current_song_info.copy()
+                    else:
+                        response['attachment'] = []
 
                 elif action == 'prev':
-                    response = self.player.switch_prev()
+                    result = self.player.switch_prev()
+                    response = {
+                        SENTINELS.SUCCESS: response_template.SUCCESS,
+                        SENTINELS.PLAYER_EMPTY: response_template.gen_response(msg='can not switch to previous song because no song is being played'),
+                        SENTINELS.VLC_ERROR: response_template.gen_vlc_error('switch to previous song'),
+                        SENTINELS.PLAYER_TIMEOUT: response_template.gen_player_timeout('switch to previous song')
+                    }[result]
                     self.current_song_num = self.player.number
 
                 elif action == 'next':
-                    response = self.player.switch_next()
+                    result = self.player.switch_next()
+                    response = {
+                        SENTINELS.SUCCESS: response_template.SUCCESS,
+                        SENTINELS.PLAYER_EMPTY: response_template.gen_response(msg='can not switch to next song because no song is being played'),
+                        SENTINELS.VLC_ERROR: response_template.gen_vlc_error('switch to next song'),
+                        SENTINELS.PLAYER_TIMEOUT: response_template.gen_player_timeout('switch to next song')
+                    }[result]
                     self.current_song_num = self.player.number
 
                 elif action == 'lib.list':
@@ -190,7 +243,7 @@ class Backend:
                             row['aliases'] = aliases
 
                     response = response_template.SUCCESS.copy()
-                    response['attachment'] = info
+                    response['attachment'] = self.sort_songs(info)
 
                 elif action == 'lib.add':
                     path = request['path']
@@ -247,7 +300,7 @@ class Backend:
                         result = self.database.bind_alias(id, request['alias'])
                         response = {
                             SENTINELS.ALIAS_EXISTS: response_template.gen_response(msg=f'can not bind alias \"{request['alias']}\" because it is already bound to another song in library'),
-                            SENTINELS.DONE: response_template.SUCCESS,
+                            SENTINELS.SUCCESS: response_template.SUCCESS,
                             SENTINELS.SONG_NOT_FOUND: response_template.gen_song_not_exist(f'bind alias to {song}') # not really necessary, but Monica insists
                         }[result]
                     else:
@@ -358,14 +411,16 @@ class Backend:
             ids = self.database.get_playlist_songs(playlist_id)
             if ids is not SENTINELS.PLAYLIST_EMPTY:
                 info = self.database.get_song_info(ids)
-                info = sorted(info, key=lambda x: Path(x['path']).name.lower())
+                info = self.sort_songs(info)
                 return info
             else:
                 return SENTINELS.PLAYLIST_EMPTY
         else:
             return SENTINELS.PLAYLIST_NOT_FOUND
         
-
+    def sort_songs(self, info):
+        return sorted(info, key=lambda x: Path(x['path']).name.lower())
+    
     def _get_song(self, alias, cwd): # try to get song id from database
         id = self.database.get_song_via_alias(alias)
         if id is not SENTINELS.ALIAS_NOT_FOUND:

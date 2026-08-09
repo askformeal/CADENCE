@@ -24,6 +24,7 @@ def main():
     resume_parser = command_sub.add_parser('resume', help='Resume paused media')
     toggle_parser = command_sub.add_parser('toggle', help='Switch between playing and paused')
     stop_parser = command_sub.add_parser('stop', help='Stop playing')
+    list_parser = command_sub.add_parser('list', help='Show current playlist')
     prev_parser = command_sub.add_parser('prev', help='Switch to the previous song in current playlist')
     next_parser = command_sub.add_parser('next',help='Switch to the next song in current playlist')
 
@@ -114,7 +115,7 @@ def main():
         response = send_request(**args)
 
         if response['code'] == 0:
-            print('[Succeeded]')
+            print(f'[Succeeded]: {response['msg']}')
             if args['action'] == 'status':
                 status = response['attachment']
                 time = status['time']
@@ -141,23 +142,13 @@ def main():
 
                 print(f"Current path: {status['path']}\nIn library: {status['in_library']}\nPlayer status: {status['player_status']}\nPlayed time: {time}\nTotal length: {length}")
 
+            elif args['action'] == 'list':
+                info = response['attachment']
+                _show_song_info(info, 'No songs are being played')
+
             elif args['action'] == 'lib.list':
                 info = response['attachment']
-                if len(info) > 0:
-                    for song in info:
-                        texts = [
-                            f'Path: {song["path"]}'
-                        ]
-                        if args['show_aliases']:
-                            texts.append(f"Aliases: {', '.join(song['aliases'])}")
-                        max_len = max(map(len, texts))
-                        print('-'*(max_len))
-                        print(f'#{song["id"]}.')
-                        print('\n'.join(texts))
-                        print('-'*(max_len))
-                        print()
-                else:
-                    print('No songs in library')
+                _show_song_info(info, 'No songs in library', show_aliases=args['show_aliases'])
 
             elif args['action'] == 'lib.alias.list':
                 aliases = response['attachment']
@@ -170,12 +161,7 @@ def main():
             elif args['action'] == 'lib.playlist.list':
                 results = response['attachment']
                 if args['playlist'] is not None:
-                    if len(results) > 0:
-                        print(f'Found {len(results)} song(s) in playlist:')
-                        for song in results:
-                            print(f'  {song['path']}')
-                    else:
-                        print('Playlist Empty')
+                    _show_song_info(results, 'Playlist empty')
                 else:
                     if len(results) > 0:
                         print(f'Found {len(results)} playlist(s) in library:')
@@ -189,6 +175,26 @@ def main():
             print(f'[Failed]: {response['msg']}')
 
         sys.exit(response['code'])
+
+def _show_song_info(info, empty_msg, show_aliases=False):
+    if len(info) > 0:
+        for song in info:
+            texts = [
+                f'Path: {song["path"]}'
+            ]
+            if show_aliases:
+                aliases = song['aliases']
+                if len(aliases) > 0:
+                    texts.append(f"Aliases: {', '.join(aliases)}")
+                else:
+                    texts.append('No aliases are bound to this song')
+            max_len = max(map(len, texts))
+            print('-'*(max_len))
+            print('\n'.join(texts))
+            print('-'*(max_len))
+            print()
+    else:
+        print(empty_msg)
 
 if __name__ == '__main__':
     main()

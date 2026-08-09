@@ -41,7 +41,7 @@ def test_get_song_info(database):
 
 def test_bind_alias(database):
     song_id, _ = database.add_song(r'C:\music\song.flac')
-    assert database.bind_alias(song_id, 'song') is SENTINELS.DONE
+    assert database.bind_alias(song_id, 'song') is SENTINELS.SUCCESS
 
 
 def test_bind_alias_duplicate(database):
@@ -73,13 +73,13 @@ def test_get_song_via_alias(database):
 def test_delete_alias(database):
     song_id, _ = database.add_song(r'C:\music\song.flac')
     database.bind_alias(song_id, 'song')
-    assert database.unbind_alias('song') is SENTINELS.DONE
+    assert database.unbind_alias('song') is SENTINELS.SUCCESS
     assert database.unbind_alias('song') is SENTINELS.ALIAS_NOT_FOUND
 
 
 def test_delete_song(database):
     song_id, _ = database.add_song(r'C:\music\song.flac')
-    assert database.delete_song(song_id) is SENTINELS.DONE
+    assert database.delete_song(song_id) is SENTINELS.SUCCESS
     assert database.song_exists(song_id) is False
     assert database.delete_song(song_id) is SENTINELS.SONG_NOT_FOUND
 
@@ -88,7 +88,7 @@ def test_delete_song_cascades_aliases(database):
     song_id, _ = database.add_song(r'C:\music\song.flac')
     database.bind_alias(song_id, 'song')
     assert database.get_song_via_alias('song') == song_id
-    assert database.delete_song(song_id) is SENTINELS.DONE
+    assert database.delete_song(song_id) is SENTINELS.SUCCESS
     assert database.get_song_via_alias('song') is SENTINELS.ALIAS_NOT_FOUND
 
 
@@ -142,7 +142,7 @@ def test_del_song_from_playlist(database):
     song_id, _ = database.add_song(r'C:\music\song.flac')
     playlist_id, _ = database.create_playlist('work')
     database.add_song_to_playlist(playlist_id, song_id)
-    assert database.del_song_from_playlist(playlist_id, song_id) is SENTINELS.DONE
+    assert database.del_song_from_playlist(playlist_id, song_id) is SENTINELS.SUCCESS
     assert database.get_playlist_songs(playlist_id) is SENTINELS.PLAYLIST_EMPTY
 
 
@@ -166,7 +166,7 @@ def test_del_song_from_playlist_playlist_not_found(database):
 
 def test_del_playlist(database):
     playlist_id, _ = database.create_playlist('work')
-    assert database.del_playlist(playlist_id) is SENTINELS.DONE
+    assert database.del_playlist(playlist_id) is SENTINELS.SUCCESS
     assert database.get_playlist_via_name('work') is SENTINELS.PLAYLIST_NOT_FOUND
 
 

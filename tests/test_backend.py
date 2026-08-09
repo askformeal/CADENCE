@@ -49,6 +49,38 @@ def test_guards_before_open(backend):
     assert _request(backend, 'toggle')['code'] == 1
 
 
+def test_list_before_open(backend):
+    response = _request(backend, 'list')
+    assert response['code'] == 0
+    assert response['attachment'] == []
+
+
+def test_list_after_open_raw_path(backend, audio_file):
+    _request(backend, 'open', song=audio_file)
+    response = _request(backend, 'list')
+    assert response['code'] == 0
+    assert response['attachment'] == [{'path': audio_file}]
+
+
+def test_list_after_open_lib_song(backend, audio_file):
+    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'open', song=audio_file)
+    response = _request(backend, 'list')
+    assert response['code'] == 0
+    assert len(response['attachment']) == 1
+    assert response['attachment'][0]['id'] == 1
+    assert response['attachment'][0]['path'] == audio_file
+
+
+def test_list_after_open_playlist(backend, audio_file):
+    _create_playlist_with_song(backend, audio_file, 'workout')
+    _request(backend, 'open', song='workout')
+    response = _request(backend, 'list')
+    assert response['code'] == 0
+    assert len(response['attachment']) == 1
+    assert response['attachment'][0]['path'] == audio_file
+
+
 def test_open_raw_path(backend, audio_file):
     response = _request(backend, 'open', song=audio_file)
     assert response['code'] == 0

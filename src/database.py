@@ -123,7 +123,7 @@ class Database:
         if self.song_exists(id):
             self.execute('DELETE FROM songs WHERE id = ?', id)
             logger.debug(f'Deleted song with id {id}')
-            return SENTINELS.DONE
+            return SENTINELS.SUCCESS
 
         else:
             logger.debug(f'Failed to delete song with id {id} because it does not exist')
@@ -145,7 +145,7 @@ class Database:
             if not self.alias_exists(alias):
                 self.execute('INSERT INTO aliases(name, song_id) VALUES (?, ?)', alias, id)
                 logger.debug(f'Bound alias \"{alias}\" to song with id {id}')
-                return SENTINELS.DONE
+                return SENTINELS.SUCCESS
             else:
                 logger.debug(f'Failed to bind alias \"{alias}\" to song with id {id} because it is already bound to another song')
                 return SENTINELS.ALIAS_EXISTS
@@ -157,7 +157,7 @@ class Database:
         if self.alias_exists(alias):
             self.execute('DELETE FROM aliases WHERE name = ?', alias)
             logger.debug(f'Deleted alias \"{alias}\"')
-            return SENTINELS.DONE
+            return SENTINELS.SUCCESS
         else:
             logger.debug(f'Failed to deleted alias \"{alias}\" because it is not bound to any song')
             return SENTINELS.ALIAS_NOT_FOUND
@@ -230,8 +230,10 @@ class Database:
     def del_playlist(self, playlist_id):
         if self.playlist_exists(playlist_id):
             self.execute('DELETE FROM playlists WHERE id=?', playlist_id)
-            return SENTINELS.DONE
+            logger.debug(f'Deleted playlist with id {playlist_id}')
+            return SENTINELS.SUCCESS
         else:
+            logger.debug(f'Failed to delete playlist with id {playlist_id} because it does not exist')
             return SENTINELS.PLAYLIST_NOT_FOUND
 
     def add_song_to_playlist(self, playlist_id, song_id):
@@ -254,7 +256,7 @@ class Database:
                 if self.playlist_song_exists(playlist_id, song_id):
                     self.execute('DELETE FROM playlist_songs where playlist_id = ? AND song_id = ?', playlist_id, song_id)
                     logger.debug(f'Deleted song with id {song_id} from playlist with id {playlist_id}')
-                    return SENTINELS.DONE
+                    return SENTINELS.SUCCESS
                 else:
                     logger.debug(f'Failed to delete song with id {song_id} from playlist with id {playlist_id} because the song is not in the playlist')
                     return SENTINELS.PLAYLIST_SONG_NOT_FOUND
