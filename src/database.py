@@ -2,7 +2,7 @@ import logging
 import sqlite3
 import threading
 
-from src.constants import DATABASE_PATH
+from src.constants import DATABASE_PATH, METADATA
 from src.sentinels import SENTINELS
 
 logger = logging.getLogger(__name__)
@@ -27,6 +27,9 @@ class Database:
         self.execute("PRAGMA foreign_keys = ON")
         self.execute('''CREATE TABLE IF NOT EXISTS songs (
                             id INTEGER NOT NULL PRIMARY KEY,
+                            name TEXT,
+                            artist TEXT,
+                            album TEXT,
                             path TEXT NOT NULL UNIQUE COLLATE NOCASE
                         )''')
 
@@ -54,6 +57,21 @@ class Database:
                             path TEXT NOT NULL PRIMARY KEY,
                             position INTEGER NOT NULL
                         )''')
+
+        try:
+            self.execute('ALTER TABLE songs ADD COLUMN name TEXT')
+        except sqlite3.OperationalError:
+            ...
+
+        try:
+            self.execute('ALTER TABLE songs ADD COLUMN artist TEXT')
+        except sqlite3.OperationalError:
+            ...
+
+        try:
+            self.execute('ALTER TABLE songs ADD COLUMN album TEXT')
+        except sqlite3.OperationalError:
+            ...
 
 
     # Song
@@ -96,7 +114,7 @@ class Database:
             return SENTINELS.SONG_NOT_FOUND
 
     def get_song_via_alias(self, alias):
-        row = self.execute('SELECT song_id FROM aliases JOIN songs ON aliases.song_id = songs.id WHERE name = ?', alias).fetchone()
+        row = self.execute('SELECT song_id FROM aliases JOIN songs ON aliases.song_id = songs.id WHERE aliases.name = ?', alias).fetchone()
         if row is not None:
             id = row['song_id']
             logger.debug(f'Got song with alias {alias}, id: {id}')
@@ -134,6 +152,37 @@ class Database:
         else:
             logger.debug(f'Failed to delete song with id {id} because it does not exist')
             return SENTINELS.SONG_NOT_FOUND
+
+    def get_song_meta(self, song_id, meta):
+        if meta in METADATA: # Seems odd if I put this in set_song_meta but no here
+            if self.song_exists(song_id):
+                row = self.execute(f'SELECT {meta} FROM songs WHERE id = ?', song_id).fetchone()
+                logger.debug(f'Got metadata \"{meta}\" of song with id {song_id}: {row[meta]}')
+                return row[meta]
+            else:
+                logger.warning(f'Failed to get metadata \"{meta}\" of song with id {song_id} because the song does not exist')
+                return SENTINELS.SONG_NOT_FOUND
+        else:
+            logger.warning(f'Failed to get metadata \"{meta}\" of song with id {song_id} because \"{meta}\" is not a valid metadata')
+            return SENTINELS.INVALID_META
+
+
+    def set_song_meta(self, song_id, meta, value): # pass SENTINEL.CLEAR_META to value to delete metadata
+        if meta in METADATA: # To prevent SQL injection. Probably useless
+            if self.song_exists(song_id):
+                if value is SENTINELS.CLEAR_META: # bullshit code. don't complain
+                    value = None
+
+                self.execute(f'UPDATE songs SET {meta} = ? WHERE id = ?', value, song_id)
+                logger.debug(f'Set metadata \"{meta}\" of song with id {song_id} to {value}')
+                return SENTINELS.SUCCESS
+            else:
+                logger.warning(f'Failed to set metadata \"{meta}\" of song with id {song_id} to {value} because the song does not exist')
+                SENTINELS.SONG_NOT_FOUND
+                return SENTINELS.SONG_NOT_FOUND
+        else:
+            logger.warning(f'Failed to set metadata \"{meta}\" of song with id {song_id} to {value} because \"{meta}\" is not a valid metadata')
+            return SENTINELS.INVALID_META
 
     # Alias
 

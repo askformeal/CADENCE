@@ -479,3 +479,58 @@ def test_restart_clears_memorized_pos(backend, audio_file):
     response = _request(backend, 'restart')
     assert response['code'] == 0
     assert database.get_pos(audio_file) is SENTINELS.POS_NOT_FOUND
+
+
+def test_lib_meta_set_name(backend, audio_file):
+    song_id, _ = backend.database.add_song(audio_file)
+    response = _request(backend, 'lib.meta.set', song=audio_file, name='Foo')
+    assert response['code'] == 0
+    assert backend.database.get_song_meta(song_id, 'name') == 'Foo'
+
+
+def test_lib_meta_set_multiple_fields(backend, audio_file):
+    song_id, _ = backend.database.add_song(audio_file)
+    response = _request(backend, 'lib.meta.set', song=audio_file,
+                        name='Foo', artist='Bar', album='Baz')
+    assert response['code'] == 0
+    assert backend.database.get_song_meta(song_id, 'name') == 'Foo'
+    assert backend.database.get_song_meta(song_id, 'artist') == 'Bar'
+    assert backend.database.get_song_meta(song_id, 'album') == 'Baz'
+
+
+def test_lib_meta_set_by_alias(backend, audio_file):
+    database = backend.database
+    song_id, _ = database.add_song(audio_file)
+    database.bind_alias(song_id, 'my_song')
+    response = _request(backend, 'lib.meta.set', song='my_song', artist='Bar')
+    assert response['code'] == 0
+    assert database.get_song_meta(song_id, 'artist') == 'Bar'
+
+
+def test_lib_meta_set_clear(backend, audio_file):
+    song_id, _ = backend.database.add_song(audio_file)
+    backend.database.set_song_meta(song_id, 'name', 'Foo')
+    assert backend.database.get_song_meta(song_id, 'name') == 'Foo'
+
+    response = _request(backend, 'lib.meta.set', song=audio_file, name='')
+    assert response['code'] == 0
+    assert backend.database.get_song_meta(song_id, 'name') is None
+
+
+def test_lib_meta_set_no_metadata_given(backend, audio_file):
+    backend.database.add_song(audio_file)
+    response = _request(backend, 'lib.meta.set', song=audio_file)
+    assert response['code'] == 1
+    assert 'no metadata was given' in response['msg']
+
+
+def test_lib_meta_set_song_not_in_library(backend):
+    response = _request(backend, 'lib.meta.set', song='ghost_song', name='Foo')
+    assert response['code'] == 1
+    assert 'does not exist' in response['msg']
+
+
+def test_lib_meta_set_missing_song_key(backend):
+    response = _request(backend, 'lib.meta.set', name='Foo')
+    assert response['code'] == 1
+    assert 'song' in response['msg']

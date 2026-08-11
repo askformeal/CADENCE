@@ -43,7 +43,26 @@ def main():
     lib_add_parser.add_argument('path', type=_path, help='Path of the song to add')
     lib_del_parser = lib_sub.add_parser('del', help='Delete a song from library')
     lib_del_parser.add_argument('song', type=str, help='Song to delete')
+
+    # Do nothing yet. Will work on it later.
+    lib_scan_parser = lib_sub.add_parser('scan', help='Scan a directory for all supported audio files and add them to library')
+    lib_scan_parser.add_argument('-r', '--recurse', action='store_true', help='Enable recursive scanning')
+    lib_scan_parser.add_argument('-p', '--preview', action='store_true', help='Show found files without adding to library')
+
     lib_reset_parser = lib_sub.add_parser('reset', help='Reset library and delete all data')
+
+    meta_epilog = '\n'.join(('Supported metadata:',
+                             '  name: The name of the song. Can not be used to reference the song like alias',
+                             '  artist: The artist of the song',
+                             '  album: The album of the song'))
+    meta_parser = lib_sub.add_parser('meta', help='Manage metadata of songs in library', epilog=meta_epilog)
+    meta_sub = meta_parser.add_subparsers(dest='meta_action', required=True)
+
+    meta_set_parser = meta_sub.add_parser('set', help='Set the value of metadata of a song in library. Using empty string (\"\") to clear a metadata')
+    meta_set_parser.add_argument('song', type=str, help='Song to set metadata')
+    meta_set_parser.add_argument('--name', type=str, default=None, help='Name of the song')
+    meta_set_parser.add_argument('--artist', type=str, default=None, help='Artist of the song')
+    meta_set_parser.add_argument('--album', type=str, default=None, help='Album of the song')
 
     alias_parser = lib_sub.add_parser('alias', help='Manage aliases of songs in library')
     alias_sub = alias_parser.add_subparsers(dest='alias_action', required=True)
@@ -91,6 +110,10 @@ def main():
             print(f'Failed to start CADENCE backend')
    
     else:
+        if args.get('meta_action', None) is not None:
+            args['lib_action'] = f"{args['lib_action']}.{args['meta_action']}"
+            del args['meta_action']
+
         if args.get('alias_action', None) is not None:
             args['lib_action'] = f"{args['lib_action']}.{args['alias_action']}"
             del args['alias_action']
@@ -100,7 +123,7 @@ def main():
             del args['playlist_action']
 
         if args.get('lib_action', None) is not None:
-            args['action'] = f'{args["action"]}.{args['lib_action']}'
+            args['action'] = f"{args['action']}.{args['lib_action']}"
             del args['lib_action']
 
         args['source'] = 'teletypewriter interface (non-interactive)'

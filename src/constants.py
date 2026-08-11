@@ -36,6 +36,7 @@ REQUIRED_KEYS = {
     'switch': ['number'],
     'lib.add': ['path'],
     'lib.del': ['song'],
+    'lib.meta.set': ['song'],
     'lib.alias.list': ['song'],
     'lib.alias.bind': ['song', 'alias'],
     'lib.alias.unbind': ['alias'],
@@ -43,4 +44,16 @@ REQUIRED_KEYS = {
     'lib.playlist.add': ['song', 'playlist'],
     'lib.playlist.kick': ['song', 'playlist'],
     'lib.playlist.del': ['playlist'],
+}
+
+METADATA = ['name', 'artist', 'album']
+
+AUDIO_EXTENSIONS = {
+    '.mp3', '.flac', '.wav', '.ogg', '.opus', '.oga',
+    '.m4a', '.m4b', '.aac', '.mp4', '.m4p',
+    '.ape', '.wma', '.aiff', '.aif', '.au',
+    '.ac3', '.dts', '.dsf', '.dsd', '.dff',
+    '.mka', '.wv', '.mpc', '.tta', '.tak',
+    '.ra', '.rm', '.amr', '.3gp', '.caf',
+    '.mid', '.midi', '.spx',
 }

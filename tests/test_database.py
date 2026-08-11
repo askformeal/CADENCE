@@ -181,3 +181,52 @@ def test_del_playlist_cascades_membership(database):
 
 def test_del_playlist_not_found(database):
     assert database.del_playlist(9999) is SENTINELS.PLAYLIST_NOT_FOUND
+
+
+def test_get_song_meta_none_by_default(database):
+    song_id, _ = database.add_song(r'C:\music\song.flac')
+    assert database.get_song_meta(song_id, 'name') is None
+    assert database.get_song_meta(song_id, 'artist') is None
+    assert database.get_song_meta(song_id, 'album') is None
+
+
+def test_set_song_meta(database):
+    song_id, _ = database.add_song(r'C:\music\song.flac')
+    assert database.set_song_meta(song_id, 'name', 'Foo') is SENTINELS.SUCCESS
+    assert database.set_song_meta(song_id, 'artist', 'Bar') is SENTINELS.SUCCESS
+    assert database.set_song_meta(song_id, 'album', 'Baz') is SENTINELS.SUCCESS
+    assert database.get_song_meta(song_id, 'name') == 'Foo'
+    assert database.get_song_meta(song_id, 'artist') == 'Bar'
+    assert database.get_song_meta(song_id, 'album') == 'Baz'
+
+
+def test_set_song_meta_overwrite(database):
+    song_id, _ = database.add_song(r'C:\music\song.flac')
+    database.set_song_meta(song_id, 'name', 'Foo')
+    database.set_song_meta(song_id, 'name', 'New')
+    assert database.get_song_meta(song_id, 'name') == 'New'
+
+
+def test_set_song_meta_clear(database):
+    song_id, _ = database.add_song(r'C:\music\song.flac')
+    database.set_song_meta(song_id, 'name', 'Foo')
+    assert database.set_song_meta(song_id, 'name', SENTINELS.CLEAR_META) is SENTINELS.SUCCESS
+    assert database.get_song_meta(song_id, 'name') is None
+
+
+def test_get_song_meta_song_not_found(database):
+    assert database.get_song_meta(9999, 'name') is SENTINELS.SONG_NOT_FOUND
+
+
+def test_set_song_meta_song_not_found(database):
+    assert database.set_song_meta(9999, 'name', 'Foo') is SENTINELS.SONG_NOT_FOUND
+
+
+def test_get_song_meta_invalid_meta(database):
+    song_id, _ = database.add_song(r'C:\music\song.flac')
+    assert database.get_song_meta(song_id, 'bogus') is SENTINELS.INVALID_META
+
+
+def test_set_song_meta_invalid_meta(database):
+    song_id, _ = database.add_song(r'C:\music\song.flac')
+    assert database.set_song_meta(song_id, 'bogus', 'Foo') is SENTINELS.INVALID_META
