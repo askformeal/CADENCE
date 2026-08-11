@@ -10,7 +10,7 @@ import vlc
 from src import version
 from src.constants import LOG_PATH, FILE_LOG_LEVEL, CONSOLE_LOG_LEVEL, LOG_ENCODING
 from src.constants import HOST, PORT, BACKLOG, REQUIRED_KEYS, SERVER_TIMEOUT
-from src.constants import MAIN_LOOP_INTERVAL
+from src.constants import MAIN_LOOP_INTERVAL, POS_MEMORIZE_INTERVAL
 from src.sentinels import SENTINELS
 from src.connection import recv_json, send_json
 from src.response import response_template
@@ -60,6 +60,7 @@ class Backend:
             logger.info(f'Command-line Audio Decoding Engine with Navigation and Continuous Execution {version} started')
 
             Thread(target=self._listen, daemon=True).start()
+            Thread(target=self._memorize_pos, daemon=True).start()
             self._flush_thread = Thread(target=self._flush_buffer, daemon=True)
             self._flush_thread.start()
 
@@ -172,6 +173,8 @@ class Backend:
                             SENTINELS.VLC_ERROR: response_template.gen_vlc_error('load path(s)'),
                             SENTINELS.PLAYER_TIMEOUT: response_template.gen_player_timeout('load path(s)'),
                         }[result]
+                        if result is SENTINELS.SUCCESS:
+                            response = self._jump_to_memorized_pos()
 
                 elif action == 'stop':
                     result = self.player.stop()
@@ -235,6 +238,8 @@ class Backend:
                         SENTINELS.PLAYER_TIMEOUT: response_template.gen_player_timeout(f'switch to the {num}th song in current playlist'),
                     }[result]
                     self.current_song_num = self.player.number
+                    if result is SENTINELS.SUCCESS:
+                        response = self._jump_to_memorized_pos()
 
                 elif action == 'prev':
                     result = self.player.switch_prev()
@@ -245,8 +250,12 @@ class Backend:
                         SENTINELS.PLAYER_TIMEOUT: response_template.gen_player_timeout('switch to previous song')
                     }[result]
                     self.current_song_num = self.player.number
+                    if result is SENTINELS.SUCCESS:
+                        response = self._restart()
 
                 elif action == 'next':
+                    if request.get('on_end', False):
+                        self._del_current_pos()
                     result = self.player.switch_next()
                     response = {
                         SENTINELS.SUCCESS: response_template.SUCCESS,
@@ -255,6 +264,8 @@ class Backend:
                         SENTINELS.PLAYER_TIMEOUT: response_template.gen_player_timeout('switch to next song')
                     }[result]
                     self.current_song_num = self.player.number
+                    if result is SENTINELS.SUCCESS:
+                        response = self._restart()
 
                 elif action == 'lib.list':
                     info = self.database.get_all_song_info()
@@ -414,6 +425,27 @@ class Backend:
 
         return response
 
+    def _jump_to_memorized_pos(self):
+        path = self.current_song_info[self.current_song_num]['path']
+        pos = self.database.get_pos(path)
+        if pos is not SENTINELS.POS_NOT_FOUND:
+            result = self.player.jump_pos(pos)
+            return {
+                SENTINELS.SUCCESS: response_template.SUCCESS,
+                SENTINELS.POS_TOO_LATE: response_template.gen_pos_too_late('jump to memorized position'),
+                SENTINELS.INVALID_PLAYER_STATE: response_template.gen_response(msg=f'can not jump to memorized position because the player is neither playing nor paused')
+            }[result]
+        else:
+            return response_template.SUCCESS
+
+    def _restart(self):
+        result = self.player.jump_pos(0)
+        return {
+            SENTINELS.SUCCESS: response_template.SUCCESS,
+            SENTINELS.POS_TOO_LATE: response_template.gen_pos_too_late('jump to beginning'), # is this even possible?
+            SENTINELS.INVALID_PLAYER_STATE: response_template.gen_response(msg='can not jump to beginning because the state of player is neither playing nor paused')
+        }[result]
+
     def _missing_key(self, action, key):
         logger.error(f'Missed key for action \"{action}\": \"{key}\"')
         return response_template.gen_missing_key(action, key)
@@ -457,6 +489,21 @@ class Backend:
                 return SENTINELS.NOT_IN_LIB
         else:
             return SENTINELS.MISSING_CWD
+
+    def _memorize_pos(self):
+        while self.running:
+            if self.current_song_info is not None and self.player.player.get_state() == vlc.State.Playing:
+                path = self.current_song_info[self.current_song_num]['path']
+                pos = self.player.get_progress()['time']
+                self.database.set_pos(path, pos)
+            sleep(POS_MEMORIZE_INTERVAL)
+
+    def _del_current_pos(self):
+        if self.current_song_info is not None:
+            path = self.current_song_info[self.current_song_num]['path']
+            self.database.del_pos(path)
+        else:
+            logger.warning('backend:del_current_pos is triggered before any song is loaded')
 
     def _listen(self):
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

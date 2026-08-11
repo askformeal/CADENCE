@@ -13,16 +13,17 @@ class Player():
         self.medias = []
         self.number = 0
         self._attach_events()
+        logger.debug(f'{__name__} initiated')
 
     def _attach_events(self):
         manager = self.player.event_manager() # I might need. Scratch that. I WILL need this.
         manager.event_attach(vlc.EventType.MediaPlayerEndReached, self._on_end)
 
     def _on_end(self, event):
-        self.buffer({'action':'next', 'source': 'backend IPC from player'})
+        self.buffer({'action':'next', 'on_end': True, 'source': 'backend IPC from player'})
 
     def _wait_state(self, target_states):
-        for _ in range(int(PLAYER_TIMEOUT/PLAYER_POLL_INTERVAL)):
+        for i in range(int(PLAYER_TIMEOUT/PLAYER_POLL_INTERVAL)):
             state = self.player.get_state()
             if state in target_states:
                 return state
@@ -96,6 +97,17 @@ class Player():
         elif result == vlc.State.Error:
             logger.error('Failed to stop playing')
             return SENTINELS.VLC_ERROR
+
+    def jump_pos(self, pos):
+        if self.player.get_state() in (vlc.State.Playing, vlc.State.Paused):
+            length = self.get_progress()['length']
+            if pos > length:
+                return SENTINELS.POS_TOO_LATE
+            else:
+                self.player.set_time(pos)
+                return SENTINELS.SUCCESS
+        else:
+            return SENTINELS.INVALID_PLAYER_STATE
 
     def play(self):
         self.player.play()

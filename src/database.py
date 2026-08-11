@@ -21,6 +21,7 @@ class Database:
 
             self.cursor = self.connection.cursor()
             self._init_database()
+            logger.debug(f'{__name__} initiated')
 
     def _init_database(self):
         self.execute("PRAGMA foreign_keys = ON")
@@ -47,6 +48,11 @@ class Database:
                             PRIMARY KEY (playlist_id, song_id),
                             FOREIGN KEY (playlist_id) REFERENCES playlists(id) ON DELETE CASCADE, 
                             FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE
+                        )''')
+
+        self.execute('''CREATE TABLE IF NOT EXISTS positions (
+                            path TEXT NOT NULL PRIMARY KEY,
+                            position INTEGER NOT NULL
                         )''')
 
 
@@ -266,6 +272,46 @@ class Database:
         else:
             logger.debug(f'Failed to delete song with id {song_id} from playlist with id {playlist_id} because the song does not exist')
             return SENTINELS.SONG_NOT_FOUND
+
+    # Position
+
+    def pos_memorized(self, path):
+        row = self.execute('SELECT 1 FROM positions WHERE path = ?', path).fetchone()
+        if row is not None:
+            result = True
+        else:
+            result = False
+        logger.debug(f'Check if position of {path} is memorized, result {result}')
+        return result
+
+    def get_pos(self, path):
+        row = self.execute('SELECT position FROM positions WHERE path = ?', path).fetchone()
+        if row is not None:
+            logger.debug(f'Got position of {path}: {row['position']}ms')
+            return row['position']
+        else:
+            logger.debug(f'Failed to get position of {path} because it is not memorized')
+            return SENTINELS.POS_NOT_FOUND
+
+    def set_pos(self, path, pos):
+        if self.pos_memorized(path):
+            self.execute('UPDATE positions SET position = ? WHERE path = ?', pos, path)
+            logger.debug(f'Updated memorized position of {path} to {pos}ms')
+        else:
+            self.execute('INSERT INTO positions(path, position) VALUES (?, ?)', path, pos)
+            logger.debug(f'Create memorized position of {path} as {pos}ms')
+        self.connection.commit()
+        return SENTINELS.SUCCESS
+
+    def del_pos(self, path):
+        if self.pos_memorized(path):
+            self.execute('DELETE FROM positions WHERE path = ?', path)
+            logger.debug(f'Deleted the position of {path} from memory')
+            return SENTINELS.SUCCESS
+        else:
+            return SENTINELS.POS_NOT_FOUND
+
+    # Break stuff
 
     def reset(self):
         self.execute("PRAGMA foreign_keys = OFF")

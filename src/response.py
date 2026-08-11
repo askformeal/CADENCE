@@ -23,6 +23,9 @@ class Response:
 
     def gen_player_timeout(self, action):
         return self.gen_response(msg=f'can not {action} because timeout waiting for the action to complete')
+
+    def gen_pos_too_late(self, action):
+        return self.gen_response(msg=f'can not {action} because the position to jump to is later than the end of the song')
     
     def gen_response(self, code=1, msg='', attachment=None):
         if attachment is None:

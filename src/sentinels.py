@@ -7,6 +7,7 @@ class Sentinel:
     
 class Sentinels:
     def __init__(self):
+        self.SUCCESS = Sentinel('Action Successfully Done') # when you don't have anything to return on success but something to return on failure
         self.LOST = Sentinel('Connection Lost')
         self.EXIT_FLUSHING = Sentinel('Exit Flushing')
         self.SONG_NOT_FOUND = Sentinel('Song Not Found')
@@ -15,7 +16,7 @@ class Sentinels:
         self.PLAYLIST_EMPTY = Sentinel('Playlist Empty')
         self.ALIAS_EXISTS = Sentinel('Alias Already Exists')
         self.ALIAS_NOT_FOUND = Sentinel('Alias Not Found')
-        self.SUCCESS = Sentinel('Action Successfully Done') # when you don't have anything to return on success but something to return on failure
+        self.POS_NOT_FOUND = Sentinel('Position not in memory')
         self.NOT_IN_LIB = Sentinel('Song Not in Library')
         self.MISSING_CWD = Sentinel('CWD is Needed but Missing')
         self.BACKEND_ALREADY_RUNNING = Sentinel('Backend is Already Running')
@@ -27,5 +28,6 @@ class Sentinels:
         self.VLC_ERROR = Sentinel('A VLC error occurred')
         self.PLAYER_TIMEOUT = Sentinel('Timeout waiting for player action to complete')
         self.INVALID_PLAYER_STATE = Sentinel('This action can not be done under current player state')
+        self.POS_TOO_LATE = Sentinel('Position is Later than Total Length')
 
 SENTINELS = Sentinels()
