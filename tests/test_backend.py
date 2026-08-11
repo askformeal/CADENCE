@@ -452,3 +452,30 @@ def test_lib_playlist_del_missing_key(backend):
     response = _request(backend, 'lib.playlist.del')
     assert response['code'] == 1
     assert 'playlist' in response['msg']
+
+
+def test_restart_before_open(backend):
+    response = _request(backend, 'restart')
+    assert response['code'] == 1
+    assert 'neither playing nor paused' in response['msg']
+
+
+def test_restart_after_open(backend, audio_file):
+    response = _request(backend, 'open', song=audio_file)
+    assert response['code'] == 0
+    response = _request(backend, 'restart')
+    assert response['code'] == 0
+    status = _request(backend, 'status')
+    assert status['attachment']['path'] == audio_file
+
+
+def test_restart_clears_memorized_pos(backend, audio_file):
+    database = backend.database
+    response = _request(backend, 'open', song=audio_file)
+    assert response['code'] == 0
+    database.set_pos(audio_file, 1000)
+    assert database.get_pos(audio_file) == 1000
+
+    response = _request(backend, 'restart')
+    assert response['code'] == 0
+    assert database.get_pos(audio_file) is SENTINELS.POS_NOT_FOUND

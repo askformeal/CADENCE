@@ -267,6 +267,10 @@ class Backend:
                     if result is SENTINELS.SUCCESS:
                         response = self._restart()
 
+                elif action == 'restart':
+                    self._del_current_pos()
+                    response = self._restart()
+
                 elif action == 'lib.list':
                     info = self.database.get_all_song_info()
                     if request.get('show_aliases', False):

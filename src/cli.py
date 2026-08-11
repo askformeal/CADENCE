@@ -28,7 +28,9 @@ def main():
     switch_parser = command_sub.add_parser('switch', help='Switch to a song in current playlist via number')
     switch_parser.add_argument('number', type=int, help='Number in playlist of song to switch. Negative number means count from the last')
     prev_parser = command_sub.add_parser('prev', help='Switch to the previous song in current playlist')
-    next_parser = command_sub.add_parser('next',help='Switch to the next song in current playlist')
+    next_parser = command_sub.add_parser('next', help='Switch to the next song in current playlist')
+
+    restart_parser = command_sub.add_parser('restart', help='Clear memorized progress and jump to the beginning of the current playing song')
 
     lib_parser = command_sub.add_parser('lib', help='Manage library')
 
