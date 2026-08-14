@@ -1,5 +1,6 @@
 colorama==0.4.6
 iniconfig==2.3.0
+mutagen==1.48.1
 packaging==26.2
 platformdirs==4.11.0
 pluggy==1.6.0

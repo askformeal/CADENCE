@@ -23,7 +23,7 @@ class Sentinels:
         self.BACKEND_ALREADY_RUNNING = Sentinel('Backend is Already Running')
         self.BACKEND_STARTED = Sentinel('Backend Started')
         self.FAILED_START_BACKEND = Sentinel('Failed to Start Backend')
-        self.CLEAR_META = Sentinel('Clear this metadata')
+        self.CLEAR_META = Sentinel('Clear This Metadata')
 
         self.PLAYER_EMPTY = Sentinel('Current playlist is empty')
         self.PLAYER_LOAD_EMPTY = Sentinel('Tried to load empty list of paths')

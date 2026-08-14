@@ -2,21 +2,26 @@ import argparse
 import sys
 from pathlib import Path
 import readchar
+from time import sleep
 
 from src import version
 from src.sentinels import SENTINELS
 from src.client import send_request
 from src.starter import start
+from src.constants import RESTART_NUM, RESTART_POLL_INTERVAL, ATTACHMENT_REQUIRED_ACTIONS
 
 def _path(val):
     return str(Path(val).absolute())
 
 def main():
+    is_reboot = False
+
     parser = argparse.ArgumentParser(prog=f'CADENCE {version}')
 
     command_sub = parser.add_subparsers(dest='action', required=True)
 
     start_parser = command_sub.add_parser('start', help='Start CADENCE backend')
+    reboot_parser = command_sub.add_parser('reboot', help='Reboot CADENCE backend. Will fail if backend is not running')
     status_parser = command_sub.add_parser('status', help='Show CADENCE status')
     open_parser = command_sub.add_parser('open', help='Open a song or playlist. Supports alias, file path and playlist name')
     open_parser.add_argument('song', type=str, help='Song to open')
@@ -41,6 +46,10 @@ def main():
 
     lib_add_parser = lib_sub.add_parser('add', help='Add a new song to library')
     lib_add_parser.add_argument('path', type=_path, help='Path of the song to add')
+    lib_add_parser.add_argument('-a', '--alias', type=str, default=None, help='Alias to bind to the new song')
+    lib_add_parser.add_argument('--skip-meta', action='store_true', help='Disable automatic setting metadata')
+    lib_add_parser.add_argument('--skip-alias', action='store_true', help='Disable automatic binding alias')
+
     lib_del_parser = lib_sub.add_parser('del', help='Delete a song from library')
     lib_del_parser.add_argument('song', type=str, help='Song to delete')
 
@@ -100,15 +109,10 @@ def main():
 
     args = vars(parser.parse_args())
 
+
     if args['action'] == 'start':
-        result = start()
-        if result is SENTINELS.BACKEND_STARTED:
-            print(f'CADENCE backend is now up and running')
-        elif result is SENTINELS.BACKEND_ALREADY_RUNNING:
-            print(f'CADENCE backend is already running')
-        elif result is SENTINELS.FAILED_START_BACKEND:
-            print(f'Failed to start CADENCE backend')
-   
+        _start_backend()
+
     else:
         if args.get('meta_action', None) is not None:
             args['lib_action'] = f"{args['lib_action']}.{args['meta_action']}"
@@ -126,8 +130,12 @@ def main():
             args['action'] = f"{args['action']}.{args['lib_action']}"
             del args['lib_action']
 
+        if  args['action'] == 'reboot':
+            args['action'] = 'exit'
+            is_reboot = True
         args['source'] = 'teletypewriter interface (non-interactive)'
         args['cwd'] = str(Path.cwd())
+        
 
         if args['action'] == 'lib.reset':
             answer = ''
@@ -141,74 +149,118 @@ def main():
 
         response = send_request(**args)
 
-        if response['code'] == 0:
+        action = args['action']
+        code =  response.get('code', None)
+        msg = response.get('msg', None)
+        attachment = response.get('attachment', None)
+
+        if code is None or msg is None:
+            print('[Failed]: Invalid response received from CADENCE backend')
+
+        elif code == 0:
             print(f'[Succeeded]: {response['msg']}')
-            if args['action'] == 'status':
-                status = response['attachment']
-                time = status['time']
-                length = status['length']
-                if time == -1:
-                    time = '--:--'
-                elif time == 0:
-                    time = '00:00'
+
+            if action == 'exit' and is_reboot:
+                print('Waiting for backend to fully exit...')
+                for i in range(RESTART_NUM):
+                    sleep(RESTART_POLL_INTERVAL)
+                    if send_request(action='test_alive', source='teletypewriter interface (non-interactive)')['code'] == 2:
+                        break
                 else:
-                    time /= 1000
-                    minutes = int(time / 60)
-                    seconds = int(time % 60)
-                    time = f'{minutes:02d}:{seconds:02d}'
+                    print('Timeout wait for backend to fully exit. Rebooting aborted')
+                    return 1
+                    
+                print('Starting backend...')
+                _start_backend()
 
-                if length == -1:
-                    length = '--:--'
-                elif length == 0:
-                    length = '00:00'
+            if action in ATTACHMENT_REQUIRED_ACTIONS:
+                if attachment is not None:
+                    # these actions will be expecting an attachment
+                    if action == 'status':
+                        status = attachment
+                        time = status['time']
+                        length = status['length']
+                        if time == -1:
+                            time = '--:--'
+                        elif time == 0:
+                            time = '00:00'
+                        else:
+                            time /= 1000
+                            minutes = int(time / 60)
+                            seconds = int(time % 60)
+                            time = f'{minutes:02d}:{seconds:02d}'
+
+                        if length == -1:
+                            length = '--:--'
+                        elif length == 0:
+                            length = '00:00'
+                        else:
+                            length /= 1000
+                            minutes = int(length / 60)
+                            seconds = int(length % 60)
+                            length = f'{minutes:02d}:{seconds:02d}'
+
+                        print(f"Current path: {status['path']}\nIn library: {status['in_library']}\nPlayer status: {status['player_status']}\nPlayed time: {time}\nTotal length: {length}")
+
+                    elif action == 'list':
+                        info = attachment
+                        _show_song_info(info, 'No songs are being played', show_num=True)
+
+                    elif action == 'lib.list':
+                        info = attachment
+                        _show_song_info(info, 'No songs in library', show_aliases=args['show_aliases'])
+
+                    elif action == 'lib.alias.list':
+                        aliases = attachment
+                        if len(aliases) > 0:
+                            print('Alias(es):')
+                            print(f'  {"\n  ".join(aliases)}')
+                        else:
+                            print('No aliases are bound to this song')
+
+                    elif action == 'lib.playlist.list':
+                        results = attachment
+                        if args['playlist'] is not None:
+                            _show_song_info(results, 'Playlist empty')
+                        else:
+                            if len(results) > 0:
+                                print(f'Found {len(results)} playlist(s) in library:')
+                                for playlist in results:
+                                    print(f'  {playlist['name']}')
+                            else:
+                                print('No playlists in library')
                 else:
-                    length /= 1000
-                    minutes = int(length / 60)
-                    seconds = int(length % 60)
-                    length = f'{minutes:02d}:{seconds:02d}'
+                    print(f'[Failed]: action {action} was expecting an attachment but none was received from CADENCE backend')
 
-                print(f"Current path: {status['path']}\nIn library: {status['in_library']}\nPlayer status: {status['player_status']}\nPlayed time: {time}\nTotal length: {length}")
-
-            elif args['action'] == 'list':
-                info = response['attachment']
-                _show_song_info(info, 'No songs are being played', show_num=True)
-
-            elif args['action'] == 'lib.list':
-                info = response['attachment']
-                _show_song_info(info, 'No songs in library', show_aliases=args['show_aliases'])
-
-            elif args['action'] == 'lib.alias.list':
-                aliases = response['attachment']
-                if len(aliases) > 0:
-                    print('Alias(es):')
-                    print(f'  {"\n  ".join(aliases)}')
-                else:
-                    print('No aliases are bound to this song')
-
-            elif args['action'] == 'lib.playlist.list':
-                results = response['attachment']
-                if args['playlist'] is not None:
-                    _show_song_info(results, 'Playlist empty')
-                else:
-                    if len(results) > 0:
-                        print(f'Found {len(results)} playlist(s) in library:')
-                        for playlist in results:
-                            print(f'  {playlist['name']}')
-                    else:
-                        print('No playlists in library')
-                        
-
-        else:
+        elif code == 1:
             print(f'[Failed]: {response['msg']}')
+            if is_reboot:
+                print('Failed to exit backend, rebooting aborted')
 
-        sys.exit(response['code'])
+        elif code:
+            print('Failed to connect to CADENCE backend. You can try to use the start subcommand to start it')
+
+        return code
+
+def _start_backend():
+    result = start()
+    if result is SENTINELS.BACKEND_STARTED:
+        print(f'CADENCE backend is now up and running')
+    elif result is SENTINELS.BACKEND_ALREADY_RUNNING:
+        print(f'CADENCE backend is already running')
+    elif result is SENTINELS.FAILED_START_BACKEND:
+        print(f'Failed to start CADENCE backend')
+    return result
 
 def _show_song_info(info, empty_msg, show_aliases=False, show_num=False):
     if len(info) > 0:
         for i in range(len(info)):
             song = info[i]
             texts = [
-                f'Path: {song["path"]}'
+                f'Name: {song["name"]}',
+                f'Path: {song["path"]}',
+                f'Artist: {song["artist"]}',
+                f'Album: {song["album"]}',
             ]
             if show_aliases:
                 aliases = song['aliases']
@@ -227,5 +279,5 @@ def _show_song_info(info, empty_msg, show_aliases=False, show_num=False):
         print(empty_msg)
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
     

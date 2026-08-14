@@ -6,23 +6,24 @@ import queue
 from time import sleep
 from pathlib import Path
 import vlc
+import mutagen
 
 from src import version
 from src.constants import LOG_PATH, FILE_LOG_LEVEL, CONSOLE_LOG_LEVEL, LOG_ENCODING
 from src.constants import HOST, PORT, BACKLOG, REQUIRED_KEYS, SERVER_TIMEOUT
-from src.constants import MAIN_LOOP_INTERVAL, POS_MEMORIZE_INTERVAL, METADATA
+from src.constants import MAIN_LOOP_INTERVAL, POS_MEMORIZE_INTERVAL, METADATA, FILE_META
 from src.sentinels import SENTINELS
 from src.connection import recv_json, send_json
 from src.response import response_template
 from src.database import Database
 from src.player import Player
 
-console = logging.StreamHandler()
-console.setLevel(CONSOLE_LOG_LEVEL)
-
 logger = logging.getLogger(__name__)
 
 class FlushFileHandler(logging.FileHandler):
+    def __init__(self, filename, mode = "a", encoding = None, delay = False, errors = None):
+        super().__init__(filename, mode, encoding, delay, errors)
+
     def emit(self, record):
         super().emit(record)
         self.flush()
@@ -46,11 +47,15 @@ class Backend:
             logger.debug(f'{__name__} initiated')
 
     def _setup_logging(self):
+        console = logging.StreamHandler()
+        console.setLevel(CONSOLE_LOG_LEVEL)
+        file = FlushFileHandler(LOG_PATH, encoding=LOG_ENCODING)
+
         logging.basicConfig(
         level=FILE_LOG_LEVEL,
         format="%(asctime)s [%(levelname)s] [%(name)s] %(message)s",
         handlers=[
-            FlushFileHandler(LOG_PATH, encoding=LOG_ENCODING),
+            file,
             console
             ])
         logger.info(f'Logging to file: {LOG_PATH}')
@@ -93,7 +98,7 @@ class Backend:
             try:
                 response = self.dispatch(request)
             except Exception as e:
-                logger.error(f'Failed to dispatch request: {e}')
+                logger.exception(f'Failed to dispatch request:')
                 response = response_template.gen_response(f'failed to dispatch request: \"{e}\"')
 
             if connection is not None:
@@ -102,6 +107,7 @@ class Backend:
                 connection.close()
 
     def dispatch(self, request):
+        logger.debug(f'Dispatch request: {request}')
         response = {}
         action = request.get('action', None)
         cwd = request.get('cwd', None)
@@ -115,7 +121,10 @@ class Backend:
 
                 # ----------------------------------------------------------------
 
-                if action == 'status':
+                if action == 'test_alive':
+                    return response_template.SUCCESS
+
+                elif action == 'status':
                     player_status = {
                         vlc.State.Playing: 'playing',
                         vlc.State.Paused: 'paused',
@@ -271,6 +280,44 @@ class Backend:
                     self._del_current_pos()
                     response = self._restart()
 
+                elif action == 'lib.list':
+                    info = self.database.get_all_song_info()
+                    if request.get('show_aliases', False):
+                        for row in info:
+                            aliases = self.database.get_song_aliases(row['id'])
+                            row['aliases'] = aliases
+
+                    response = response_template.SUCCESS.copy()
+                    response['attachment'] = self.sort_songs(info)
+
+                elif action == 'lib.add':
+                    alias = request.get('alias', None)
+                    set_meta = not request.get('skip_meta', False)
+                    bind_alias = not request.get('skip_alias', False)
+                    response = self._add_song(request['path'], set_meta, bind_alias, alias)
+
+                elif action == 'lib.del':
+                    song = request['song']
+                    id = self._get_song(song, cwd)
+                    if id is SENTINELS.MISSING_CWD:
+                        response = self._missing_key('lib.del', 'cwd')
+                    elif id is not SENTINELS.NOT_IN_LIB:
+                        path = self.database.get_song_info(id)[0]['path']
+                        if self.current_song_info is not None and self.current_song_info[self.current_song_num].get('id', None) == id:
+                            self.current_song_info[self.current_song_num] = {'path': path} 
+                            self.current_song_in_lib = False
+                        self.database.delete_song(id)
+                        response = response_template.SUCCESS
+                    else:
+                        response = response_template.gen_song_not_exist(f'delete {song}')
+
+                elif action == 'lib.reset':
+                    self.database.reset()
+                    if self.current_song_in_lib:
+                        path = self.current_song_info[self.current_song_num]['path']
+                        self._set_current_song({'path': path}, False)
+                    response = response_template.SUCCESS
+
                 elif action == 'lib.meta.set':
                     song_id = self._get_song(request['song'], cwd)
                     if song_id is SENTINELS.MISSING_CWD:
@@ -296,51 +343,6 @@ class Backend:
 
                         else:
                             response = response_template.gen_response(f'can not set metadata because no metadata was given')
-
-
-
-                elif action == 'lib.list':
-                    info = self.database.get_all_song_info()
-                    if request.get('show_aliases', False):
-                        for row in info:
-                            aliases = self.database.get_song_aliases(row['id'])
-                            row['aliases'] = aliases
-
-                    response = response_template.SUCCESS.copy()
-                    response['attachment'] = self.sort_songs(info)
-
-                elif action == 'lib.add':
-                    path = request['path']
-                    if Path(path).is_file():
-                        ignored = self.database.add_song(path)[1]
-                        if not ignored:
-                            response = response_template.SUCCESS
-                        else:
-                            response = response_template.gen_response(f'can not add \"{path}\" because a song of the same path already exists in library')
-                    else:
-                        response = response_template.gen_invalid_path(path)
-
-                elif action == 'lib.del':
-                    song = request['song']
-                    id = self._get_song(song, cwd)
-                    if id is SENTINELS.MISSING_CWD:
-                        response = self._missing_key('lib.del', 'cwd')
-                    elif id is not SENTINELS.NOT_IN_LIB:
-                        path = self.database.get_song_info(id)[0]['path']
-                        if self.current_song_info is not None and self.current_song_info[self.current_song_num].get('id', None) == id:
-                            self.current_song_info[self.current_song_num] = {'path': path} 
-                            self.current_song_in_lib = False
-                        self.database.delete_song(id)
-                        response = response_template.SUCCESS
-                    else:
-                        response = response_template.gen_song_not_exist(f'delete {song}')
-
-                elif action == 'lib.reset':
-                    self.database.reset()
-                    if self.current_song_in_lib:
-                        path = self.current_song_info[self.current_song_num]['path']
-                        self._set_current_song({'path': path}, False)
-                    response = response_template.SUCCESS
 
                 elif action == 'lib.alias.list':
                     song = request['song']
@@ -522,6 +524,38 @@ class Backend:
         else:
             return SENTINELS.MISSING_CWD
 
+    def _add_song(self, path, set_meta=True, bind_alias=True, alias=None):
+        if Path(path).is_file():
+            song_id, ignored = self.database.add_song(path)
+            if not ignored:
+                if alias is not None:
+                    self.database.bind_alias(song_id, alias)
+                    
+                meta = self._get_meta_from_file(path)
+
+                if set_meta:
+                    # auto set metadata
+                    for tag, value in meta.items():
+                        self.database.set_song_meta(song_id, tag, value)
+
+                if bind_alias:
+                    name = meta.get('name', None)
+                    if name is not None and not self.database.alias_exists(name):
+                        self.database.bind_alias(song_id, name)
+                    else:
+                        logging.info(f'Name metadata of song with id {song_id} and path {path} does not exist or is already used. Now try to use filename instead')
+                        name = Path(path).stem
+                        result = self.database.bind_alias(song_id, name)
+                        if result is SENTINELS.ALIAS_EXISTS:
+                            logging.info(f'Can not find a suitable alias for song with id {song_id} and path {path}. Auto alias binding canceled')
+                        return response_template.SUCCESS
+
+                return response_template.SUCCESS
+            else:
+                return response_template.gen_response(f'can not add \"{path}\" because a song of the same path already exists in library')
+        else:
+            return response_template.gen_invalid_path(path)
+        
     def _memorize_pos(self):
         while self.running:
             if self.current_song_info is not None and self.player.player.get_state() == vlc.State.Playing:
@@ -536,6 +570,20 @@ class Backend:
             self.database.del_pos(path)
         else:
             logger.warning('backend:del_current_pos is triggered before any song is loaded')
+
+    def _get_meta_from_file(self, path):
+        file = mutagen.File(path, easy=True)
+        tags = {}
+        if file is not None:
+            for file_tag, meta in FILE_META.items():
+                tags[meta] = file.get(file_tag, [None])[0]
+                if tags[meta] == '':
+                    tags[meta] = None
+            logger.debug(f'Extracted metadata from {path}: {tags}')
+            return tags
+        else:
+            logger.debug(f'Failed to extract metadata from {path} because there is no metadata in the file')
+            return {}
 
     def _listen(self):
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

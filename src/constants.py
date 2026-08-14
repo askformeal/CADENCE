@@ -19,8 +19,13 @@ MAIN_LOOP_INTERVAL = 0.05
 HOST = '127.0.0.1'
 PORT = 17891
 TIMEOUT = 3
+
 STARTER_CHECK_INTERVAL = 0.5
 STARTER_RETRY = 5
+
+RESTART_NUM = 3
+RESTART_POLL_INTERVAL = 0.5
+
 SERVER_TIMEOUT = 0.5
 BACKLOG = 5
 HEADER_LEN = 4
@@ -46,7 +51,21 @@ REQUIRED_KEYS = {
     'lib.playlist.del': ['playlist'],
 }
 
+ATTACHMENT_REQUIRED_ACTIONS = [
+    'status',
+    'list',
+    'lib.list',
+    'lib.alias.list',
+    'lib.playlist.list',
+
+]
+
 METADATA = ['name', 'artist', 'album']
+FILE_META = {
+    'title': 'name',
+    'artist': 'artist',
+    'album': 'album'
+}
 
 AUDIO_EXTENSIONS = {
     '.mp3', '.flac', '.wav', '.ogg', '.opus', '.oga',
