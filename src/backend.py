@@ -14,7 +14,7 @@ from src.constants import HOST, PORT, BACKLOG, REQUIRED_KEYS, SERVER_TIMEOUT
 from src.constants import MAIN_LOOP_INTERVAL, POS_MEMORIZE_INTERVAL, METADATA, FILE_META
 from src.sentinels import SENTINELS
 from src.connection import recv_json, send_json
-from src.response import response_template
+from src.response import gen_response
 from src.database import Database
 from src.player import Player
 
@@ -99,7 +99,7 @@ class Backend:
                 response = self.dispatch(request)
             except Exception as e:
                 logger.exception(f'Failed to dispatch request:')
-                response = response_template.gen_response(f'failed to dispatch request: \"{e}\"')
+                response = gen_response.response(f'failed to dispatch request: \"{e}\"')
 
             if connection is not None:
                 logger.info(f'Send response: {response}')
@@ -122,7 +122,7 @@ class Backend:
                 # ----------------------------------------------------------------
 
                 if action == 'test_alive':
-                    return response_template.SUCCESS
+                    return gen_response.success('CADENCE backend is running')
 
                 elif action == 'status':
                     player_status = {
@@ -143,8 +143,7 @@ class Backend:
                     progress = self.player.get_progress()
                     status['length'] = progress['length']
                     status['time'] = progress['time']
-                    response = response_template.SUCCESS.copy()
-                    response['attachment'] = status
+                    response = gen_response.success('status obtained', status)
                     
                 elif action == 'open':
                     paths_to_load = None
@@ -159,7 +158,7 @@ class Backend:
                         path = Path(cwd) / song
                         info = self._get_playlist_songs(song)
                         if info is SENTINELS.PLAYLIST_EMPTY:
-                            response = response_template.gen_response(f'can not open playlist \"{song}\" because it is empty')
+                            response = gen_response.response(f'can not open playlist \"{song}\" because it is empty')
 
                         elif info is not SENTINELS.PLAYLIST_NOT_FOUND:
                             self._set_current_song(info)
@@ -172,56 +171,56 @@ class Backend:
                                 paths_to_load = str(path)
                             else:
                                 logger.warning(f'Can not open {path}')
-                                response = response_template.gen_invalid_path(str(path))
+                                response = gen_response.invalid_path(str(path))
 
                     if paths_to_load is not None:
                         result = self.player.load_paths(paths_to_load)
                         response = {
-                            SENTINELS.SUCCESS: response_template.SUCCESS,
-                            SENTINELS.PLAYER_LOAD_EMPTY: response_template.gen_response('can not load empty list of songs'),
-                            SENTINELS.VLC_ERROR: response_template.gen_vlc_error('load path(s)'),
-                            SENTINELS.PLAYER_TIMEOUT: response_template.gen_player_timeout('load path(s)'),
+                            SENTINELS.SUCCESS: gen_response.success(f'opened song \"{song}\"'),
+                            SENTINELS.PLAYER_LOAD_EMPTY: gen_response.response('can not load empty list of songs'),
+                            SENTINELS.VLC_ERROR: gen_response.vlc_error('load path(s)'),
+                            SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout('load path(s)'),
                         }[result]
                         if result is SENTINELS.SUCCESS:
-                            response = self._jump_to_memorized_pos()
+                            response = gen_response.merge(response, self._jump_to_memorized_pos())
 
                 elif action == 'stop':
                     result = self.player.stop()
                     response = {
-                        SENTINELS.SUCCESS: response_template.SUCCESS,
-                        SENTINELS.VLC_ERROR: response_template.gen_vlc_error('stop player'),
-                        SENTINELS.PLAYER_TIMEOUT: response_template.gen_player_timeout('stop player')
+                        SENTINELS.SUCCESS: gen_response.success('player stopped'),
+                        SENTINELS.VLC_ERROR: gen_response.vlc_error('stop player'),
+                        SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout('stop player')
                     }[result]
 
                 elif action == 'pause':
                     result = self.player.pause()
                     response = {
-                        SENTINELS.SUCCESS: response_template.SUCCESS,
-                        SENTINELS.INVALID_PLAYER_STATE: response_template.gen_response('can not pause player because player is not playing'),
-                        SENTINELS.VLC_ERROR: response_template.gen_vlc_error('pause player'),
-                        SENTINELS.PLAYER_TIMEOUT: response_template.gen_player_timeout('pause player')
+                        SENTINELS.SUCCESS: gen_response.success('player paused'),
+                        SENTINELS.INVALID_PLAYER_STATE: gen_response.response('can not pause player because player is not playing'),
+                        SENTINELS.VLC_ERROR: gen_response.vlc_error('pause player'),
+                        SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout('pause player')
                     }[result]
 
                 elif action == 'resume':
                     result = self.player.resume()
                     response = {
-                        SENTINELS.SUCCESS: response_template.SUCCESS,
-                        SENTINELS.INVALID_PLAYER_STATE: response_template.gen_response('can not resume player because player is not paused'),
-                        SENTINELS.VLC_ERROR: response_template.gen_vlc_error('resume player'),
-                        SENTINELS.PLAYER_TIMEOUT: response_template.gen_player_timeout('resume player')
+                        SENTINELS.SUCCESS: gen_response.success('player resumed'),
+                        SENTINELS.INVALID_PLAYER_STATE: gen_response.response('can not resume player because player is not paused'),
+                        SENTINELS.VLC_ERROR: gen_response.vlc_error('resume player'),
+                        SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout('resume player')
                     }[result]
 
                 elif action == 'toggle':
                     result = self.player.toggle()
                     response = {
-                        SENTINELS.SUCCESS: response_template.SUCCESS,
-                        SENTINELS.INVALID_PLAYER_STATE: response_template.gen_response('can not toggle player because player is neither playing nor paused'),
-                        SENTINELS.VLC_ERROR: response_template.gen_vlc_error('toggle player'),
-                        SENTINELS.PLAYER_TIMEOUT: response_template.gen_player_timeout('toggle player')
+                        SENTINELS.SUCCESS: gen_response.success('player toggled'),
+                        SENTINELS.INVALID_PLAYER_STATE: gen_response.response('can not toggle player because player is neither playing nor paused'),
+                        SENTINELS.VLC_ERROR: gen_response.vlc_error('toggle player'),
+                        SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout('toggle player')
                     }[result]
 
                 elif action == 'list':
-                    response = response_template.SUCCESS.copy()
+                    response = gen_response.success('obtained current playlist')
                     if self.current_song_info is not None:
                         response['attachment'] = self.current_song_info.copy()
                     else:
@@ -241,44 +240,45 @@ class Backend:
                         num_to_load = num - 1
                     result = self.player.load_number(num_to_load)
                     response = {
-                        SENTINELS.SUCCESS: response_template.SUCCESS,
-                        SENTINELS.PLAYER_EMPTY: response_template.gen_player_empty(f'switch to the {num}th song in current playlist'),
-                        SENTINELS.VLC_ERROR: response_template.gen_vlc_error(f'switch to the {num}th song in current playlist'),
-                        SENTINELS.PLAYER_TIMEOUT: response_template.gen_player_timeout(f'switch to the {num}th song in current playlist'),
+                        SENTINELS.SUCCESS: gen_response.success(f'switched to the {num}nd song in current playlist'),
+                        SENTINELS.PLAYER_EMPTY: gen_response.player_empty(f'switch to the {num}nd song in current playlist'),
+                        SENTINELS.VLC_ERROR: gen_response.vlc_error(f'switch to the {num}nd song in current playlist'),
+                        SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout(f'switch to the {num}nd song in current playlist'),
                     }[result]
                     self.current_song_num = self.player.number
                     if result is SENTINELS.SUCCESS:
-                        response = self._jump_to_memorized_pos()
+                        response = gen_response.merge(response, self._jump_to_memorized_pos())
 
                 elif action == 'prev':
                     result = self.player.switch_prev()
                     response = {
-                        SENTINELS.SUCCESS: response_template.SUCCESS,
-                        SENTINELS.PLAYER_EMPTY: response_template.gen_player_empty('switch to previous song'),
-                        SENTINELS.VLC_ERROR: response_template.gen_vlc_error('switch to previous song'),
-                        SENTINELS.PLAYER_TIMEOUT: response_template.gen_player_timeout('switch to previous song')
+                        SENTINELS.SUCCESS: gen_response.success('switched to previous song'),
+                        SENTINELS.PLAYER_EMPTY: gen_response.player_empty('switch to previous song'),
+                        SENTINELS.VLC_ERROR: gen_response.vlc_error('switch to previous song'),
+                        SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout('switch to previous song')
                     }[result]
                     self.current_song_num = self.player.number
                     if result is SENTINELS.SUCCESS:
-                        response = self._restart()
+                        response = gen_response.merge(response, self._restart())
 
                 elif action == 'next':
                     if request.get('on_end', False):
                         self._del_current_pos()
                     result = self.player.switch_next()
                     response = {
-                        SENTINELS.SUCCESS: response_template.SUCCESS,
-                        SENTINELS.PLAYER_EMPTY: response_template.gen_player_empty('switch to next song'),
-                        SENTINELS.VLC_ERROR: response_template.gen_vlc_error('switch to next song'),
-                        SENTINELS.PLAYER_TIMEOUT: response_template.gen_player_timeout('switch to next song')
+                        SENTINELS.SUCCESS: gen_response.success('switched to next song'),
+                        SENTINELS.PLAYER_EMPTY: gen_response.player_empty('switch to next song'),
+                        SENTINELS.VLC_ERROR: gen_response.vlc_error('switch to next song'),
+                        SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout('switch to next song')
                     }[result]
                     self.current_song_num = self.player.number
                     if result is SENTINELS.SUCCESS:
-                        response = self._restart()
+                        response = gen_response.merge(response, self._restart())
 
                 elif action == 'restart':
-                    self._del_current_pos()
                     response = self._restart()
+                    if response['code'] == 0:
+                        self._del_current_pos()
 
                 elif action == 'lib.list':
                     info = self.database.get_all_song_info()
@@ -287,8 +287,7 @@ class Backend:
                             aliases = self.database.get_song_aliases(row['id'])
                             row['aliases'] = aliases
 
-                    response = response_template.SUCCESS.copy()
-                    response['attachment'] = self.sort_songs(info)
+                    response = gen_response.success('obtained information of all songs in library', self.sort_songs(info))
 
                 elif action == 'lib.add':
                     alias = request.get('alias', None)
@@ -307,23 +306,23 @@ class Backend:
                             self.current_song_info[self.current_song_num] = {'path': path} 
                             self.current_song_in_lib = False
                         self.database.delete_song(id)
-                        response = response_template.SUCCESS
+                        response = gen_response.success(f'deleted song \"{song}\" from library')
                     else:
-                        response = response_template.gen_song_not_exist(f'delete {song}')
+                        response = gen_response.song_not_exist(f'delete {song}')
 
                 elif action == 'lib.reset':
                     self.database.reset()
                     if self.current_song_in_lib:
                         path = self.current_song_info[self.current_song_num]['path']
                         self._set_current_song({'path': path}, False)
-                    response = response_template.SUCCESS
+                    response = gen_response.success('database reset')
 
                 elif action == 'lib.meta.set':
                     song_id = self._get_song(request['song'], cwd)
                     if song_id is SENTINELS.MISSING_CWD:
                         response = self._missing_key('lib.meta.set', 'cwd')
                     elif song_id is SENTINELS.NOT_IN_LIB:
-                        response = response_template.gen_song_not_exist(f"set metadata of \"{request['song']}\"")
+                        response = gen_response.song_not_exist(f"set metadata of \"{request['song']}\"")
                     else:
                         metadata = {}
                         for label in METADATA:
@@ -334,15 +333,12 @@ class Backend:
                                 if value is not None:
                                     if value == '':
                                         value = SENTINELS.CLEAR_META
-                                    result = self.database.set_song_meta(song_id, label, value)
-                                    if result is not SENTINELS.SUCCESS:
-                                        break
-                            response = {
-                                SENTINELS.SUCCESS: response_template.SUCCESS,
-                            }[result]
+                                    self.database.set_song_meta(song_id, label, value)
+
+                            response = gen_response.success('metadata set')
 
                         else:
-                            response = response_template.gen_response(f'can not set metadata because no metadata was given')
+                            response = gen_response.response(f'can not set metadata because no metadata was given')
 
                 elif action == 'lib.alias.list':
                     song = request['song']
@@ -351,10 +347,9 @@ class Backend:
                         response = self._missing_key('lib.alias.list', 'cwd')
                     elif id is not SENTINELS.NOT_IN_LIB:
                         aliases = self.database.get_song_aliases(id)
-                        response = response_template.SUCCESS.copy()
-                        response['attachment'] = aliases
+                        response = gen_response.success('obtained all aliases in library', aliases)
                     else:
-                        response = response_template.gen_song_not_exist(f'show aliases of {song}')
+                        response = gen_response.song_not_exist(f'show aliases of {song}')
 
                 elif action == 'lib.alias.bind':
                     song = request['song']
@@ -365,28 +360,28 @@ class Backend:
                     elif id is not SENTINELS.NOT_IN_LIB:
                         result = self.database.bind_alias(id, request['alias'])
                         response = {
-                            SENTINELS.ALIAS_EXISTS: response_template.gen_response(f'can not bind alias \"{request['alias']}\" because it is already bound to another song in library'),
-                            SENTINELS.SUCCESS: response_template.SUCCESS,
-                            SENTINELS.SONG_NOT_FOUND: response_template.gen_song_not_exist(f'bind alias to {song}') # not really necessary, but Monica insists
+                            SENTINELS.ALIAS_EXISTS: gen_response.response(f'can not bind alias \"{request['alias']}\" because it is already bound to another song in library'),
+                            SENTINELS.SUCCESS: gen_response.success(f"bound alias \"{request['alias']}\" to song \"{song}\""),
+                            SENTINELS.SONG_NOT_FOUND: gen_response.song_not_exist(f'bind alias to {song}') # not really necessary, but Monica insists
                         }[result]
                     else:
-                        response = response_template.gen_song_not_exist(f'bind alias to {song}')
+                        response = gen_response.song_not_exist(f'bind alias to {song}')
 
                 elif action == 'lib.alias.unbind':
                     result = self.database.unbind_alias(request['alias'])
                     if result is not SENTINELS.ALIAS_NOT_FOUND:
-                        response = response_template.SUCCESS
+                        response = gen_response.success(f"unbound alias \"{request["alias"]}\"")
                     else:
-                        response = response_template.gen_response(f'can not unbind {request["alias"]} because it does not exist in library')
+                        response = gen_response.response(f'can not unbind {request["alias"]} because it does not exist in library')
 
                 elif action == 'lib.playlist.list':
-                    response = response_template.SUCCESS.copy()
+                    response = gen_response.success('obtained list of playlist in library')
 
                     playlist = request.get('playlist', None)
                     if playlist is not None:
                         info = self._get_playlist_songs(playlist)
                         if info is SENTINELS.PLAYLIST_NOT_FOUND:
-                            response = response_template.gen_playlist_not_exist(f'list songs of playlist \"{playlist}\"')
+                            response = gen_response.playlist_not_exist(f'list songs of playlist \"{playlist}\"')
                         elif info is SENTINELS.PLAYLIST_EMPTY:
                             response['attachment'] = []
                         else:
@@ -400,61 +395,61 @@ class Backend:
                     name = request['name']
                     ignored = self.database.create_playlist(name)[1]
                     if not ignored:
-                        response = response_template.SUCCESS
+                        response = gen_response.success(f'created playlist \"{name}\"')
                     else:
-                        response = response_template.gen_response(f'can not create \"{name}\" because a playlist of the same name already exists in library')
+                        response = gen_response.response(f'can not create \"{name}\" because a playlist of the same name already exists in library')
 
                 elif action == 'lib.playlist.add':
                     playlist = self.database.get_playlist_via_name(request['playlist'])
                     if playlist is not SENTINELS.PLAYLIST_NOT_FOUND:
                         song = self._get_song(request['song'], cwd)
                         if song is SENTINELS.MISSING_CWD:
-                            response = response_template.gen_missing_key('lib.playlist.add', 'cwd')
+                            response = gen_response.missing_key('lib.playlist.add', 'cwd')
                         elif song is SENTINELS.NOT_IN_LIB:
-                            response = response_template.gen_song_not_exist(f'add song \"{request['song']}\" to playlist \"{request['playlist']}\"')
+                            response = gen_response.song_not_exist(f'add song \"{request['song']}\" to playlist \"{request['playlist']}\"')
                         else:
                             ignored = self.database.add_song_to_playlist(playlist, song)
                             if not ignored:
-                                response = response_template.SUCCESS
+                                response = gen_response.success(f"added song \"{request['song']}\" to playlist \"{request['playlist']}\"")
                             else:
-                                response = response_template.gen_response(f'can not add song \"{request['song']}\" to playlist \"{request['playlist']}\" because it is already in the playlist')
+                                response = gen_response.response(f'can not add song \"{request['song']}\" to playlist \"{request['playlist']}\" because it is already in the playlist')
                     else:
-                        response = response_template.gen_playlist_not_exist(f'add song to playlist \"{request['playlist']}\"')
+                        response = gen_response.playlist_not_exist(f'add song to playlist \"{request['playlist']}\"')
 
                 elif action == 'lib.playlist.kick':
                     playlist_id = self.database.get_playlist_via_name(request['playlist'])
                     if playlist_id is not SENTINELS.PLAYLIST_NOT_FOUND:
                         song_id = self._get_song(request['song'], cwd)
                         if song_id is SENTINELS.MISSING_CWD:
-                            response = response_template.gen_missing_key('lib.playlist.kick', 'cwd')
+                            response = gen_response.missing_key('lib.playlist.kick', 'cwd')
                         elif song_id is SENTINELS.NOT_IN_LIB:
-                            response = response_template.gen_song_not_exist(f'remove song \"{request['song']}\" from playlist \"{request['playlist']}\"')
+                            response = gen_response.song_not_exist(f'remove song \"{request['song']}\" from playlist \"{request['playlist']}\"')
                         else:
                             result = self.database.del_song_from_playlist(playlist_id, song_id)
                             if result is SENTINELS.PLAYLIST_SONG_NOT_FOUND:
-                                response = response_template.gen_response(f"can not remove song \"{request['song']}\" from playlist \"{request['playlist']}\" because the song is not in the playlist")
+                                response = gen_response.response(f"can not remove song \"{request['song']}\" from playlist \"{request['playlist']}\" because the song is not in the playlist")
                             else:
-                                response = response_template.SUCCESS
+                                response = gen_response.success(f"removed song \"{request['song']}\" from playlist \"{request['playlist']}\"")
                     else:
-                        response = response_template.gen_playlist_not_exist(f"remove song {request['song']} from playlist {request['playlist']}")
+                        response = gen_response.playlist_not_exist(f"remove song {request['song']} from playlist {request['playlist']}")
 
                 elif action == 'lib.playlist.del':
                     playlist_id = self.database.get_playlist_via_name(request['playlist'])
                     if playlist_id is not SENTINELS.PLAYLIST_NOT_FOUND:
                         self.database.del_playlist(playlist_id)
-                        response = response_template.SUCCESS
+                        response = gen_response.success(f"deleted playlist \"{request['playlist']}\"")
                     else:
-                        response = response_template.gen_playlist_not_exist(f'delete playlist \"{request['playlist']}\"')
+                        response = gen_response.playlist_not_exist(f"delete playlist \"{request['playlist']}\"")
 
                 elif action == 'exit':
                     self.exit()
-                    response = response_template.SUCCESS
+                    response = gen_response.success('CADENCE backend is now exiting')
                 else:
                     logger.error(f'Invalid \"action\" value received: {action}')
-                    response = response_template.INVALID_ACTION
+                    response = gen_response.INVALID_ACTION
         else:
             logger.error('Not \"action\" key found in request')
-            response =  response_template.gen_missing_key('all', 'action')
+            response =  gen_response.missing_key('all', 'action')
 
 
         return response
@@ -465,24 +460,24 @@ class Backend:
         if pos is not SENTINELS.POS_NOT_FOUND:
             result = self.player.jump_pos(pos)
             return {
-                SENTINELS.SUCCESS: response_template.SUCCESS,
-                SENTINELS.POS_TOO_LATE: response_template.gen_pos_too_late('jump to memorized position'),
-                SENTINELS.INVALID_PLAYER_STATE: response_template.gen_response(f'can not jump to memorized position because the player is neither playing nor paused')
+                SENTINELS.SUCCESS: gen_response.success(f'jumped to {pos/1000:.2f}s'),
+                SENTINELS.POS_TOO_LATE: gen_response.pos_too_late('jump to memorized position'),
+                SENTINELS.INVALID_PLAYER_STATE: gen_response.response(f'can not jump to memorized position because the player is neither playing nor paused')
             }[result]
         else:
-            return response_template.SUCCESS
+            return gen_response.success(f'no memorized position')
 
     def _restart(self):
         result = self.player.jump_pos(0)
         return {
-            SENTINELS.SUCCESS: response_template.SUCCESS,
-            SENTINELS.POS_TOO_LATE: response_template.gen_pos_too_late('jump to beginning'), # is this even possible?
-            SENTINELS.INVALID_PLAYER_STATE: response_template.gen_response('can not jump to beginning because the state of player is neither playing nor paused')
+            SENTINELS.SUCCESS: gen_response.success('jumped to beginning'),
+            SENTINELS.POS_TOO_LATE: gen_response.pos_too_late('jump to beginning'), # is this even possible?
+            SENTINELS.INVALID_PLAYER_STATE: gen_response.response('can not jump to beginning because the state of player is neither playing nor paused')
         }[result]
 
     def _missing_key(self, action, key):
         logger.error(f'Missed key for action \"{action}\": \"{key}\"')
-        return response_template.gen_missing_key(action, key)
+        return gen_response.missing_key(action, key)
 
     def _set_current_song(self, info, in_lib=True):
         if not isinstance(info, list):
@@ -526,35 +521,57 @@ class Backend:
 
     def _add_song(self, path, set_meta=True, bind_alias=True, alias=None):
         if Path(path).is_file():
+            add_response = None
+            alias_response = None
+            meta_response = None
+            auto_alias_response = None
+
             song_id, ignored = self.database.add_song(path)
             if not ignored:
+                add_response = gen_response.success(f'added song \"{path}\" to library')
+
+                # --- manual alias ---
                 if alias is not None:
-                    self.database.bind_alias(song_id, alias)
+                    result = self.database.bind_alias(song_id, alias)
+                    if result is SENTINELS.ALIAS_EXISTS:
+                        alias_msg = f'can not bind alias \"{alias}\" to the song'
+                    else:
+                        alias_msg = f'bound alias \"{alias}\" to the song'
+                    alias_response = gen_response.success(alias_msg)
                     
                 meta = self._get_meta_from_file(path)
 
+                # --- auto set metadata ---
                 if set_meta:
-                    # auto set metadata
+                    count = 0
                     for tag, value in meta.items():
                         self.database.set_song_meta(song_id, tag, value)
+                        if value is not None:
+                            count += 1
+                    meta_response = gen_response.success(f'set {count} metadata of the song from file')
 
+                # --- auto bind alias ---
                 if bind_alias:
                     name = meta.get('name', None)
                     if name is not None and not self.database.alias_exists(name):
                         self.database.bind_alias(song_id, name)
+                        bind_msg = f'bound alias \"{name}\" from song name in metadata'
                     else:
                         logging.info(f'Name metadata of song with id {song_id} and path {path} does not exist or is already used. Now try to use filename instead')
                         name = Path(path).stem
                         result = self.database.bind_alias(song_id, name)
                         if result is SENTINELS.ALIAS_EXISTS:
                             logging.info(f'Can not find a suitable alias for song with id {song_id} and path {path}. Auto alias binding canceled')
-                        return response_template.SUCCESS
+                            bind_msg = f'can not find and bind an available alias for the song automatically'
+                        else:
+                            bind_msg = f'bound alias \"{name}\" from filename'
+                    auto_alias_response = gen_response.success(bind_msg)
 
-                return response_template.SUCCESS
+                return gen_response.merge(add_response, alias_response, meta_response, auto_alias_response)
             else:
-                return response_template.gen_response(f'can not add \"{path}\" because a song of the same path already exists in library')
+                return gen_response.response(f'can not add \"{path}\" because a song of the same path already exists in library')
         else:
-            return response_template.gen_invalid_path(path)
+            return gen_response.invalid_path(path)
         
     def _memorize_pos(self):
         while self.running:
