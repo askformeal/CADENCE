@@ -53,8 +53,8 @@ def main():
     lib_del_parser = lib_sub.add_parser('del', help='Delete a song from library')
     lib_del_parser.add_argument('song', type=str, help='Song to delete')
 
-    # Do nothing yet. Will work on it later.
     lib_scan_parser = lib_sub.add_parser('scan', help='Scan a directory for all supported audio files and add them to library')
+    lib_scan_parser.add_argument('dir', type=_path, help='directory to scan')
     lib_scan_parser.add_argument('-r', '--recurse', action='store_true', help='Enable recursive scanning')
     lib_scan_parser.add_argument('-p', '--preview', action='store_true', help='Show found files without adding to library')
 
@@ -209,6 +209,13 @@ def main():
                     elif action == 'lib.list':
                         info = attachment
                         _show_song_info(info, 'No songs in library', show_aliases=args['show_aliases'])
+
+                    elif action == 'lib.scan':
+                        # TODO prettify output
+                        if args['preview']:
+                            print(attachment)
+                        else:
+                            print(attachment)
 
                     elif action == 'lib.alias.list':
                         aliases = attachment

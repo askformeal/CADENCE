@@ -45,7 +45,7 @@ class Response:
                 messages.append(response['msg'])
                 codes.append(response['code'])
 
-        if len(code) > 0:
+        if len(codes) > 0:
             msg = ' | '.join(messages)
             code = max(codes)
             return self.response(msg, code)

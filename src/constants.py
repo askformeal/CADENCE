@@ -41,6 +41,7 @@ REQUIRED_KEYS = {
     'switch': ['number'],
     'lib.add': ['path'],
     'lib.del': ['song'],
+    'lib.scan': ['dir'],
     'lib.meta.set': ['song'],
     'lib.alias.list': ['song'],
     'lib.alias.bind': ['song', 'alias'],
@@ -55,9 +56,9 @@ ATTACHMENT_REQUIRED_ACTIONS = [
     'status',
     'list',
     'lib.list',
+    'lib.scan',
     'lib.alias.list',
     'lib.playlist.list',
-
 ]
 
 METADATA = ['name', 'artist', 'album']

@@ -1,4 +1,5 @@
 import sys
+import os
 import logging
 from threading import Thread
 import socket
@@ -12,6 +13,7 @@ from src import version
 from src.constants import LOG_PATH, FILE_LOG_LEVEL, CONSOLE_LOG_LEVEL, LOG_ENCODING
 from src.constants import HOST, PORT, BACKLOG, REQUIRED_KEYS, SERVER_TIMEOUT
 from src.constants import MAIN_LOOP_INTERVAL, POS_MEMORIZE_INTERVAL, METADATA, FILE_META
+from src.constants import AUDIO_EXTENSIONS
 from src.sentinels import SENTINELS
 from src.connection import recv_json, send_json
 from src.response import gen_response
@@ -310,6 +312,30 @@ class Backend:
                     else:
                         response = gen_response.song_not_exist(f'delete {song}')
 
+                elif action == 'lib.scan':
+                    directory = request['dir']
+                    directory = str(Path(cwd) / directory)
+                    is_recurse = request.get('recurse', False)
+                    is_preview = request.get('preview', False)
+                    if Path(directory).is_dir():
+                        if is_recurse:
+                            paths = self._recurse_scan(directory)
+                        else:
+                            paths = self._scan(directory)
+                        if is_preview:
+                            response = gen_response.success(f'{len(paths)} supported audio files found under {directory}', paths)
+                        else:
+                            failed_responses = []
+                            for path in paths:
+                                add_response = self._add_song(path) # add auto alias and auto meta option later
+                                if add_response['code'] != 0:
+                                    failed_responses.append(add_response)
+
+                            added = len(paths) - len(failed_responses)
+                            response = gen_response.success(f'successfully added [{added}/{len(paths)}] file(s) to library', failed_responses)
+                    else:
+                        response = gen_response.response(f'\"{directory}\" is not a valid directory')
+
                 elif action == 'lib.reset':
                     self.database.reset()
                     if self.current_song_in_lib:
@@ -601,6 +627,22 @@ class Backend:
         else:
             logger.debug(f'Failed to extract metadata from {path} because there is no metadata in the file')
             return {}
+
+    def _scan(self, directory):
+        paths = []
+        for path in Path(directory).iterdir():
+            if path.suffix.lower() in AUDIO_EXTENSIONS and path.is_file():
+                paths.append(str(path.resolve()))
+        return paths
+
+    def _recurse_scan(self, directory):
+        paths = []
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                path = Path(root) / file
+                if path.suffix.lower() in AUDIO_EXTENSIONS:
+                    paths.append(str(path.resolve()))
+        return paths
 
     def _listen(self):
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
