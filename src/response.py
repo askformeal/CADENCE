@@ -35,8 +35,7 @@ class Response:
             attachment = {}
         return {'code': code, 'msg': msg, 'attachment': attachment}
 
-    def merge(self, *responses):
-        # will lose attachment, you can use response['attachment'] to set it manually after merging
+    def merge(self, *responses, attachment=None):
         messages = []
         codes = []
 
@@ -48,8 +47,8 @@ class Response:
         if len(codes) > 0:
             msg = ' | '.join(messages)
             code = max(codes)
-            return self.response(msg, code)
+            return self.response(msg, code, attachment=attachment)
         else:
-            return self.response('')
+            return self.response('', attachment=attachment)
 
 gen_response = Response()

@@ -313,28 +313,57 @@ class Backend:
                         response = gen_response.song_not_exist(f'delete {song}')
 
                 elif action == 'lib.scan':
+                    missing_cwd = False
                     directory = request['dir']
-                    directory = str(Path(cwd) / directory)
-                    is_recurse = request.get('recurse', False)
-                    is_preview = request.get('preview', False)
-                    if Path(directory).is_dir():
-                        if is_recurse:
-                            paths = self._recurse_scan(directory)
+                    if not Path(directory).is_absolute():
+                        if cwd is None:
+                            response = self._missing_key('lib.scan', 'cwd')
+                            missing_cwd = True
                         else:
-                            paths = self._scan(directory)
-                        if is_preview:
-                            response = gen_response.success(f'{len(paths)} supported audio files found under {directory}', paths)
-                        else:
-                            failed_responses = []
-                            for path in paths:
-                                add_response = self._add_song(path) # add auto alias and auto meta option later
-                                if add_response['code'] != 0:
-                                    failed_responses.append(add_response)
+                            directory = str(Path(cwd) / directory)
+                            
+                    if not missing_cwd:
+                        playlist = request.get('playlist', None)
 
-                            added = len(paths) - len(failed_responses)
-                            response = gen_response.success(f'successfully added [{added}/{len(paths)}] file(s) to library', failed_responses)
-                    else:
-                        response = gen_response.response(f'\"{directory}\" is not a valid directory')
+                        is_recurse = request.get('recurse', False)
+                        is_preview = request.get('preview', False)
+
+                        set_meta = not request.get('skip_meta', False)
+                        bind_alias = not request.get('skip_alias', False)
+
+                        failed_responses = []
+
+                        if Path(directory).is_dir():
+                            if is_recurse:
+                                paths = self._recurse_scan(directory)
+                            else:
+                                paths = self._scan(directory)
+                            if is_preview:
+                                response = gen_response.success(f'{len(paths)} supported audio files found under {directory}', paths)
+                            else:
+                                ids = []
+                                for path in paths:
+                                    song_id, add_response = self._add_song(path, set_meta, bind_alias, return_id=True)
+                                    if add_response['code'] != 0:
+                                        failed_responses.append(add_response)
+                                    else:
+                                        ids.append(song_id)
+
+                                response = gen_response.success(f'successfully added [{len(ids)}/{len(paths)}] file(s) to library')
+
+                                if playlist is not None:
+                                    playlist_id = self.database.get_playlist_via_name(playlist)
+                                    if playlist_id is SENTINELS.PLAYLIST_NOT_FOUND:
+                                        playlist_msg = f'can not add songs to playlist \"{playlist}\" because it does not exist'
+                                    else:
+                                        for song_id in ids:
+                                            self.database.add_song_to_playlist(playlist_id, song_id) # all songs are freshly added, no chance of ignored
+
+                                        playlist_msg = f'added {len(ids)} song(s) to playlist {playlist}'
+                                    response = gen_response.merge(response, gen_response.success(playlist_msg), attachment=failed_responses)
+
+                        else:
+                            response = gen_response.response(f'\"{directory}\" is not a valid directory')
 
                 elif action == 'lib.reset':
                     self.database.reset()
@@ -545,13 +574,13 @@ class Backend:
         else:
             return SENTINELS.MISSING_CWD
 
-    def _add_song(self, path, set_meta=True, bind_alias=True, alias=None):
+    def _add_song(self, path, set_meta=True, bind_alias=True, alias=None, return_id=False):
+        song_id = None
         if Path(path).is_file():
             add_response = None
             alias_response = None
             meta_response = None
             auto_alias_response = None
-
             song_id, ignored = self.database.add_song(path)
             if not ignored:
                 add_response = gen_response.success(f'added song \"{path}\" to library')
@@ -593,11 +622,16 @@ class Backend:
                             bind_msg = f'bound alias \"{name}\" from filename'
                     auto_alias_response = gen_response.success(bind_msg)
 
-                return gen_response.merge(add_response, alias_response, meta_response, auto_alias_response)
+                response = gen_response.merge(add_response, alias_response, meta_response, auto_alias_response)
             else:
-                return gen_response.response(f'can not add \"{path}\" because a song of the same path already exists in library')
+                response = gen_response.response(f'can not add \"{path}\" because a song of the same path already exists in library')
         else:
-            return gen_response.invalid_path(path)
+            response = gen_response.invalid_path(path)
+
+        if return_id:
+            return song_id, response
+        else:
+            return response
         
     def _memorize_pos(self):
         while self.running:

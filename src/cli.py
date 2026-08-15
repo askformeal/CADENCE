@@ -55,8 +55,11 @@ def main():
 
     lib_scan_parser = lib_sub.add_parser('scan', help='Scan a directory for all supported audio files and add them to library')
     lib_scan_parser.add_argument('dir', type=_path, help='directory to scan')
+    lib_scan_parser.add_argument('--playlist', type=str, default=None, help='Playlist to add all found songs to')
     lib_scan_parser.add_argument('-r', '--recurse', action='store_true', help='Enable recursive scanning')
     lib_scan_parser.add_argument('-p', '--preview', action='store_true', help='Show found files without adding to library')
+    lib_scan_parser.add_argument('--skip-meta', action='store_true', help='Disable automatic setting metadata')
+    lib_scan_parser.add_argument('--skip-alias', action='store_true', help='Disable automatic binding alias')
 
     lib_reset_parser = lib_sub.add_parser('reset', help='Reset library and delete all data')
 
