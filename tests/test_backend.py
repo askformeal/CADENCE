@@ -592,6 +592,64 @@ def test_scan_with_playlist(backend, tmp_path):
     assert len(database.get_playlist_songs(playlist_id)) == 1
 
 
+def test_shuffle_toggle_on_off(backend):
+    response = _request(backend, 'shuffle')
+    assert response['code'] == 0
+    assert 'on' in response['msg']
+    assert backend.shuffle is True
+
+    response = _request(backend, 'shuffle')
+    assert response['code'] == 0
+    assert 'off' in response['msg']
+    assert backend.shuffle is False
+
+
+def test_shuffle_next_uses_order_and_reshuffles(backend, audio_file, tmp_path, monkeypatch):
+    _, second = _open_two_song_playlist(backend, audio_file, tmp_path)
+    backend.shuffle = True
+    backend.shuffle_order = [1, 0]  # current (0) sits at the tail: next wraps and reshuffles
+
+    reshuffled = []
+    monkeypatch.setattr('src.backend.random.shuffle', lambda lst: reshuffled.append(list(lst)))
+
+    response = _request(backend, 'next')
+    assert response['code'] == 0
+    status = _request(backend, 'status')
+    assert status['attachment']['path'] == second
+    assert len(reshuffled) == 1  # tail wrap triggers reshuffle
+
+
+def test_shuffle_prev_wraps_without_reshuffle(backend, audio_file, tmp_path, monkeypatch):
+    first, _ = _open_two_song_playlist(backend, audio_file, tmp_path)
+    backend.shuffle = True
+    backend.shuffle_order = [1, 0]
+    backend.current_song_num = 1  # second song, at position 0 of the order
+
+    reshuffled = []
+    monkeypatch.setattr('src.backend.random.shuffle', lambda lst: reshuffled.append(list(lst)))
+
+    response = _request(backend, 'prev')
+    assert response['code'] == 0
+    status = _request(backend, 'status')
+    assert status['attachment']['path'] == first  # wraps to tail without reshuffle
+    assert len(reshuffled) == 0
+
+
+def test_shuffle_next_without_songs(backend):
+    backend.shuffle = True
+    response = _request(backend, 'next')
+    assert response['code'] == 1
+    assert 'no songs are being played' in response['msg']
+
+
+def test_shuffle_order_rebuilt_on_open(backend, audio_file, tmp_path, monkeypatch):
+    backend.shuffle = True
+    reshuffled = []
+    monkeypatch.setattr('src.backend.random.shuffle', lambda lst: reshuffled.append(list(lst)))
+    _open_two_song_playlist(backend, audio_file, tmp_path)
+    assert len(backend.shuffle_order) == 2
+
+
 def test_invalid_key_type(backend):
     response = _request(backend, 'switch', number='abc')
     assert response['code'] == 1
