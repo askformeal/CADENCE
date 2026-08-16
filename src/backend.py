@@ -2,6 +2,7 @@ import sys
 import os
 import logging
 from threading import Thread
+import random
 import socket
 import queue
 from time import sleep
@@ -30,6 +31,10 @@ class Backend:
         self.exit_code = 0
         self.running = True
         self.dying = False
+
+        self.shuffle = False
+        self.shuffle_order = []
+
         self.current_song_info = None
         self.current_song_num = None
         self.current_song_in_lib = False # Use this to prevent KeyError
@@ -228,6 +233,11 @@ class Backend:
                     else:
                         response['attachment'] = []
 
+                elif action == 'shuffle':
+                    self._toggle_shuffle()
+                    mode = {True: 'on', False: 'off'}[self.shuffle]
+                    response = gen_response.success(f"Shuffle mode turned {mode}")
+
                 elif action == 'switch':
                     num = request['number']
                     max_num = len(self.player.medias)
@@ -252,7 +262,10 @@ class Backend:
                         response = gen_response.merge(response, self._jump_to_memorized_pos())
 
                 elif action == 'prev':
-                    result = self.player.switch_prev()
+                    if self.shuffle:
+                        result = self.player.load_number(self._switch_shuffle(-1))
+                    else:
+                        result = self.player.switch_prev()
                     response = {
                         SENTINELS.SUCCESS: gen_response.success('switched to previous song'),
                         SENTINELS.PLAYER_EMPTY: gen_response.player_empty('switch to previous song'),
@@ -266,7 +279,10 @@ class Backend:
                 elif action == 'next':
                     if request.get('on_end', False):
                         self._del_current_pos()
-                    result = self.player.switch_next()
+                    if self.shuffle:
+                        result = self.player.load_number(self._switch_shuffle(1))
+                    else:
+                        result = self.player.switch_next()
                     response = {
                         SENTINELS.SUCCESS: gen_response.success('switched to next song'),
                         SENTINELS.PLAYER_EMPTY: gen_response.player_empty('switch to next song'),
@@ -529,6 +545,25 @@ class Backend:
 
         return response
 
+    def _toggle_shuffle(self):
+        self.shuffle = not self.shuffle
+        logger.info(f'Shuffle set to {self.shuffle}')
+        if self.shuffle and self.current_song_info is not None:
+            random.shuffle(self.shuffle_order)
+
+    def _switch_shuffle(self, direction): # direction: 1 / -1
+        if len(self.shuffle_order) > 0:
+            shuffle_num = self.shuffle_order.index(self.current_song_num)
+            shuffle_num += direction
+            if shuffle_num >= len(self.shuffle_order):
+                shuffle_num = 0
+                random.shuffle(self.shuffle_order)
+            elif shuffle_num < 0:
+                shuffle_num = len(self.shuffle_order) - 1
+            return self.shuffle_order[shuffle_num]
+        else:
+            return SENTINELS.PLAYER_EMPTY
+
     def _jump_to_memorized_pos(self):
         path = self.current_song_info[self.current_song_num]['path']
         pos = self.database.get_pos(path)
@@ -560,6 +595,9 @@ class Backend:
         self.current_song_info = info
         self.current_song_in_lib = in_lib
         self.current_song_num = 0
+        self.shuffle_order = list(range(len(self.current_song_info)))
+        if self.shuffle:
+            random.shuffle(self.shuffle_order)
         logger.info(f'Set current info of current songs to {info}, in library {in_lib}')
 
     def _get_playlist_songs(self, name):
