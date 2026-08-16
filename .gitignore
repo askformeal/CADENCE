@@ -30,3 +30,4 @@ test_*.json
 test.json
 *.example.*
 .pytest_cache/
+.vscode/

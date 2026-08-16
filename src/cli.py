@@ -171,6 +171,7 @@ def main():
         code =  response.get('code', None)
         msg = response.get('msg', None)
         attachment = response.get('attachment', None)
+        failed = response.get('failed', [])
 
         if code is None or msg is None:
             print('[Failed]: Invalid response received from CADENCE backend')
@@ -191,7 +192,14 @@ def main():
                 print('Starting backend...')
                 _start_backend()
 
-            if action in ATTACHMENT_REQUIRED_ACTIONS:
+            if action == 'lib.scan' and not args['preview']: # just to be clear
+                if len(failed) > 0:
+                    print('-'*50)
+                    print('Failed to add the following file(s) to library:')
+                    for add_response in failed:
+                        print(f'  {add_response['msg']}')
+
+            elif action in ATTACHMENT_REQUIRED_ACTIONS:
                 if attachment is not None:
                     # these actions will be expecting an attachment
                     if action == 'status':
@@ -209,16 +217,13 @@ def main():
                         info = attachment
                         _show_song_info(info, 'No songs in library', show_aliases=args['show_aliases'])
 
-                    elif action == 'lib.scan':
+                    elif action == 'lib.scan' and args['preview']:
                         if len(attachment) > 0:
                             print('-'*50)
-                            if args['preview']:
-                                for path in attachment:
-                                    print(path)
-                            else:
-                                print('Failed to add the following file(s) to library:')
-                                for add_response in attachment:
-                                    print(f'  {add_response['msg']}')
+                            for path in attachment:
+                                print(path)
+                        else:
+                            print('No files to be shown')
 
                     elif action == 'lib.alias.list':
                         aliases = attachment
@@ -247,8 +252,11 @@ def main():
             if is_reboot:
                 print('Failed to exit backend, rebooting aborted')
 
-        elif code:
+        elif code == 2:
             print('Failed to connect to CADENCE backend. You can try to use the start subcommand to start it')
+
+        elif code == 3:
+            print('[Failed]: received an unexpected default response code from CADENCE backend which is not to be used under any circumstances. Please report this BUG')
 
         return code
 

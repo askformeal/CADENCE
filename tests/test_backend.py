@@ -522,6 +522,76 @@ def test_jump_ended_state_not_crash(backend, monkeypatch):
     assert 'neither playing nor paused' in response['msg']
 
 
+def test_scan_missing_dir(backend):
+    response = _request(backend, 'lib.scan')
+    assert response['code'] == 1
+    assert 'dir' in response['msg']
+
+
+def test_scan_invalid_directory(backend, tmp_path):
+    response = _request(backend, 'lib.scan', dir=str(tmp_path / 'not_a_dir'))
+    assert response['code'] == 1
+    assert 'not a valid directory' in response['msg']
+
+
+def test_scan_preview(backend, tmp_path):
+    _make_wav(tmp_path / 'test_a.wav')
+    _make_wav(tmp_path / 'test_b.wav')
+    response = _request(backend, 'lib.scan', dir=str(tmp_path), preview=True)
+    assert response['code'] == 0
+    assert len(response['attachment']) == 2
+    assert response['attachment'][0].endswith('test_a.wav')
+    # preview must not add anything to the library
+    assert _request(backend, 'lib.list')['attachment'] == []
+
+
+def test_scan_success(backend, tmp_path):
+    _make_wav(tmp_path / 'test_a.wav')
+    _make_wav(tmp_path / 'test_b.wav')
+    response = _request(backend, 'lib.scan', dir=str(tmp_path))
+    assert response['code'] == 0
+    assert '2/2' in response['msg']
+    assert response['failed'] == []
+    assert len(_request(backend, 'lib.list')['attachment']) == 2
+
+
+def test_scan_partial_failure(backend, tmp_path):
+    _make_wav(tmp_path / 'test_a.wav')
+    _make_wav(tmp_path / 'test_b.wav')
+    _request(backend, 'lib.add', path=str(tmp_path / 'test_a.wav'))
+    response = _request(backend, 'lib.scan', dir=str(tmp_path))
+    assert response['code'] == 0
+    assert '1/2' in response['msg']
+    assert len(response['failed']) == 1
+    assert 'already exists' in response['failed'][0]['msg']
+    assert len(_request(backend, 'lib.list')['attachment']) == 2
+
+
+def test_scan_recurse(backend, tmp_path):
+    sub = tmp_path / 'sub'
+    sub.mkdir()
+    _make_wav(sub / 'test_c.wav')
+    response = _request(backend, 'lib.scan', dir=str(tmp_path))
+    assert response['code'] == 0
+    assert '0/0' in response['msg']
+
+    response = _request(backend, 'lib.scan', dir=str(tmp_path), recurse=True)
+    assert response['code'] == 0
+    assert '1/1' in response['msg']
+    assert len(_request(backend, 'lib.list')['attachment']) == 1
+
+
+def test_scan_with_playlist(backend, tmp_path):
+    _make_wav(tmp_path / 'test_a.wav')
+    database = backend.database
+    database.create_playlist('scanlist')
+    response = _request(backend, 'lib.scan', dir=str(tmp_path), playlist='scanlist')
+    assert response['code'] == 0
+    assert 'added 1 song(s) to playlist' in response['msg']
+    playlist_id = database.get_playlist_via_name('scanlist')
+    assert len(database.get_playlist_songs(playlist_id)) == 1
+
+
 def test_lib_meta_set_name(backend, audio_file):
     song_id, _ = backend.database.add_song(audio_file)
     response = _request(backend, 'lib.meta.set', song=audio_file, name='Foo')
