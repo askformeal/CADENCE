@@ -1,4 +1,3 @@
-import logging
 import vlc
 from time import sleep
 from src.log import setup_logger
@@ -14,6 +13,8 @@ class Player():
         self.player = self.instance.media_player_new()
         self.medias = []
         self.number = 0
+        self.volume = 100
+        self.mute = False
         self._attach_events()
         logger.debug(f'{__name__} initiated')
 
@@ -120,6 +121,7 @@ class Player():
 
         elif result == vlc.State.Playing:
             logger.info('Started playing')
+            self._apply_volume()
             return SENTINELS.SUCCESS
         
         elif result == vlc.State.Error:
@@ -171,6 +173,26 @@ class Player():
             logger.error('Failed to resume because player is not paused')
             return SENTINELS.INVALID_PLAYER_STATE
 
+    def set_volume(self, volume):
+        self.volume = volume
+        logger.debug(f'Set target volume to {self.volume}')
+        self._apply_volume()
+        return SENTINELS.SUCCESS
+    
+    def set_mute(self, mute):
+        self.mute = mute
+        logger.debug(f'Set target mute mode to {self.mute}')
+        self._apply_volume()
+        return SENTINELS.SUCCESS
+    
+    def _apply_volume(self):
+        if self.player.get_state() in (vlc.State.Playing, vlc.State.Paused):
+            logger.debug(f'Applied volume: {self.volume}, mute: {self.mute}')
+            self.player.audio_set_volume(self.volume)
+            self.player.audio_set_mute(self.mute)
+        else:
+            logger.debug(f'Can not apply volume and mute: unsupported player state')
+        
     def on_exit(self):
         self.player.stop()
         self.instance.release()

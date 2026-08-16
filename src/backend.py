@@ -146,6 +146,8 @@ class Backend:
                         'path': path,
                         'in_library': self.current_song_in_lib,
                         'player_status': player_status,
+                        'volume': self.player.volume,
+                        'mute': self.player.mute
                     }
                     progress = self.player.get_progress()
                     status['length'] = progress['length']
@@ -296,9 +298,9 @@ class Backend:
                 elif action == 'jump':
                     percent = request['progress']
                     if percent < 0:
-                        response = gen_response.failed(f'{percent} is lower than 0 and hence not a valid percentage number')
+                        response = gen_response.percentage_too_low(percent)
                     elif percent > 100:
-                        response = gen_response.failed(f'{percent} is higher than 100 and hence not a valid percentage number')
+                        response = gen_response.percentage_too_high(percent)
                     else:
                         length = self.player.get_progress()['length']
                         if length == -1:
@@ -317,6 +319,21 @@ class Backend:
                     response = self._restart()
                     if response['code'] == 0:
                         self._del_current_pos()
+
+                elif action == 'volume':
+                    volume = request['volume']
+                    if volume < 0:
+                        response = gen_response.percentage_too_low(volume)
+                    elif volume > 100:
+                        response = gen_response.percentage_too_high(volume)
+                    else:
+                        self.player.set_volume(volume)
+                        response = gen_response.success(f'set volume to {self.player.volume}%')
+
+                elif action == 'mute':
+                    self.player.set_mute(not self.player.mute)
+                    mode = {True: 'on', False: 'off'}[self.player.mute]
+                    response = gen_response.success(f'turned mute mode {mode}')
 
                 elif action == 'lib.list':
                     info = self.database.get_all_song_info()
@@ -765,6 +782,7 @@ class Backend:
         self.running = False
 
     def exit(self, error=False, msg=None):
+        Thread(target=self.player.stop, daemon=True).start()
         if msg is not None:
             if error:
                 logger.critical(msg)

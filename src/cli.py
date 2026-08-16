@@ -52,6 +52,11 @@ def main():
     jump_parser.add_argument('progress', type=_percent, help='Progress to jump to (percentage)')
     restart_parser = command_sub.add_parser('restart', help='Clear memorized progress and jump to the beginning of the current playing song')
 
+    volume_parser = command_sub.add_parser('volume', help='Set volume')
+    volume_parser.add_argument('volume', type=_percent, help='Volume to set (percentage)')
+
+    mute_parser = command_sub.add_parser('mute', help='Toggle mute')
+
     lib_parser = command_sub.add_parser('lib', help='Manage library')
 
     lib_sub = lib_parser.add_subparsers(dest='lib_action', required=True)
@@ -208,8 +213,16 @@ def main():
                         status = attachment
                         time = format_ms(status['time'])
                         length = format_ms(status['length'])
+                        mute = {True: 'Yes', False: 'No'}[status['mute']]
 
-                        print(f"Current path: {status['path']}\nIn library: {status['in_library']}\nPlayer status: {status['player_status']}\nPlayed time: {time}\nTotal length: {length}")
+                        print('\n'.join((f'Current path: {status['path']}',
+                                         f'In library: {status['in_library']}',
+                                         f'Player status: {status['player_status']}',
+                                         f'Played time: {time}',
+                                         f'Total length: {length}',
+                                         f'Volume: {status['volume']}%',
+                                         f'Mute: {mute}'
+                                         )))
 
                     elif action == 'list':
                         info = attachment

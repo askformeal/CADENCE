@@ -65,6 +65,9 @@ ACTION_KEYS = {
     'jump': {
         'progress': (int, True)
     },
+    'volume': {
+        'volume': (int, True)
+    },
     'lib.list': {
         'show_aliases': (bool, False)
     },

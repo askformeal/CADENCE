@@ -33,6 +33,12 @@ class Response:
     def invalid_key_type(self, action, key, key_type):
         return self.failed(f'the value of key \"{key}\" of \"{action}\" action must be a {key_type} value but it is not')
 
+    def percentage_too_low(self, value):
+        return self.failed(f'{value} is lower than 0 and hence not a valid percentage number')
+    
+    def percentage_too_high(self, value):
+        return self.failed(f'{value} is higher than 100 and hence not a valid percentage number')
+
     def player_empty(self, action):
         return self.failed(f'can not {action} because no songs are being played')
 
