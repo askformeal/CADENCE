@@ -5,6 +5,8 @@ packaging==26.2
 platformdirs==4.11.0
 pluggy==1.6.0
 Pygments==2.20.0
+pynput==1.8.2
 pytest==9.1.1
 python-vlc==3.0.21203
 readchar==4.2.2
+six==1.17.0

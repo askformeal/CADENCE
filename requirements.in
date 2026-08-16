@@ -2,3 +2,4 @@ platformdirs
 python-vlc
 readchar
 mutagen
+pynput

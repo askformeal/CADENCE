@@ -49,7 +49,9 @@ SOURCES = {
     SENTINELS.SOURCE_NOT_PROVIDED: '[source not provided]',
     'cli': 'teletypewriter interface (non-interactive)',
     'player': 'backend inter-process communication from player',
-    'alive': 'alive test'
+    'hotkey': 'Hotkey control service',
+    'alive': 'alive test',
+    'heartbeat': 'heartbeat test',
 }
 
 # 'key name': (type, is_required)
