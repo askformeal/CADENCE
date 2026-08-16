@@ -21,6 +21,9 @@ class Response:
     def player_empty(self, action):
         return self.response(f'can not {action} because no songs are being played')
 
+    def not_playing_paused(self, action):
+        return self.response(f'can not {action} because the player is neither playing nor paused')
+
     def vlc_error(self, action):
         return self.response(f'can not {action} because an internal VLC error occurred')
 

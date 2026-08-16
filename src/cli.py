@@ -9,14 +9,26 @@ from src.sentinels import SENTINELS
 from src.client import send_request
 from src.starter import start
 from src.constants import RESTART_NUM, RESTART_POLL_INTERVAL, ATTACHMENT_REQUIRED_ACTIONS
+from src.utils import format_ms
 
 def _path(val):
     return str(Path(val).absolute())
 
+def _percent(val):
+    try:
+        val = int(val)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f'{val} is not a valid percentage number')
+    else:
+        if val < 0 or val > 100:
+            raise argparse.ArgumentTypeError(f'percentage must not be lower than 0 or higher than 100')
+        else:
+            return val
+
 def main():
     is_reboot = False
 
-    parser = argparse.ArgumentParser(prog=f'CADENCE {version}')
+    parser = argparse.ArgumentParser(prog=f'CADENCE {version}', epilog='CADENCE stands for Command-line Audio Decoding Engine with Navigation and Continuous Execution')
 
     command_sub = parser.add_subparsers(dest='action', required=True)
 
@@ -35,6 +47,8 @@ def main():
     prev_parser = command_sub.add_parser('prev', help='Switch to the previous song in current playlist')
     next_parser = command_sub.add_parser('next', help='Switch to the next song in current playlist')
 
+    jump_parser = command_sub.add_parser('jump', help='Jump to progress of the current song')
+    jump_parser.add_argument('progress', type=_percent, help='Progress to jump to (percentage)')
     restart_parser = command_sub.add_parser('restart', help='Clear memorized progress and jump to the beginning of the current playing song')
 
     lib_parser = command_sub.add_parser('lib', help='Manage library')
@@ -182,27 +196,8 @@ def main():
                     # these actions will be expecting an attachment
                     if action == 'status':
                         status = attachment
-                        time = status['time']
-                        length = status['length']
-                        if time == -1:
-                            time = '--:--'
-                        elif time == 0:
-                            time = '00:00'
-                        else:
-                            time /= 1000
-                            minutes = int(time / 60)
-                            seconds = int(time % 60)
-                            time = f'{minutes:02d}:{seconds:02d}'
-
-                        if length == -1:
-                            length = '--:--'
-                        elif length == 0:
-                            length = '00:00'
-                        else:
-                            length /= 1000
-                            minutes = int(length / 60)
-                            seconds = int(length % 60)
-                            length = f'{minutes:02d}:{seconds:02d}'
+                        time = format_ms(status['time'])
+                        length = format_ms(status['length'])
 
                         print(f"Current path: {status['path']}\nIn library: {status['in_library']}\nPlayer status: {status['player_status']}\nPlayed time: {time}\nTotal length: {length}")
 

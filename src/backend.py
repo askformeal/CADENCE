@@ -19,6 +19,7 @@ from src.connection import recv_json, send_json
 from src.response import gen_response
 from src.database import Database
 from src.player import Player
+from src.utils import format_ms
 
 logger = logging.getLogger(__name__)
 
@@ -219,7 +220,7 @@ class Backend:
                     result = self.player.toggle()
                     response = {
                         SENTINELS.SUCCESS: gen_response.success('player toggled'),
-                        SENTINELS.INVALID_PLAYER_STATE: gen_response.response('can not toggle player because player is neither playing nor paused'),
+                        SENTINELS.INVALID_PLAYER_STATE: gen_response.not_playing_paused('toggle player'),
                         SENTINELS.VLC_ERROR: gen_response.vlc_error('toggle player'),
                         SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout('toggle player')
                     }[result]
@@ -279,6 +280,26 @@ class Backend:
                     self.current_song_num = self.player.number
                     if result is SENTINELS.SUCCESS:
                         response = gen_response.merge(response, self._restart())
+
+                elif action == 'jump':
+                    percent = request['progress']
+                    if percent < 0:
+                        response = gen_response.response(f'{percent} is lower than 0 and hence not a valid percentage number')
+                    elif percent > 100:
+                        response = gen_response.response(f'{percent} is higher than 100 and hence not a valid percentage number')
+                    else:
+                        length = self.player.get_progress()['length']
+                        if length == -1:
+                            response = gen_response.not_playing_paused('jump to progress')
+                        else:
+                            pos = length * (percent / 100)
+                            result = self.player.jump_pos(pos)
+                            response = {
+                                SENTINELS.SUCCESS: gen_response.success(f'jumped to {format_ms(pos)}'),
+                                SENTINELS.POS_TOO_LATE: gen_response.response(f'can not jumps to {format_ms(pos)} because it is later than the end of the current song'), 
+                                # ^^^ not very possible, but didn't feel really impossible ^^^
+                                SENTINELS.INVALID_PLAYER_STATE: gen_response.not_playing_paused('jump to progress')
+                            }[result]
 
                 elif action == 'restart':
                     response = self._restart()
@@ -520,7 +541,7 @@ class Backend:
             return {
                 SENTINELS.SUCCESS: gen_response.success(f'jumped to {pos/1000:.2f}s'),
                 SENTINELS.POS_TOO_LATE: gen_response.pos_too_late('jump to memorized position'),
-                SENTINELS.INVALID_PLAYER_STATE: gen_response.response(f'can not jump to memorized position because the player is neither playing nor paused')
+                SENTINELS.INVALID_PLAYER_STATE: gen_response.not_playing_paused('jump to memorized position')
             }[result]
         else:
             return gen_response.success(f'no memorized position')
@@ -530,7 +551,7 @@ class Backend:
         return {
             SENTINELS.SUCCESS: gen_response.success('jumped to beginning'),
             SENTINELS.POS_TOO_LATE: gen_response.pos_too_late('jump to beginning'), # is this even possible?
-            SENTINELS.INVALID_PLAYER_STATE: gen_response.response('can not jump to beginning because the state of player is neither playing nor paused')
+            SENTINELS.INVALID_PLAYER_STATE: gen_response.not_playing_paused('jump to beginning')
         }[result]
 
     def _missing_key(self, action, key):

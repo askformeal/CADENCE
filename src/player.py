@@ -101,6 +101,7 @@ class Player():
     def jump_pos(self, pos):
         if self.player.get_state() in (vlc.State.Playing, vlc.State.Paused):
             length = self.get_progress()['length']
+            pos = int(pos)
             if pos > length:
                 return SENTINELS.POS_TOO_LATE
             else:

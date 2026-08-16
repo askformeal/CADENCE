@@ -481,6 +481,47 @@ def test_restart_clears_memorized_pos(backend, audio_file):
     assert database.get_pos(audio_file) is SENTINELS.POS_NOT_FOUND
 
 
+def test_jump_missing_progress(backend):
+    response = _request(backend, 'jump')
+    assert response['code'] == 1
+    assert 'progress' in response['msg']
+
+
+def test_jump_before_open(backend):
+    response = _request(backend, 'jump', progress=50)
+    assert response['code'] == 1
+    assert 'neither playing nor paused' in response['msg']
+
+
+def test_jump_lower_than_zero(backend):
+    response = _request(backend, 'jump', progress=-1)
+    assert response['code'] == 1
+    assert 'lower than 0' in response['msg']
+
+
+def test_jump_higher_than_100(backend):
+    response = _request(backend, 'jump', progress=101)
+    assert response['code'] == 1
+    assert 'higher than 100' in response['msg']
+
+
+def test_jump_success(backend, audio_file):
+    _request(backend, 'open', song=audio_file)
+    response = _request(backend, 'jump', progress=50)
+    assert response['code'] == 0
+    assert 'jumped to' in response['msg']
+    status = _request(backend, 'status')
+    assert status['attachment']['time'] >= 1500
+
+
+def test_jump_ended_state_not_crash(backend, monkeypatch):
+    """Ended/Stopped state with a known length must return a proper error, not dispatch_failed."""
+    monkeypatch.setattr(backend.player, 'get_progress', lambda: {'length': 3000, 'time': 3000})
+    response = _request(backend, 'jump', progress=50)
+    assert response['code'] == 1
+    assert 'neither playing nor paused' in response['msg']
+
+
 def test_lib_meta_set_name(backend, audio_file):
     song_id, _ = backend.database.add_song(audio_file)
     response = _request(backend, 'lib.meta.set', song=audio_file, name='Foo')

@@ -47,6 +47,7 @@ SOURCES = {
 REQUIRED_KEYS = {
     'open': ['song'],
     'switch': ['number'],
+    'jump': ['progress'],
     'lib.add': ['path'],
     'lib.del': ['song'],
     'lib.scan': ['dir'],

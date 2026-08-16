@@ -10,11 +10,11 @@ Retrieves collections of mechanically-represented wave data from persistent stor
 
 Log file location (platform-dependent, managed by platformdirs):
 
-| Platform | Path |
-| --- | --- |
-| Windows | `%LOCALAPPDATA%\cadence\cadence\Logs\cadence.log` |
-| Linux | `$XDG_STATE_HOME/cadence/log/cadence.log`, defaults to `~/.local/state/cadence/log/cadence.log` |
-| macOS | `~/Library/Logs/cadence/cadence.log` |
+| Platform | Path                                                                                                |
+| -------- | --------------------------------------------------------------------------------------------------- |
+| Windows  | `%LOCALAPPDATA%\cadence\cadence\Logs\cadence.log`                                                 |
+| Linux    | `$XDG_STATE_HOME/cadence/log/cadence.log`, defaults to `~/.local/state/cadence/log/cadence.log` |
+| macOS    | `~/Library/Logs/cadence/cadence.log`                                                              |
 
 ## License
 
