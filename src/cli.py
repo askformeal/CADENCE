@@ -62,6 +62,7 @@ def main():
     lib_scan_parser.add_argument('--skip-alias', action='store_true', help='Disable automatic binding alias')
 
     lib_reset_parser = lib_sub.add_parser('reset', help='Reset library and delete all data')
+    lib_reset_parser.add_argument('-y', '--yes', action='store_true', help='Skip confirmation')
 
     meta_epilog = '\n'.join(('Supported metadata:',
                              '  name: The name of the song. Can not be used to reference the song like alias',
@@ -136,13 +137,13 @@ def main():
         if  args['action'] == 'reboot':
             args['action'] = 'exit'
             is_reboot = True
-        args['source'] = 'teletypewriter interface (non-interactive)'
+        args['source'] = 'cli'
         args['cwd'] = str(Path.cwd())
         
 
         if args['action'] == 'lib.reset':
             answer = ''
-            while answer not in ('y', 'n'):
+            while not args['yes'] and answer not in ('y', 'n'):
                 print('This action will reset the database and all data including songs and playlists will be permanently lost. Continue? [Y/N]', end='', flush=True)
                 answer = readchar.readkey().lower()
                 print()
@@ -167,7 +168,7 @@ def main():
                 print('Waiting for backend to fully exit...')
                 for i in range(RESTART_NUM):
                     sleep(RESTART_POLL_INTERVAL)
-                    if send_request(action='test_alive', source='teletypewriter interface (non-interactive)')['code'] == 2:
+                    if send_request(action='test_alive', source='cli')['code'] == 2:
                         break
                 else:
                     print('Timeout wait for backend to fully exit. Rebooting aborted')
@@ -214,11 +215,15 @@ def main():
                         _show_song_info(info, 'No songs in library', show_aliases=args['show_aliases'])
 
                     elif action == 'lib.scan':
-                        # TODO prettify output
-                        if args['preview']:
-                            print(attachment)
-                        else:
-                            print(attachment)
+                        if len(attachment) > 0:
+                            print('-'*50)
+                            if args['preview']:
+                                for path in attachment:
+                                    print(path)
+                            else:
+                                print('Failed to add the following file(s) to library:')
+                                for add_response in attachment:
+                                    print(f'  {add_response['msg']}')
 
                     elif action == 'lib.alias.list':
                         aliases = attachment

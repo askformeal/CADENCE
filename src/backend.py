@@ -13,7 +13,7 @@ from src import version
 from src.constants import LOG_PATH, FILE_LOG_LEVEL, CONSOLE_LOG_LEVEL, LOG_ENCODING
 from src.constants import HOST, PORT, BACKLOG, REQUIRED_KEYS, SERVER_TIMEOUT
 from src.constants import MAIN_LOOP_INTERVAL, POS_MEMORIZE_INTERVAL, METADATA, FILE_META
-from src.constants import AUDIO_EXTENSIONS
+from src.constants import AUDIO_EXTENSIONS, SOURCES
 from src.sentinels import SENTINELS
 from src.connection import recv_json, send_json
 from src.response import gen_response
@@ -89,7 +89,10 @@ class Backend:
             sys.exit(1)
 
     def buffer_request(self, request, connection=None):
-        logger.info(f'Received request: {request} from {request.get('source', '[source not provided]')}')
+        source_code = request.get('source', SENTINELS.SOURCE_NOT_PROVIDED)
+        source = SOURCES.get(source_code, f'unrecognized source \"{source_code}\"')
+        logger.info(f'Received request: {request} from {source}')
+
         self.dispatch_buffer.put((request, connection))
 
     def _flush_buffer(self):
@@ -349,7 +352,7 @@ class Backend:
                                     else:
                                         ids.append(song_id)
 
-                                response = gen_response.success(f'successfully added [{len(ids)}/{len(paths)}] file(s) to library')
+                                response = gen_response.success(f'successfully added [{len(ids)}/{len(paths)}] file(s) to library', attachment=failed_responses)
 
                                 if playlist is not None:
                                     playlist_id = self.database.get_playlist_via_name(playlist)

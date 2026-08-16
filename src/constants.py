@@ -2,6 +2,8 @@ from platformdirs import PlatformDirs
 from pathlib import Path
 import logging
 
+from src.sentinels import SENTINELS
+
 dirs = PlatformDirs('cadence', ensure_exists=True)
 
 LOG_DIR = Path(dirs.user_log_dir)
@@ -35,6 +37,12 @@ MAX_JSON_SIZE = 10 * 1024 * 1024
 PLAYER_TIMEOUT = 1
 PLAYER_POLL_INTERVAL = 0.05
 POS_MEMORIZE_INTERVAL = 5
+
+SOURCES = {
+    SENTINELS.SOURCE_NOT_PROVIDED: '[source not provided]',
+    'cli': 'teletypewriter interface (non-interactive)',
+    'player': 'backend inter-process communication from player'
+}
 
 REQUIRED_KEYS = {
     'open': ['song'],

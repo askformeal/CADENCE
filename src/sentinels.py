@@ -4,6 +4,15 @@ class Sentinel:
 
     def __repr__(self):
         return self.msg
+
+    def __eq__(self, value):
+        if not isinstance(value, Sentinel):
+            return NotImplemented
+        else:
+            return self is value
+
+    def __hash__(self):
+        return id(self)
     
 class Sentinels:
     def __init__(self):
@@ -31,5 +40,7 @@ class Sentinels:
         self.PLAYER_TIMEOUT = Sentinel('Timeout waiting for player action to complete')
         self.INVALID_PLAYER_STATE = Sentinel('This action can not be done under current player state')
         self.POS_TOO_LATE = Sentinel('Position is Later than Total Length')
+
+        self.SOURCE_NOT_PROVIDED = Sentinel('No source provided in request')
 
 SENTINELS = Sentinels()

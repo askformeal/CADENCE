@@ -242,11 +242,11 @@ def test_lib_list_with_show_aliases(backend, audio_file):
     _request(backend, 'lib.alias.bind', song=audio_file, alias='favorite')
     response = _request(backend, 'lib.list', show_aliases=True)
     assert response['code'] == 0
-    assert response['attachment'][0]['aliases'] == ['favorite']
+    assert response['attachment'][0]['aliases'] == ['test_audio', 'favorite']
 
 
 def test_lib_list_show_aliases_empty(backend, audio_file):
-    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.add', path=audio_file, skip_alias=True)
     response = _request(backend, 'lib.list', show_aliases=True)
     assert response['code'] == 0
     assert response['attachment'][0]['aliases'] == []
@@ -328,7 +328,7 @@ def test_lib_alias_list(backend, audio_file):
     _request(backend, 'lib.alias.bind', song=audio_file, alias='workout')
     response = _request(backend, 'lib.alias.list', song=audio_file)
     assert response['code'] == 0
-    assert response['attachment'] == ['favorite', 'workout']
+    assert response['attachment'] == ['test_audio', 'favorite', 'workout']
 
 
 def test_lib_alias_list_missing_song(backend):

@@ -20,7 +20,7 @@ class Player():
         manager.event_attach(vlc.EventType.MediaPlayerEndReached, self._on_end)
 
     def _on_end(self, event):
-        self.buffer({'action':'next', 'on_end': True, 'source': 'backend IPC from player'})
+        self.buffer({'action':'next', 'on_end': True, 'source': 'player'})
 
     def _wait_state(self, target_states):
         for i in range(int(PLAYER_TIMEOUT/PLAYER_POLL_INTERVAL)):
