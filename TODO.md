@@ -1,0 +1,11 @@
+- [X] Detailed README
+- [ ] Jump to a random song command
+- [ ] Loop mode
+- [ ] Release
+- [ ] Tray icon frontend
+- [ ] Seek command
+- [ ] Duration metadata
+- [ ] Configure system
+- [ ] TUI frontend
+- [ ] HTTP frontend
+- [ ] Auto play song depend on the user's mood
