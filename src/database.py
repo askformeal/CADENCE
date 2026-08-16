@@ -2,10 +2,12 @@ import logging
 import sqlite3
 import threading
 
+from src.log import setup_logger
+from src.constants import BACKEND_LOG_PATH
 from src.constants import DATABASE_PATH, METADATA
 from src.sentinels import SENTINELS
 
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__, BACKEND_LOG_PATH)
 
 class Database:
     def __init__(self):

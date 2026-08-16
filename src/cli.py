@@ -6,7 +6,7 @@ from time import sleep
 
 from src import version
 from src.sentinels import SENTINELS
-from src.client import send_request
+from src.client import send_request, test_alive
 from src.starter import start
 from src.constants import RESTART_NUM, RESTART_POLL_INTERVAL, ATTACHMENT_REQUIRED_ACTIONS
 from src.utils import format_ms
@@ -184,7 +184,7 @@ def main():
                 print('Waiting for backend to fully exit...')
                 for i in range(RESTART_NUM):
                     sleep(RESTART_POLL_INTERVAL)
-                    if send_request(action='test_alive', source='cli')['code'] == 2:
+                    if not test_alive():
                         break
                 else:
                     print('Timeout wait for backend to fully exit. Rebooting aborted')
@@ -258,6 +258,9 @@ def main():
 
         elif code == 3:
             print('[Failed]: received an unexpected default response code from CADENCE backend which is not to be used under any circumstances. Please report this BUG')
+
+        elif code == 4:
+            print('[Failed]: CADENCE backend is exiting')
 
         return code
 

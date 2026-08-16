@@ -21,6 +21,7 @@ Key: `code`
 - 1 Failed. Backend can not conduct this action. More information should be available in message.
 - 2 Failed to connect to CADENCE backend. This response was not sent by backend but by client.py
 - 3 Default code, should not be used under any circumstances. Receiving this code means response.py:Response._response was accidentally called outside the class.
+- 4 Exiting. Daemon-like frontend should exit immediately after receiving this code.
 
 ### Message
 
@@ -40,3 +41,11 @@ A list or dictionary of information requested by the frontend.
 Key: `failed`
 
 A list of messages of failed sub-actions during a batch action such as `lib scan`.
+
+## The REAL Response codes
+
+0 It's done. Probably
+1 You fucked up
+2 Nobody home
+3 I fucked up
+4 Fuck off, I'm dying

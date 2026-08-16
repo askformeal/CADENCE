@@ -1,10 +1,12 @@
 import logging
 import vlc
 from time import sleep
+from src.log import setup_logger
+from src.constants import BACKEND_LOG_PATH
 from src.constants import PLAYER_TIMEOUT, PLAYER_POLL_INTERVAL
 from src.sentinels import SENTINELS
 
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__, BACKEND_LOG_PATH)
 class Player():
     def __init__(self, buffer_func):
         self.buffer = buffer_func

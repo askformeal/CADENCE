@@ -1,10 +1,13 @@
-import logging
 import socket
+from time import sleep
 
+from src.log import setup_logger
+from src.constants import SOCKET_LOG_PATH
 from src.constants import HOST, PORT, TIMEOUT
+from src.constants import DEATH_CONFIRM_INTERVAL, DEATH_CONFIRM_NUMBER
 from src.connection import send_json, recv_json
 
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__, SOCKET_LOG_PATH)
 
 def send_request(**kwargs):
     try:
@@ -32,3 +35,18 @@ def send_request(**kwargs):
             'msg': f'A socket error occurred while trying to connect to CADENCE backend: {e}',
             'attachment': {}
         }
+
+def test_alive():
+    response = send_request(action='test_alive', source='alive')
+    return response['code'] != 2
+
+def test_heartbeat():
+    response = send_request(action='heartbeat', source='heartbeat') # for good measure
+    return response['code']
+
+def confirm_dead():
+    for i in range(DEATH_CONFIRM_NUMBER):
+        sleep(DEATH_CONFIRM_INTERVAL)
+        if test_heartbeat() == 0:
+            return False # Brain~~~~~~
+    return True

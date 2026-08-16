@@ -1,10 +1,11 @@
-import logging
 import json
 
+from src.log import setup_logger
+from src.constants import SOCKET_LOG_PATH
 from src.constants import HEADER_LEN, CONNECTION_ENCODING, MAX_JSON_SIZE
 from src.sentinels import SENTINELS
 
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__, SOCKET_LOG_PATH)
 
 def send_json(connection, data):
     try:

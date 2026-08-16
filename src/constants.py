@@ -7,7 +7,9 @@ from src.sentinels import SENTINELS
 dirs = PlatformDirs('cadence', ensure_exists=True)
 
 LOG_DIR = Path(dirs.user_log_dir)
-LOG_PATH = LOG_DIR / 'cadence.log'
+BACKEND_LOG_PATH = LOG_DIR / 'cadence.log'
+SOCKET_LOG_PATH = LOG_DIR / 'cadence-socket.log'
+HOTKEY_LOG_PATH = LOG_DIR / 'cadence-hotkey.log'
 
 DATABASE_DIR = Path(dirs.user_data_dir)
 DATABASE_PATH = DATABASE_DIR / 'cadence.db'
@@ -18,6 +20,11 @@ LOG_ENCODING = 'utf-8'
 
 MAIN_LOOP_INTERVAL = 0.05
 
+HEARTBEAT_POLL_INTERVAL = 3
+DEATH_CONFIRM_INTERVAL = 0.3
+DEATH_CONFIRM_NUMBER = 10
+PLAY_DEAD_TIME = 5
+
 HOST = '127.0.0.1'
 PORT = 17891
 TIMEOUT = 3
@@ -25,7 +32,7 @@ TIMEOUT = 3
 STARTER_CHECK_INTERVAL = 0.5
 STARTER_RETRY = 5
 
-RESTART_NUM = 3
+RESTART_NUM = 15
 RESTART_POLL_INTERVAL = 0.5
 
 SERVER_TIMEOUT = 0.5
@@ -41,7 +48,8 @@ POS_MEMORIZE_INTERVAL = 5
 SOURCES = {
     SENTINELS.SOURCE_NOT_PROVIDED: '[source not provided]',
     'cli': 'teletypewriter interface (non-interactive)',
-    'player': 'backend inter-process communication from player'
+    'player': 'backend inter-process communication from player',
+    'alive': 'alive test'
 }
 
 # 'key name': (type, is_required)

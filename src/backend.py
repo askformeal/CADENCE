@@ -10,9 +10,11 @@ import vlc
 import mutagen
 
 from src import version
-from src.constants import LOG_PATH, FILE_LOG_LEVEL, CONSOLE_LOG_LEVEL, LOG_ENCODING
+from src.log import setup_logger
+from src.constants import BACKEND_LOG_PATH
 from src.constants import HOST, PORT, BACKLOG, ACTION_KEYS, SERVER_TIMEOUT
 from src.constants import MAIN_LOOP_INTERVAL, POS_MEMORIZE_INTERVAL, METADATA, FILE_META
+from src.constants import PLAY_DEAD_TIME
 from src.constants import AUDIO_EXTENSIONS, SOURCES, READABLE_TYPE_NAMES
 from src.sentinels import SENTINELS
 from src.connection import recv_json, send_json
@@ -21,21 +23,13 @@ from src.database import Database
 from src.player import Player
 from src.utils import format_ms
 
-logger = logging.getLogger(__name__)
-
-class FlushFileHandler(logging.FileHandler):
-    def __init__(self, filename, mode = "a", encoding = None, delay = False, errors = None):
-        super().__init__(filename, mode, encoding, delay, errors)
-
-    def emit(self, record):
-        super().emit(record)
-        self.flush()
+logger = setup_logger(__name__, BACKEND_LOG_PATH)
 
 class Backend:
     def __init__(self):
         self.exit_code = 0
-        self._setup_logging()
         self.running = True
+        self.dying = False
         self.current_song_info = None
         self.current_song_num = None
         self.current_song_in_lib = False # Use this to prevent KeyError
@@ -48,20 +42,6 @@ class Backend:
         else:
             self.player = Player(self.buffer_request)
             logger.debug(f'{__name__} initiated')
-
-    def _setup_logging(self):
-        console = logging.StreamHandler()
-        console.setLevel(CONSOLE_LOG_LEVEL)
-        file = FlushFileHandler(LOG_PATH, encoding=LOG_ENCODING)
-
-        logging.basicConfig(
-        level=FILE_LOG_LEVEL,
-        format="%(asctime)s [%(levelname)s] [%(name)s] %(message)s",
-        handlers=[
-            file,
-            console
-            ])
-        logger.info(f'Logging to file: {LOG_PATH}')
 
     def run(self):
         if self.running:
@@ -89,12 +69,22 @@ class Backend:
         else:
             sys.exit(1)
 
-    def buffer_request(self, request, connection=None):
-        source_code = request.get('source', SENTINELS.SOURCE_NOT_PROVIDED)
-        source = SOURCES.get(source_code, f'unrecognized source \"{source_code}\"')
-        logger.info(f'Received request: {request} from {source}')
-
-        self.dispatch_buffer.put((request, connection))
+    def buffer_request(self, request, connection=None, address=None):            
+        if self.dying:
+            if connection is not None:
+                send_json(connection, gen_response.dying())
+        
+        elif request.get('action', None) == 'heartbeat':
+            if connection is not None:
+                send_json(connection, gen_response.success('alive'))
+        else:
+            source_code = request.get('source', SENTINELS.SOURCE_NOT_PROVIDED)
+            source = SOURCES.get(source_code, f'unrecognized source \"{source_code}\"')
+            msg = f'Received request: {request} from {source}'
+            if connection is not None:
+                msg += f' via socket connection from {address}'
+            logger.info(msg)
+            self.dispatch_buffer.put((request, connection))
 
     def _flush_buffer(self):
         while self.running:
@@ -724,13 +714,17 @@ class Backend:
                 except socket.timeout:
                     continue
 
-                logger.info(f'Received connection from {address}')
-                Thread(target=self._handle_connection, args=(connection,), daemon=True).start()
+                Thread(target=self._handle_connection, args=(connection,address), daemon=True).start()
 
-    def _handle_connection(self, connection):
+    def _handle_connection(self, connection, address):
         request = recv_json(connection)
         if request is not None:
-            self.buffer_request(request, connection)
+            self.buffer_request(request, connection, address)
+
+    def _play_dead(self): # give some time for daemon-like frontend to exit
+        logger.info('Playing dead...')
+        sleep(PLAY_DEAD_TIME)
+        self.running = False
 
     def exit(self, error=False, msg=None):
         if msg is not None:
@@ -740,7 +734,11 @@ class Backend:
             else:
                 logger.info(msg)
                 self.exit_code = 0
-        self.running = False
+        if error:
+            self.running = False
+        else:
+            self.dying = True
+            Thread(target=self._play_dead, daemon=True).start()
 
 if __name__ == '__main__':
     Backend().run()

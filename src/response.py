@@ -15,6 +15,9 @@ class Response:
     def failed(self, msg='', attachment=None, failed=None):
         return self._response(msg=msg, code=1, attachment=attachment, failed=failed)
 
+    def dying(self):
+        return self._response(msg='backend is dying', code=4)
+
     def invalid_path(self, song):
         return self.failed(f'\"{song}\" can not be parsed as a valid and existing path')
 
