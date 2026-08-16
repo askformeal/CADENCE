@@ -37,6 +37,7 @@ def main():
     status_parser = command_sub.add_parser('status', help='Show CADENCE status')
     open_parser = command_sub.add_parser('open', help='Open a song or playlist. Supports alias, file path and playlist name')
     open_parser.add_argument('song', type=str, help='Song to open')
+    play_all_parser = command_sub.add_parser('play-all', help='Play all songs in library')
     pause_parser = command_sub.add_parser('pause', help='Pause playing media')
     resume_parser = command_sub.add_parser('resume', help='Resume paused media')
     toggle_parser = command_sub.add_parser('toggle', help='Switch between playing and paused')

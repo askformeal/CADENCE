@@ -183,15 +183,16 @@ class Backend:
                                 response = gen_response.invalid_path(str(path))
 
                     if paths_to_load is not None:
-                        result = self.player.load_paths(paths_to_load)
-                        response = {
-                            SENTINELS.SUCCESS: gen_response.success(f'opened song/playlist \"{song}\"'),
-                            SENTINELS.PLAYER_LOAD_EMPTY: gen_response.failed('can not load empty list of songs'),
-                            SENTINELS.VLC_ERROR: gen_response.vlc_error('load path(s)'),
-                            SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout('load path(s)'),
-                        }[result]
-                        if result is SENTINELS.SUCCESS:
-                            response = gen_response.merge(response, self._jump_to_memorized_pos())
+                        response = self._load_paths(paths_to_load, song)
+
+                elif action == 'play-all':
+                    info = self.database.get_all_song_info()
+                    if len(info) > 0:
+                        self._set_current_song(info, True)
+                        paths = list(map(lambda x: x['path'], info))
+                        response = self._load_paths(paths, 'all-songs')
+                    else:
+                        response = gen_response.failed('can not open all songs because there is none in library')
 
                 elif action == 'stop':
                     result = self.player.stop()
@@ -560,6 +561,18 @@ class Backend:
             response =  gen_response.missing_key('all', 'action')
 
 
+        return response
+
+    def _load_paths(self, paths, song):
+        result = self.player.load_paths(paths)
+        response = {
+            SENTINELS.SUCCESS: gen_response.success(f'opened song/playlist \"{song}\"'),
+            SENTINELS.PLAYER_LOAD_EMPTY: gen_response.failed('can not load empty list of songs'),
+            SENTINELS.VLC_ERROR: gen_response.vlc_error('load path(s)'),
+            SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout('load path(s)'),
+        }[result]
+        if result is SENTINELS.SUCCESS:
+            response = gen_response.merge(response, self._jump_to_memorized_pos())
         return response
 
     def _toggle_shuffle(self):
