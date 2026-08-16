@@ -9,7 +9,7 @@ All communications between frontend and backend are sent in the format of JSON v
 - `action` The action to be conducted by the backend
 - `source` The frontend that send this request. See complete list at constants.py:SOURCES
 - `cwd` The current working directory of frontend. The missing of this key may cause error of a relative path is sent to back
-- Other keys depending on the action.
+- Other keys depending on the action. A list of keys for each action can be seen at constants.py:ACTION_KEYS
 
 ## Response
 

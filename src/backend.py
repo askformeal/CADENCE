@@ -11,9 +11,9 @@ import mutagen
 
 from src import version
 from src.constants import LOG_PATH, FILE_LOG_LEVEL, CONSOLE_LOG_LEVEL, LOG_ENCODING
-from src.constants import HOST, PORT, BACKLOG, REQUIRED_KEYS, SERVER_TIMEOUT
+from src.constants import HOST, PORT, BACKLOG, ACTION_KEYS, SERVER_TIMEOUT
 from src.constants import MAIN_LOOP_INTERVAL, POS_MEMORIZE_INTERVAL, METADATA, FILE_META
-from src.constants import AUDIO_EXTENSIONS, SOURCES
+from src.constants import AUDIO_EXTENSIONS, SOURCES, READABLE_TYPE_NAMES
 from src.sentinels import SENTINELS
 from src.connection import recv_json, send_json
 from src.response import gen_response
@@ -118,10 +118,16 @@ class Backend:
         action = request.get('action', None)
         cwd = request.get('cwd', None)
         if action is not None:
-            keys_required = REQUIRED_KEYS.get(action, [])
-            for key in keys_required:
-                if key not in request.keys():
-                    response = self._missing_key(action, key)
+            keys = ACTION_KEYS.get(action, {})
+            for key, info in keys.items():
+                key_type, is_required = info
+                value = request.get(key, SENTINELS.KEY_NOT_PROVIDED)
+                if value is SENTINELS.KEY_NOT_PROVIDED:
+                    if is_required:
+                        response = self._missing_key(action, key)
+                        break
+                elif not isinstance(value, key_type) and not (value is None and not is_required): # None type acceptable for non-required keys even if not stated in ACTION_KEYS
+                    response = gen_response.invalid_key_type(action, key, READABLE_TYPE_NAMES[key_type])
                     break
             else:
 

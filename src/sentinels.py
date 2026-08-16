@@ -19,6 +19,7 @@ class Sentinels:
         self.SUCCESS = Sentinel('Action Successfully Done') # when you don't have anything to return on success but something to return on failure
         self.LOST = Sentinel('Connection Lost')
         self.EXIT_FLUSHING = Sentinel('Exit Flushing')
+        self.KEY_NOT_PROVIDED = Sentinel('Key not Provided in Request')
         self.SONG_NOT_FOUND = Sentinel('Song Not Found')
         self.PLAYLIST_NOT_FOUND = Sentinel('Playlist Not Found')
         self.PLAYLIST_SONG_NOT_FOUND = Sentinel('Playlist Song Not Found')

@@ -592,6 +592,17 @@ def test_scan_with_playlist(backend, tmp_path):
     assert len(database.get_playlist_songs(playlist_id)) == 1
 
 
+def test_invalid_key_type(backend):
+    response = _request(backend, 'switch', number='abc')
+    assert response['code'] == 1
+    assert 'must be a integer' in response['msg']
+
+
+def test_optional_key_none_accepted(backend, audio_file):
+    response = _request(backend, 'lib.add', path=audio_file, alias=None)
+    assert response['code'] == 0
+
+
 def test_lib_meta_set_name(backend, audio_file):
     song_id, _ = backend.database.add_song(audio_file)
     response = _request(backend, 'lib.meta.set', song=audio_file, name='Foo')

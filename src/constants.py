@@ -44,21 +44,76 @@ SOURCES = {
     'player': 'backend inter-process communication from player'
 }
 
-REQUIRED_KEYS = {
-    'open': ['song'],
-    'switch': ['number'],
-    'jump': ['progress'],
-    'lib.add': ['path'],
-    'lib.del': ['song'],
-    'lib.scan': ['dir'],
-    'lib.meta.set': ['song'],
-    'lib.alias.list': ['song'],
-    'lib.alias.bind': ['song', 'alias'],
-    'lib.alias.unbind': ['alias'],
-    'lib.playlist.create': ['name'],
-    'lib.playlist.add': ['song', 'playlist'],
-    'lib.playlist.kick': ['song', 'playlist'],
-    'lib.playlist.del': ['playlist'],
+# 'key name': (type, is_required)
+ACTION_KEYS = {
+    'open': {
+        'song': (str, True)
+    },
+    'switch': {
+        'number': (int, True)
+    },
+    'jump': {
+        'progress': (int, True)
+    },
+    'lib.list': {
+        'show_aliases': (bool, False)
+    },
+    'lib.add': {
+        'path': (str, True),
+        'alias': (str, False),
+        'skip_meta': (bool, False),
+        'skip_alias': (bool, False)
+    },
+    'lib.del': {
+        'song': (str, True)
+    },
+    'lib.scan': {
+        'dir': (str, True),
+        'playlist': (str, False),
+        'recurse': (bool, False),
+        'preview': (bool, False),
+        'skip_meta': (bool, False),
+        'skip_alias': (bool, False)
+    },
+    'lib.meta.set': {
+        'song': (str, True),
+        'name': (str, False),
+        'artist': (str, False),
+        'album': (str, False)
+    },
+    'lib.alias.list': {
+        'song': (str, True)
+    },
+    'lib.alias.bind': {
+        'song': (str, True),
+        'alias': (str, True)
+    },
+    'lib.alias.unbind': {
+        'alias': (str, True)
+    },
+    'lib.playlist.list': {
+        'playlist': (str, False)
+    },
+    'lib.playlist.create': {
+        'name': (str, True)
+    },
+    'lib.playlist.add': {
+        'song': (str, True),
+        'playlist': (str, True)
+    },
+    'lib.playlist.kick': {
+        'song': (str, True),
+        'playlist': (str, True),
+    },
+    'lib.playlist.del': {
+        'playlist': (str, True)
+    },
+}
+
+READABLE_TYPE_NAMES = {
+    str: 'string',
+    int: 'integer',
+    bool: 'boolean'
 }
 
 ATTACHMENT_REQUIRED_ACTIONS = [

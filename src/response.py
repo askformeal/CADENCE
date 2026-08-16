@@ -27,6 +27,9 @@ class Response:
     def missing_key(self, action, key):
         return self.failed(f'{action} action(s) requires key \"{key}\" but it is not received')
 
+    def invalid_key_type(self, action, key, key_type):
+        return self.failed(f'the value of key \"{key}\" of \"{action}\" action must be a {key_type} value but it is not')
+
     def player_empty(self, action):
         return self.failed(f'can not {action} because no songs are being played')
 

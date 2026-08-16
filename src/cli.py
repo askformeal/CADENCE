@@ -164,6 +164,7 @@ def main():
             if answer == 'n':
                 print('Cancelled')
                 return
+            del args['yes']
 
         response = send_request(**args)
 
