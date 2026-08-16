@@ -276,6 +276,7 @@ def main():
         elif code == 4:
             print('[Failed]: CADENCE backend is exiting')
 
+        print()
         return code
 
 def _start_backend():

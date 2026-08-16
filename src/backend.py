@@ -185,7 +185,7 @@ class Backend:
                     if paths_to_load is not None:
                         result = self.player.load_paths(paths_to_load)
                         response = {
-                            SENTINELS.SUCCESS: gen_response.success(f'opened song \"{song}\"'),
+                            SENTINELS.SUCCESS: gen_response.success(f'opened song/playlist \"{song}\"'),
                             SENTINELS.PLAYER_LOAD_EMPTY: gen_response.failed('can not load empty list of songs'),
                             SENTINELS.VLC_ERROR: gen_response.vlc_error('load path(s)'),
                             SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout('load path(s)'),
