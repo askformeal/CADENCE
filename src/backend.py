@@ -13,6 +13,7 @@ import mutagen
 from src import version
 from src.log import setup_logger
 from src.constants import BACKEND_LOG_PATH
+from src.constants import DATABASE_PATH, DATABASE_DEV_PATH
 from src.constants import HOST, PORT, BACKLOG, ACTION_KEYS, SERVER_TIMEOUT
 from src.constants import MAIN_LOOP_INTERVAL, POS_MEMORIZE_INTERVAL, METADATA, FILE_META
 from src.constants import PLAY_DEAD_TIME
@@ -28,6 +29,14 @@ logger = setup_logger(__name__, BACKEND_LOG_PATH)
 
 class Backend:
     def __init__(self):
+        self.dev = {'0': False, '1': True}.get(os.environ.get('CADENCE_DEV', '0'), False)
+
+        if self.dev:
+            logger.info('DEVELOPMENT MODE ON')
+            database_path = DATABASE_DEV_PATH
+        else:
+            database_path = DATABASE_PATH
+
         self.exit_code = 0
         self.running = True
         self.dying = False
@@ -42,7 +51,7 @@ class Backend:
         self.current_song_in_lib = False # Use this to prevent KeyError
         self.dispatch_buffer = queue.Queue() # single way
         try:
-            self.database = Database()
+            self.database = Database(database_path)
         except RuntimeError as e:
             logger.critical(e)
             self.running = False
@@ -104,6 +113,9 @@ class Backend:
                 logger.exception(f'Failed to dispatch request:')
                 response = gen_response.failed(f'failed to dispatch request: \"{e}\"')
 
+            if self.dev:
+                response['msg'] = ' '.join(('[DEV]', response.get('msg','')))
+            
             if connection is not None:
                 logger.info(f'Send response: {response}')
                 send_json(connection, response)
@@ -154,6 +166,7 @@ class Backend:
                     progress = self.player.get_progress()
                     status['length'] = progress['length']
                     status['time'] = progress['time']
+                    status['dev'] = self.dev
                     response = gen_response.success('status obtained', status)
                     
                 elif action == 'open':

@@ -13,6 +13,7 @@ HOTKEY_LOG_PATH = LOG_DIR / 'cadence-hotkey.log'
 
 DATABASE_DIR = Path(dirs.user_data_dir)
 DATABASE_PATH = DATABASE_DIR / 'cadence.db'
+DATABASE_DEV_PATH = DATABASE_DIR / 'cadence-dev.db'
 
 FILE_LOG_LEVEL = logging.DEBUG
 CONSOLE_LOG_LEVEL = logging.INFO

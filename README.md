@@ -15,6 +15,7 @@ Retrieves collections of mechanically-represented wave data from persistent stor
 - Shuffle mode
 - Loop mode — replay the current song on end
 - Random song jump (`dice`)
+- Dev mode — isolated development database
 - Volume and mute control
 - Hotkey frontend (pynput)
 - Socket-based backend/frontend architecture (see [docs/protocol.md](docs/protocol.md))
@@ -37,12 +38,13 @@ python -m src
 
 ### Lifecycle
 
-| Command             | Description                          |
-| ------------------- | ------------------------------------ |
-| `cadence start`     | Start the CADENCE backend (daemon)   |
-| `cadence reboot`    | Restart the backend                  |
-| `cadence exit`      | Stop the backend                     |
-| `cadence status`    | Show current playback status         |
+| Command                   | Description                          |
+| ------------------------- | ------------------------------------ |
+| `cadence start`           | Start the CADENCE backend (daemon)   |
+| `cadence start --dev`     | Start backend with dev database      |
+| `cadence reboot`          | Restart the backend                  |
+| `cadence exit`            | Stop the backend                     |
+| `cadence status`          | Show current playback status         |
 
 ### Playback
 
@@ -90,6 +92,7 @@ python -m src
 ## Data
 
 - Database: `%LOCALAPPDATA%\cadence\cadence\cadence.db` (Windows) — managed by platformdirs
+- Dev database: `%LOCALAPPDATA%\cadence\cadence\cadence-dev.db` (Windows) — used when the backend is started with `--dev`
 - Audio formats: FLAC, MP3, WAV, and other common formats (see `AUDIO_EXTENSIONS` in `src/constants.py`)
 
 ## Logs

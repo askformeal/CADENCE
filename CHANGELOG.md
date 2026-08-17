@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [Unreleased]
+
+### Added
+
+- Dev mode — `cadence start --dev` uses a separate development database (`cadence-dev.db`)
+
 ## [0.5.0] - 2026-08-17
 
 ### Added

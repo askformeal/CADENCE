@@ -16,12 +16,11 @@ def audio_file(tmp_path):
 
 
 @pytest.fixture
-def database(tmp_path, monkeypatch):
+def database(tmp_path):
     """Database isolated in a temp file, never touching the real user DB."""
-    monkeypatch.setattr('src.database.DATABASE_PATH', tmp_path / 'test.db')
     from src.database import Database
 
-    db = Database()
+    db = Database(tmp_path / 'test.db')
     yield db
     db.on_exit()
 
@@ -29,7 +28,7 @@ def database(tmp_path, monkeypatch):
 @pytest.fixture
 def backend(tmp_path, monkeypatch):
     """Full backend with temp DB; player state must be cleaned up after."""
-    monkeypatch.setattr('src.database.DATABASE_PATH', tmp_path / 'test.db')
+    monkeypatch.setattr('src.backend.DATABASE_PATH', tmp_path / 'test.db')
     from src.backend import Backend
 
     b = Backend()

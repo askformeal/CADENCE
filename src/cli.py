@@ -33,6 +33,7 @@ def main():
     command_sub = parser.add_subparsers(dest='action', required=True)
 
     start_parser = command_sub.add_parser('start', help='Start CADENCE backend')
+    start_parser.add_argument('--dev', action='store_true', help='Start in development mode')
     reboot_parser = command_sub.add_parser('reboot', help='Reboot CADENCE backend. Will fail if backend is not running')
     status_parser = command_sub.add_parser('status', help='Show CADENCE status')
     open_parser = command_sub.add_parser('open', help='Open a song or playlist. Supports alias, file path and playlist name')
@@ -138,7 +139,7 @@ def main():
 
 
     if args['action'] == 'start':
-        _start_backend()
+        _start_backend(CADENCE_DEV=int(args['dev']))
 
     else:
         if args.get('meta_action', None) is not None:
@@ -226,6 +227,8 @@ def main():
                                          f'Volume: {status['volume']}%',
                                          f'Mute: {mute}'
                                          )))
+                        if status['dev']:
+                            print('\nDEVELOPMENT MODE ON')
 
                     elif action == 'list':
                         info = attachment
@@ -282,8 +285,8 @@ def main():
         print()
         return code
 
-def _start_backend():
-    result = start()
+def _start_backend(**kwargs):
+    result = start(**kwargs)
     if result is SENTINELS.BACKEND_STARTED:
         print(f'CADENCE backend is now up and running')
     elif result is SENTINELS.BACKEND_ALREADY_RUNNING:

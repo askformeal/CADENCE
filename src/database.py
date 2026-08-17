@@ -3,17 +3,17 @@ import threading
 
 from src.log import setup_logger
 from src.constants import BACKEND_LOG_PATH
-from src.constants import DATABASE_PATH, METADATA
+from src.constants import METADATA
 from src.sentinels import SENTINELS
 
 logger = setup_logger(__name__, BACKEND_LOG_PATH)
 
 class Database:
-    def __init__(self):
+    def __init__(self, database_path):
         self._lock = threading.Lock()
 
         try:
-            self.connection = sqlite3.connect(DATABASE_PATH, check_same_thread=False, isolation_level=None)
+            self.connection = sqlite3.connect(database_path, check_same_thread=False, isolation_level=None)
         except sqlite3.Error as e:
             raise RuntimeError(f'Failed to connect to database: {e}') from e
         else:
