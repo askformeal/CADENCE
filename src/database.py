@@ -325,13 +325,14 @@ class Database:
 
     # Position
 
-    def pos_memorized(self, path):
+    def pos_memorized(self, path, log=True):
         row = self.execute('SELECT 1 FROM positions WHERE path = ?', path).fetchone()
         if row is not None:
             result = True
         else:
             result = False
-        logger.debug(f'Check if position of {path} is memorized, result {result}')
+        if log:
+            logger.debug(f'Check if position of {path} is memorized, result {result}')
         return result
 
     def get_pos(self, path):
@@ -343,13 +344,15 @@ class Database:
             logger.debug(f'Failed to get position of {path} because it is not memorized')
             return SENTINELS.POS_NOT_FOUND
 
-    def set_pos(self, path, pos):
-        if self.pos_memorized(path):
+    def set_pos(self, path, pos, log=True):
+        if self.pos_memorized(path, log=log):
             self.execute('UPDATE positions SET position = ? WHERE path = ?', pos, path)
-            logger.debug(f'Updated memorized position of {path} to {pos}ms')
+            msg = f'Updated memorized position of {path} to {pos}ms'
         else:
+            msg = f'Create memorized position of {path} as {pos}ms'
             self.execute('INSERT INTO positions(path, position) VALUES (?, ?)', path, pos)
-            logger.debug(f'Create memorized position of {path} as {pos}ms')
+        if log:
+            logger.debug(msg)
         self.connection.commit()
         return SENTINELS.SUCCESS
 

@@ -774,7 +774,7 @@ class Backend:
             if self.current_song_info is not None and self.player.player.get_state() == vlc.State.Playing:
                 path = self.current_song_info[self.current_song_num]['path']
                 pos = self.player.get_progress()['time']
-                self.database.set_pos(path, pos)
+                self.database.set_pos(path, pos, log=False)
             sleep(POS_MEMORIZE_INTERVAL)
 
     def _del_current_pos(self):
