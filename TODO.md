@@ -1,7 +1,7 @@
 - [X] Detailed README
 - [X] Jump to a random song command
 - [X] Loop mode
-- [ ] Release
+- [X] Release
 - [ ] Tray icon frontend
 - [ ] Seek command
 - [ ] Duration metadata
