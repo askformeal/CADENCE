@@ -241,6 +241,24 @@ class Backend:
                     mode = {True: 'on', False: 'off'}[self.shuffle]
                     response = gen_response.success(f"Shuffle mode turned {mode}")
 
+                elif action == 'dice':
+                    if self.current_song_info is None:
+                        response = gen_response.player_empty('switch to a random song in current playlist')
+                    elif len(self.current_song_info) == 1:
+                        response = gen_response.failed('can not switch to a random song because there is only one song in current playlist ')
+                    else:
+                        pool = list(range(len(self.current_song_info)))
+                        pool.remove(self.current_song_num)
+                        num = random.choice(pool)
+                        result = self.player.load_number(num)
+                        response = {
+                            SENTINELS.SUCCESS: gen_response.success(f'diced to the {num+1}nd song in current playlist'),
+                            SENTINELS.PLAYER_EMPTY: gen_response.player_empty(f'switch to the {num+1}nd song in current playlist'),
+                            SENTINELS.VLC_ERROR: gen_response.vlc_error(f'switch to the {num+1}nd song in current playlist'),
+                            SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout(f'switch to the {num+1}nd song in current playlist'),
+                        }[result]
+                        self.current_song_num = self.player.number
+
                 elif action == 'switch':
                     num = request['number']
                     max_num = len(self.player.medias)

@@ -161,6 +161,48 @@ def test_switch_negative_too_large_goes_to_first(backend, audio_file, tmp_path):
     assert status['attachment']['path'] == first
 
 
+def test_dice_before_open(backend):
+    response = _request(backend, 'dice')
+    assert response['code'] == 1
+    assert 'no songs are being played' in response['msg']
+
+
+def test_dice_single_song(backend, audio_file):
+    _request(backend, 'open', song=audio_file)
+    response = _request(backend, 'dice')
+    assert response['code'] == 1
+    assert 'only one song' in response['msg']
+
+
+def _open_three_song_playlist(backend, audio_file, tmp_path):
+    """Open a playlist with three songs sorted as [a, b, c] by basename."""
+    first = audio_file
+    second = str(tmp_path / 'test_b.wav')
+    third = str(tmp_path / 'test_c.wav')
+    _make_wav(second)
+    _make_wav(third)
+    _open_playlist_with_songs(backend, [first, second, third], 'trio')
+    return first, second, third
+
+
+def test_dice_skips_current_song(backend, audio_file, tmp_path, monkeypatch):
+    _, second, _ = _open_three_song_playlist(backend, audio_file, tmp_path)
+    assert backend.current_song_num == 0
+
+    pool_seen = []
+    def fake_choice(seq):
+        pool_seen.extend(seq)
+        return seq[0]
+    monkeypatch.setattr('src.backend.random.choice', fake_choice)
+
+    response = _request(backend, 'dice')
+    assert response['code'] == 0
+    assert pool_seen == [1, 2]  # current song (0) excluded from the pool
+    assert backend.current_song_num == 1
+    status = _request(backend, 'status')
+    assert status['attachment']['path'] == second
+
+
 def test_open_raw_path(backend, audio_file):
     response = _request(backend, 'open', song=audio_file)
     assert response['code'] == 0

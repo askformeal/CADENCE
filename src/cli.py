@@ -44,6 +44,7 @@ def main():
     stop_parser = command_sub.add_parser('stop', help='Stop playing')
     list_parser = command_sub.add_parser('list', help='Show current playlist')
     shuffle_parser = command_sub.add_parser('shuffle', help='Toggle shuffle mode')
+    dice_parser = command_sub.add_parser('dice', help='Switch to a random song in current playlist')
     switch_parser = command_sub.add_parser('switch', help='Switch to a song in current playlist via number')
     switch_parser.add_argument('number', type=int, help='Number in playlist of song to switch. Negative number means count from the last')
     prev_parser = command_sub.add_parser('prev', help='Switch to the previous song in current playlist')
