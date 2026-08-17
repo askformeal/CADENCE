@@ -13,6 +13,8 @@ Retrieves collections of mechanically-represented wave data from persistent stor
 - Auto metadata extraction and alias binding from file tags
 - Memorized playback position — resume where you left off
 - Shuffle mode
+- Loop mode — replay the current song on end
+- Random song jump (`dice`)
 - Volume and mute control
 - Hotkey frontend (pynput)
 - Socket-based backend/frontend architecture (see [docs/protocol.md](docs/protocol.md))
@@ -55,7 +57,9 @@ python -m src
 | `cadence prev`         | Switch to the previous song in current playlist        |
 | `cadence next`         | Switch to the next song in current playlist            |
 | `cadence list`         | Show current playlist                                  |
+| `cadence dice`         | Switch to a random song in current playlist            |
 | `cadence shuffle`      | Toggle shuffle mode                                    |
+| `cadence loop`         | Toggle loop mode                                       |
 | `cadence switch <num>` | Switch to a song in current playlist via number        |
 | `cadence jump <pct>`   | Jump to progress of the current song (percentage)      |
 | `cadence restart`      | Clear memorized progress and restart the current song  |

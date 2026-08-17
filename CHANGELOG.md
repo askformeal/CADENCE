@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [Unreleased]
+
+### Added
+
+- `dice` command — switch to a random song in the current playlist
+- `loop` command — toggle loop mode (replay the current song on end)
+
 ## [0.1.0] - 2026-07-31
 
 ### Added

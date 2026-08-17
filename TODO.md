@@ -1,6 +1,6 @@
 - [X] Detailed README
 - [X] Jump to a random song command
-- [ ] Loop mode
+- [X] Loop mode
 - [ ] Release
 - [ ] Tray icon frontend
 - [ ] Seek command
