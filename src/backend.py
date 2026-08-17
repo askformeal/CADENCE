@@ -32,6 +32,8 @@ class Backend:
         self.running = True
         self.dying = False
 
+        self.loop = False
+
         self.shuffle = False
         self.shuffle_order = []
 
@@ -239,7 +241,12 @@ class Backend:
                 elif action == 'shuffle':
                     self._toggle_shuffle()
                     mode = {True: 'on', False: 'off'}[self.shuffle]
-                    response = gen_response.success(f"Shuffle mode turned {mode}")
+                    response = gen_response.success(f"shuffle mode turned {mode}")
+
+                elif action == 'loop':
+                    self.loop = not self.loop
+                    mode = {True: 'on', False: 'off'}[self.loop]
+                    response = gen_response.success(f'loop mode turned {mode}')
 
                 elif action == 'dice':
                     if self.current_song_info is None:
@@ -298,21 +305,31 @@ class Backend:
                         response = gen_response.merge(response, self._restart())
 
                 elif action == 'next':
-                    if request.get('on_end', False):
+                    on_end = request.get('on_end', False)
+                    if on_end:
                         self._del_current_pos()
-                    if self.shuffle:
-                        result = self.player.load_number(self._switch_shuffle(1))
+
+                    if on_end and self.loop:
+                        result = self.player.load_number(self.player.number)
+                        response = {
+                            SENTINELS.SUCCESS: gen_response.success('replayed current song'),
+                            SENTINELS.VLC_ERROR: gen_response.vlc_error('replayed current song'),
+                            SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout('replayed current song'),
+                        }[result]
                     else:
-                        result = self.player.switch_next()
-                    response = {
-                        SENTINELS.SUCCESS: gen_response.success('switched to next song'),
-                        SENTINELS.PLAYER_EMPTY: gen_response.player_empty('switch to next song'),
-                        SENTINELS.VLC_ERROR: gen_response.vlc_error('switch to next song'),
-                        SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout('switch to next song')
-                    }[result]
-                    self.current_song_num = self.player.number
-                    if result is SENTINELS.SUCCESS:
-                        response = gen_response.merge(response, self._restart())
+                        if self.shuffle:
+                            result = self.player.load_number(self._switch_shuffle(1))
+                        else:
+                            result = self.player.switch_next()
+                        response = {
+                            SENTINELS.SUCCESS: gen_response.success('switched to next song'),
+                            SENTINELS.PLAYER_EMPTY: gen_response.player_empty('switch to next song'),
+                            SENTINELS.VLC_ERROR: gen_response.vlc_error('switch to next song'),
+                            SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout('switch to next song')
+                        }[result]
+                        self.current_song_num = self.player.number
+                        if result is SENTINELS.SUCCESS:
+                            response = gen_response.merge(response, self._restart())
 
                 elif action == 'jump':
                     percent = request['progress']

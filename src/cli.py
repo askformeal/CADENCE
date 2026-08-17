@@ -43,6 +43,7 @@ def main():
     toggle_parser = command_sub.add_parser('toggle', help='Switch between playing and paused')
     stop_parser = command_sub.add_parser('stop', help='Stop playing')
     list_parser = command_sub.add_parser('list', help='Show current playlist')
+    loop_parser = command_sub.add_parser('loop', help='Toggle loop mode')
     shuffle_parser = command_sub.add_parser('shuffle', help='Toggle shuffle mode')
     dice_parser = command_sub.add_parser('dice', help='Switch to a random song in current playlist')
     switch_parser = command_sub.add_parser('switch', help='Switch to a song in current playlist via number')

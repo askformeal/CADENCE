@@ -1,5 +1,5 @@
 - [X] Detailed README
-- [ ] Jump to a random song command
+- [X] Jump to a random song command
 - [ ] Loop mode
 - [ ] Release
 - [ ] Tray icon frontend

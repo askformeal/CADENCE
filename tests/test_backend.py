@@ -692,6 +692,50 @@ def test_shuffle_order_rebuilt_on_open(backend, audio_file, tmp_path, monkeypatc
     assert len(backend.shuffle_order) == 2
 
 
+def test_loop_toggle_on_off(backend):
+    response = _request(backend, 'loop')
+    assert response['code'] == 0
+    assert 'on' in response['msg']
+    assert backend.loop is True
+
+    response = _request(backend, 'loop')
+    assert response['code'] == 0
+    assert 'off' in response['msg']
+    assert backend.loop is False
+
+
+def test_loop_next_on_end_replays_current(backend, audio_file, tmp_path):
+    first, _ = _open_two_song_playlist(backend, audio_file, tmp_path)
+    backend.loop = True
+
+    response = _request(backend, 'next', on_end=True)
+    assert response['code'] == 0
+    assert 'replayed' in response['msg']
+    assert backend.current_song_num == 0  # stays on the same song
+    status = _request(backend, 'status')
+    assert status['attachment']['path'] == first
+
+
+def test_loop_next_on_end_without_loop_advances(backend, audio_file, tmp_path):
+    _, second = _open_two_song_playlist(backend, audio_file, tmp_path)
+    response = _request(backend, 'next', on_end=True)
+    assert response['code'] == 0
+    assert backend.current_song_num == 1
+    status = _request(backend, 'status')
+    assert status['attachment']['path'] == second
+
+
+def test_loop_manual_next_still_advances(backend, audio_file, tmp_path):
+    _, second = _open_two_song_playlist(backend, audio_file, tmp_path)
+    backend.loop = True
+
+    response = _request(backend, 'next')
+    assert response['code'] == 0
+    assert backend.current_song_num == 1
+    status = _request(backend, 'status')
+    assert status['attachment']['path'] == second
+
+
 def test_invalid_key_type(backend):
     response = _request(backend, 'switch', number='abc')
     assert response['code'] == 1
