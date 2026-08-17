@@ -214,20 +214,43 @@ def main():
                 if attachment is not None:
                     # these actions will be expecting an attachment
                     if action == 'status':
-                        status = attachment
-                        time = format_ms(status['time'])
-                        length = format_ms(status['length'])
-                        mute = {True: 'Yes', False: 'No'}[status['mute']]
+                        attachment
 
-                        print('\n'.join((f'Current path: {status['path']}',
-                                         f'In library: {status['in_library']}',
-                                         f'Player status: {status['player_status']}',
-                                         f'Played time: {time}',
-                                         f'Total length: {length}',
-                                         f'Volume: {status['volume']}%',
-                                         f'Mute: {mute}'
-                                         )))
-                        if status['dev']:
+                        name = attachment.get('name', '?')
+                        artist = attachment.get('artist', '?')
+                        album = attachment.get('album', '?')
+                        in_lib = {True: 'Yes', False: 'No', None: '?'}[attachment.get('in_library', None)]
+                        path = attachment.get('path', '?')
+                        player_status = attachment.get('player_status', '?')
+
+                        raw_time = attachment.get('time', -1)
+                        raw_length = attachment.get('length', -1)
+
+                        volume = attachment.get('volume', '?')
+                        mute = {True: 'Yes', False: 'No', None: '?'}[attachment.get('mute', None)]
+
+                        time = format_ms(raw_time)
+                        length = format_ms(raw_length)
+
+                        dev = attachment.get('dev', False)
+
+                        if raw_length != -1:
+                            percentage = f'{raw_time / raw_length * 100:.0f}'
+                        else:
+                            percentage = '--'
+
+
+                        print('-'*50)
+                        print(f'\n{name} - {artist}')
+                        print(f'[{time} / {length}] {percentage}%\n')
+                        print(f'In library: {in_lib}')
+                        print(f'Album: {album}')
+                        print(f'Path: {path}\n')
+                        print(f'Player status: {player_status}')
+                        print(f'Volume: {volume}%')
+                        print(f'Mute: {mute}')
+
+                        if dev:
                             print('\nDEVELOPMENT MODE ON')
 
                     elif action == 'list':

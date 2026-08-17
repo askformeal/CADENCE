@@ -2,6 +2,7 @@
 - [X] Jump to a random song command
 - [X] Loop mode
 - [X] Release
+- [ ] Start and continue last song
 - [ ] Tray icon frontend
 - [ ] Seek command
 - [ ] Duration metadata

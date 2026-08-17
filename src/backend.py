@@ -153,11 +153,15 @@ class Backend:
                     }.get(self.player.player.get_state(), 'unknown')
 
                     if self.current_song_info is None:
-                        path = 'none'
+                        info = {}
                     else:
-                        path = self.current_song_info[self.current_song_num]['path']
+                        info = self.current_song_info[self.current_song_num]
+
                     status = {
-                        'path': path,
+                        'path': info.get('path', 'path unknown'),
+                        'name': info.get('name', 'name unknown'),
+                        'artist': info.get('artist', 'artist unknown'),
+                        'album': info.get('album', 'album unknown'),
                         'in_library': self.current_song_in_lib,
                         'player_status': player_status,
                         'volume': self.player.volume,
