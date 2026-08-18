@@ -75,6 +75,9 @@ ACTION_KEYS = {
     'lib.list': {
         'show_aliases': (bool, False)
     },
+    'lib.search': {
+        'keyword': (str, True)
+    },
     'lib.add': {
         'path': (str, True),
         'alias': (str, False),
@@ -136,6 +139,7 @@ READABLE_TYPE_NAMES = {
 ATTACHMENT_REQUIRED_ACTIONS = [
     'status',
     'list',
+    'lib.search',
     'lib.list',
     'lib.scan',
     'lib.alias.list',
@@ -143,6 +147,8 @@ ATTACHMENT_REQUIRED_ACTIONS = [
 ]
 
 METADATA = ['name', 'artist', 'album', 'duration']
+SEARCH_META = ['name', 'artist', 'album'] # metadata that can be used for searching
+
 FILE_META = {
     'title': 'name',
     'artist': 'artist',

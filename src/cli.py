@@ -57,7 +57,7 @@ def main():
     seek_parser.add_argument('time', help='Time to jump to (HH:MM:SS)')
     jump_parser = command_sub.add_parser('jump', help='Jump to progress of the current song')
     jump_parser.add_argument('progress', type=_percent, help='Progress to jump to (percentage)')
-    restart_parser = command_sub.add_parser('restart', help='Clear memorized progress and jump to the beginning of the current playing song')
+    replay_parser = command_sub.add_parser('replay', help='Clear memorized progress and jump to the beginning of the current playing song')
 
     volume_parser = command_sub.add_parser('volume', help='Set volume')
     volume_parser.add_argument('volume', type=_percent, help='Volume to set (percentage)')
@@ -70,6 +70,9 @@ def main():
 
     lib_list_parser = lib_sub.add_parser('list', help='Show all songs in library')
     lib_list_parser.add_argument('-a', '--show-aliases', action='store_true', help='Show aliases of songs')
+
+    lib_search_parser = lib_sub.add_parser('search', help='Search for songs in library')
+    lib_search_parser.add_argument('keyword', type=str, help='Keyword to search')
 
     lib_add_parser = lib_sub.add_parser('add', help='Add a new song to library')
     lib_add_parser.add_argument('path', type=_path, help='Path of the song to add')
@@ -217,8 +220,6 @@ def main():
                 if attachment is not None:
                     # these actions will be expecting an attachment
                     if action == 'status':
-                        attachment
-
                         name = attachment.get('name', '?')
                         artist = attachment.get('artist', '?')
                         album = attachment.get('album', '?')
@@ -257,12 +258,13 @@ def main():
                             print('\nDEVELOPMENT MODE ON')
 
                     elif action == 'list':
-                        info = attachment
-                        _show_song_info(info, 'No songs are being played', show_num=True)
+                        _show_song_info(attachment, 'No songs are being played', show_num=True)
+
+                    elif action == 'lib.search':
+                        _show_song_info(attachment, 'No results to be shown')
 
                     elif action == 'lib.list':
-                        info = attachment
-                        _show_song_info(info, 'No songs in library', show_aliases=args['show_aliases'])
+                        _show_song_info(attachment, 'No songs in library', show_aliases=args['show_aliases'])
 
                     elif action == 'lib.scan' and args['preview']:
                         if len(attachment) > 0:
@@ -273,21 +275,19 @@ def main():
                             print('No files to be shown')
 
                     elif action == 'lib.alias.list':
-                        aliases = attachment
-                        if len(aliases) > 0:
+                        if len(attachment) > 0:
                             print('Alias(es):')
-                            print(f'  {"\n  ".join(aliases)}')
+                            print(f'  {"\n  ".join(attachment)}')
                         else:
                             print('No aliases are bound to this song')
 
                     elif action == 'lib.playlist.list':
-                        results = attachment
                         if args['playlist'] is not None:
-                            _show_song_info(results, 'Playlist empty')
+                            _show_song_info(attachment, 'Playlist empty')
                         else:
-                            if len(results) > 0:
-                                print(f'Found {len(results)} playlist(s) in library:')
-                                for playlist in results:
+                            if len(attachment) > 0:
+                                print(f'Found {len(attachment)} playlist(s) in library:')
+                                for playlist in attachment:
                                     print(f'  {playlist['name']}')
                             else:
                                 print('No playlists in library')

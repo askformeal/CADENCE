@@ -4,7 +4,7 @@
 - [X] Release
 - [X] Seek command
 - [X] Duration metadata
-- [ ] Library search
+- [X] Library search
 - [ ] Start and continue last song
 - [ ] More user-friendly library management (no idea yet)
 - [ ] Bluetooth frontend

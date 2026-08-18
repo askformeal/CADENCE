@@ -28,7 +28,7 @@ Key: `code`
 Key: `msg`
 
 A message about the result of the action. Only summarizing information may be shown in this message. Full results (for example, result of list sub-command) should be put under the `attachment` key.
-For multi-stage actions such as restart (including jump to beginning and delete memorized position) the result of different stages should be separated by "|".
+For multi-stage actions such as replay (including jump to beginning and delete memorized position) the result of different stages should be separated by "|".
 
 ### Attachment
 

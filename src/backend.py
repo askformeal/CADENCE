@@ -17,7 +17,7 @@ from src.constants import DATABASE_PATH, DATABASE_DEV_PATH
 from src.constants import HOST, PORT, BACKLOG, ACTION_KEYS, SERVER_TIMEOUT
 from src.constants import MAIN_LOOP_INTERVAL, POS_MEMORIZE_INTERVAL, METADATA, FILE_META
 from src.constants import PLAY_DEAD_TIME
-from src.constants import AUDIO_EXTENSIONS, SOURCES, READABLE_TYPE_NAMES
+from src.constants import AUDIO_EXTENSIONS, SOURCES, READABLE_TYPE_NAMES, SEARCH_META
 from src.sentinels import SENTINELS
 from src.connection import recv_json, send_json
 from src.response import gen_response
@@ -319,7 +319,7 @@ class Backend:
                     }[result]
                     self.current_song_num = self.player.number
                     if result is SENTINELS.SUCCESS:
-                        response = gen_response.merge(response, self._restart())
+                        response = gen_response.merge(response, self._replay())
 
                 elif action == 'next':
                     on_end = request.get('on_end', False)
@@ -346,7 +346,7 @@ class Backend:
                         }[result]
                         self.current_song_num = self.player.number
                         if result is SENTINELS.SUCCESS:
-                            response = gen_response.merge(response, self._restart())
+                            response = gen_response.merge(response, self._replay())
 
                 elif action == 'seek':
                     time = request['time']
@@ -382,8 +382,8 @@ class Backend:
                                 SENTINELS.INVALID_PLAYER_STATE: gen_response.not_playing_paused('jump to progress')
                             }[result]
 
-                elif action == 'restart':
-                    response = self._restart()
+                elif action == 'replay':
+                    response = self._replay()
                     if response['code'] == 0:
                         self._del_current_pos()
 
@@ -401,6 +401,27 @@ class Backend:
                     self.player.set_mute(not self.player.mute)
                     mode = {True: 'on', False: 'off'}[self.player.mute]
                     response = gen_response.success(f'turned mute mode {mode}')
+
+                elif action == 'lib.search':
+                    keyword = request['keyword'].lower()
+                    results = []
+
+                    info = self.database.get_all_song_info()
+                    for song in info:
+                        aliases = self.database.get_song_aliases(song['id'])
+                        song['aliases'] = aliases
+
+                        for key, value in song.items():
+                            if key in SEARCH_META and keyword in str(value).lower():
+                                results.append(song)
+                                break
+                        else:
+                            for alias in aliases:
+                                if keyword in alias.lower():
+                                    results.append(song)
+                                    break
+
+                    response = gen_response.success(f'{len(results)} result(s) found in library', results)
 
                 elif action == 'lib.list':
                     info = self.database.get_all_song_info()
@@ -673,7 +694,7 @@ class Backend:
         else:
             return gen_response.success(f'no memorized position')
 
-    def _restart(self):
+    def _replay(self):
         result = self.player.jump_pos(0)
         return {
             SENTINELS.SUCCESS: gen_response.success('jumped to beginning'),

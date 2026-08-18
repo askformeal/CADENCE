@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [0.8.1] - 2026-08-18
+
+### Added
+
+- `lib search <keyword>` — search songs in library by name/artist/album/alias (case-insensitive)
+
+### Changed
+
+- `restart` renamed to `replay` (clear memorized progress and replay the current song) — no longer confused with `reboot`
+
 ## [0.8.0] - 2026-08-18
 
 ### Added

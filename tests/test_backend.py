@@ -496,31 +496,82 @@ def test_lib_playlist_del_missing_key(backend):
     assert 'playlist' in response['msg']
 
 
-def test_restart_before_open(backend):
-    response = _request(backend, 'restart')
+def test_replay_before_open(backend):
+    response = _request(backend, 'replay')
     assert response['code'] == 1
     assert 'neither playing nor paused' in response['msg']
 
 
-def test_restart_after_open(backend, audio_file):
+def test_replay_after_open(backend, audio_file):
     response = _request(backend, 'open', song=audio_file)
     assert response['code'] == 0
-    response = _request(backend, 'restart')
+    response = _request(backend, 'replay')
     assert response['code'] == 0
     status = _request(backend, 'status')
     assert status['attachment']['path'] == audio_file
 
 
-def test_restart_clears_memorized_pos(backend, audio_file):
+def test_replay_clears_memorized_pos(backend, audio_file):
     database = backend.database
     response = _request(backend, 'open', song=audio_file)
     assert response['code'] == 0
     database.set_pos(audio_file, 1000)
     assert database.get_pos(audio_file) == 1000
 
-    response = _request(backend, 'restart')
+    response = _request(backend, 'replay')
     assert response['code'] == 0
     assert database.get_pos(audio_file) is SENTINELS.POS_NOT_FOUND
+
+
+def test_search_missing_keyword(backend):
+    response = _request(backend, 'lib.search')
+    assert response['code'] == 1
+    assert 'keyword' in response['msg']
+
+
+def test_search_no_results(backend, audio_file):
+    _request(backend, 'lib.add', path=audio_file)
+    response = _request(backend, 'lib.search', keyword='nonexistent')
+    assert response['code'] == 0
+    assert response['attachment'] == []
+
+
+def test_search_by_name(backend, audio_file):
+    database = backend.database
+    _request(backend, 'lib.add', path=audio_file)
+    song_id = database.get_all_song_info()[0]['id']
+    database.set_song_meta(song_id, 'name', 'My Awesome Song')
+    response = _request(backend, 'lib.search', keyword='awesome')
+    assert response['code'] == 0
+    assert len(response['attachment']) == 1
+    assert response['attachment'][0]['name'] == 'My Awesome Song'
+
+
+def test_search_by_alias(backend, audio_file):
+    _request(backend, 'lib.add', path=audio_file, alias='MyAlias')
+    response = _request(backend, 'lib.search', keyword='alias')
+    assert response['code'] == 0
+    assert len(response['attachment']) == 1
+
+
+def test_search_case_insensitive(backend, audio_file):
+    database = backend.database
+    _request(backend, 'lib.add', path=audio_file)
+    song_id = database.get_all_song_info()[0]['id']
+    database.set_song_meta(song_id, 'artist', 'Metallica')
+    response = _request(backend, 'lib.search', keyword='METALLICA')
+    assert response['code'] == 0
+    assert len(response['attachment']) == 1
+
+
+def test_search_partial_match(backend, audio_file):
+    database = backend.database
+    _request(backend, 'lib.add', path=audio_file)
+    song_id = database.get_all_song_info()[0]['id']
+    database.set_song_meta(song_id, 'name', 'Hello World')
+    response = _request(backend, 'lib.search', keyword='wor')
+    assert response['code'] == 0
+    assert len(response['attachment']) == 1
 
 
 def test_jump_missing_progress(backend):
