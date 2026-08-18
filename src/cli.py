@@ -52,6 +52,8 @@ def main():
     prev_parser = command_sub.add_parser('prev', help='Switch to the previous song in current playlist')
     next_parser = command_sub.add_parser('next', help='Switch to the next song in current playlist')
 
+    seek_parser = command_sub.add_parser('seek', help='Jump to a specific time')
+    seek_parser.add_argument('time', help='Time to jump to (HH:MM:SS)')
     jump_parser = command_sub.add_parser('jump', help='Jump to progress of the current song')
     jump_parser.add_argument('progress', type=_percent, help='Progress to jump to (percentage)')
     restart_parser = command_sub.add_parser('restart', help='Clear memorized progress and jump to the beginning of the current playing song')

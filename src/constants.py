@@ -63,6 +63,9 @@ ACTION_KEYS = {
     'switch': {
         'number': (int, True)
     },
+    'seek': {
+        'time': (str, True)
+    },
     'jump': {
         'progress': (int, True)
     },

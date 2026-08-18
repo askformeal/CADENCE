@@ -2,10 +2,13 @@
 - [X] Jump to a random song command
 - [X] Loop mode
 - [X] Release
-- [ ] Start and continue last song
-- [ ] Tray icon frontend
-- [ ] Seek command
+- [X] Seek command
 - [ ] Duration metadata
+- [ ] Library search
+- [ ] Start and continue last song
+- [ ] More user-friendly library management (no idea yet)
+- [ ] Bluetooth frontend
+- [ ] Tray icon frontend
 - [ ] Configure system
 - [ ] TUI frontend
 - [ ] HTTP frontend

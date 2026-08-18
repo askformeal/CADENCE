@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [0.7.0] - 2026-08-18
+
+### Added
+
+- `seek` command — jump to a specific time (`HH:MM:SS`)
+
 ## [0.6.0] - 2026-08-17
 
 ### Added

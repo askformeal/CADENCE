@@ -564,6 +564,58 @@ def test_jump_ended_state_not_crash(backend, monkeypatch):
     assert 'neither playing nor paused' in response['msg']
 
 
+def test_seek_missing_time(backend):
+    response = _request(backend, 'seek')
+    assert response['code'] == 1
+    assert 'time' in response['msg']
+
+
+def test_seek_invalid_time(backend):
+    response = _request(backend, 'seek', time='abc')
+    assert response['code'] == 1
+    assert 'invalid time' in response['msg']
+
+
+def test_seek_invalid_time_negative(backend):
+    response = _request(backend, 'seek', time='-5:30')
+    assert response['code'] == 1
+    assert 'invalid time' in response['msg']
+
+
+def test_seek_invalid_time_too_many_parts(backend):
+    response = _request(backend, 'seek', time='1:2:3:4')
+    assert response['code'] == 1
+    assert 'invalid time' in response['msg']
+
+
+def test_seek_before_open(backend):
+    response = _request(backend, 'seek', time='1')
+    assert response['code'] == 1
+    assert 'neither playing nor paused' in response['msg']
+
+
+def test_seek_success(backend, audio_file):
+    _request(backend, 'open', song=audio_file)
+    response = _request(backend, 'seek', time='00:01')
+    assert response['code'] == 0
+    assert 'jumped to' in response['msg']
+    status = _request(backend, 'status')
+    assert status['attachment']['time'] >= 500
+
+
+def test_seek_pos_too_late(backend, audio_file):
+    _request(backend, 'open', song=audio_file)
+    response = _request(backend, 'seek', time='1:00')
+    assert response['code'] == 1
+    assert 'later than the end' in response['msg']
+
+
+def test_seek_hours_parsed_correctly(backend):
+    """1:02:03 must resolve to 1h2m3s (the 3600000 fix), verified without a player."""
+    from src.utils import parse_time, format_ms
+    assert format_ms(parse_time('1:02:03')) == '01:02:03'
+
+
 def test_scan_missing_dir(backend):
     response = _request(backend, 'lib.scan')
     assert response['code'] == 1

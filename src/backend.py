@@ -23,7 +23,7 @@ from src.connection import recv_json, send_json
 from src.response import gen_response
 from src.database import Database
 from src.player import Player
-from src.utils import format_ms
+from src.utils import format_ms, parse_time
 
 logger = setup_logger(__name__, BACKEND_LOG_PATH)
 
@@ -347,6 +347,20 @@ class Backend:
                         self.current_song_num = self.player.number
                         if result is SENTINELS.SUCCESS:
                             response = gen_response.merge(response, self._restart())
+
+                elif action == 'seek':
+                    time = request['time']
+                    pos = parse_time(time)
+                    if pos is SENTINELS.INVALID_TIME:
+                        response = gen_response.failed(f'invalid time: {time}')
+                    else:
+                        result = self.player.jump_pos(pos)
+                        response = {
+                            # why formate_ms instead of time: if user input something crazy like 99999:999999 this will make it sane.
+                            SENTINELS.SUCCESS: gen_response.success(f'jumped to {format_ms(pos)}'), 
+                            SENTINELS.POS_TOO_LATE: gen_response.failed(f'can not jumps to {format_ms(pos)} because it is later than the end of the current song'),
+                            SENTINELS.INVALID_PLAYER_STATE: gen_response.not_playing_paused('jump to progress')
+                        }[result]
 
                 elif action == 'jump':
                     percent = request['progress']
