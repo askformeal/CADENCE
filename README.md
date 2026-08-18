@@ -73,7 +73,7 @@ python -m src
 
 | Command                     | Description                                        |
 | --------------------------- | -------------------------------------------------- |
-| `cadence lib list`          | Show all songs in library                          |
+| `cadence lib list`          | Show all songs in library (`-a` aliases, `-p` playlists) |
 | `cadence lib search <kw>`   | Search songs in library by name/artist/album/alias |
 | `cadence lib add <path>`    | Add a new song to library                          |
 | `cadence lib del <song>`    | Delete a song from library                         |

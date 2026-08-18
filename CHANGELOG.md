@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## [0.8.2] - 2026-08-18
+
+### Added
+
+- `lib list --show-playlists` (`-p`) — show which playlists each song belongs to
+
+### Fixed
+
+- `lib reset` now resets `user_version` so the database is properly rebuilt
+- Corrected log message in `get_playlists_info` (was printing builtin `id`)
+
 ## [0.8.1] - 2026-08-18
 
 ### Added

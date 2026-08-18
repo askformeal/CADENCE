@@ -426,9 +426,15 @@ class Backend:
                 elif action == 'lib.list':
                     info = self.database.get_all_song_info()
                     if request.get('show_aliases', False):
-                        for row in info:
-                            aliases = self.database.get_song_aliases(row['id'])
-                            row['aliases'] = aliases
+                        for song in info:
+                            aliases = self.database.get_song_aliases(song['id'])
+                            song['aliases'] = aliases
+
+                    if request.get('show_playlists', False):
+                        for song in info:
+                            playlists_id = self.database.get_song_playlists(song['id'])
+                            playlists_info = self.database.get_playlists_info(playlists_id)
+                            song['playlists'] = list(map(lambda pl: pl['name'], playlists_info))
 
                     response = gen_response.success('obtained information of all songs in library', self.sort_songs(info))
 

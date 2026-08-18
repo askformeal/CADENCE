@@ -294,6 +294,31 @@ def test_lib_list_show_aliases_empty(backend, audio_file):
     assert response['attachment'][0]['aliases'] == []
 
 
+def test_lib_list_with_show_playlists(backend, audio_file):
+    database = backend.database
+    _request(backend, 'lib.add', path=audio_file)
+    song_id = database.get_all_song_info()[0]['id']
+    playlist_id, _ = database.create_playlist('workout')
+    database.add_song_to_playlist(playlist_id, song_id)
+    response = _request(backend, 'lib.list', show_playlists=True)
+    assert response['code'] == 0
+    assert response['attachment'][0]['playlists'] == ['workout']
+
+
+def test_lib_list_show_playlists_empty(backend, audio_file):
+    _request(backend, 'lib.add', path=audio_file)
+    response = _request(backend, 'lib.list', show_playlists=True)
+    assert response['code'] == 0
+    assert response['attachment'][0]['playlists'] == []
+
+
+def test_lib_list_without_show_playlists(backend, audio_file):
+    _request(backend, 'lib.add', path=audio_file)
+    response = _request(backend, 'lib.list')
+    assert response['code'] == 0
+    assert 'playlists' not in response['attachment'][0]
+
+
 def test_lib_del_by_path(backend, audio_file):
     _request(backend, 'lib.add', path=audio_file)
     response = _request(backend, 'lib.del', song=audio_file)

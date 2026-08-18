@@ -73,7 +73,8 @@ ACTION_KEYS = {
         'volume': (int, True)
     },
     'lib.list': {
-        'show_aliases': (bool, False)
+        'show_aliases': (bool, False),
+        'show_playlists': (bool, False)
     },
     'lib.search': {
         'keyword': (str, True)

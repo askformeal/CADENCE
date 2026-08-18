@@ -70,6 +70,7 @@ def main():
 
     lib_list_parser = lib_sub.add_parser('list', help='Show all songs in library')
     lib_list_parser.add_argument('-a', '--show-aliases', action='store_true', help='Show aliases of songs')
+    lib_list_parser.add_argument('-p', '--show-playlists', action='store_true', help='Show playlists each song is in')
 
     lib_search_parser = lib_sub.add_parser('search', help='Search for songs in library')
     lib_search_parser.add_argument('keyword', type=str, help='Keyword to search')
@@ -264,7 +265,7 @@ def main():
                         _show_song_info(attachment, 'No results to be shown')
 
                     elif action == 'lib.list':
-                        _show_song_info(attachment, 'No songs in library', show_aliases=args['show_aliases'])
+                        _show_song_info(attachment, 'No songs in library', show_aliases=args['show_aliases'], show_playlists=args['show_playlists'])
 
                     elif action == 'lib.scan' and args['preview']:
                         if len(attachment) > 0:
@@ -321,7 +322,7 @@ def _start_backend(**kwargs):
         print(f'Failed to start CADENCE backend')
     return result
 
-def _show_song_info(info, empty_msg, show_aliases=False, show_num=False):
+def _show_song_info(info, empty_msg, show_aliases=False, show_playlists=False, show_num=False):
     if len(info) > 0:
         for i in range(len(info)):
             song = info[i]
@@ -337,7 +338,15 @@ def _show_song_info(info, empty_msg, show_aliases=False, show_num=False):
                 if len(aliases) > 0:
                     texts.append(f"Aliases: {', '.join(aliases)}")
                 else:
-                    texts.append('No aliases are bound to this song')
+                    texts.append('Aliases: No aliases are bound to this song')
+
+            if show_playlists:
+                playlists = song['playlists']
+                if len(playlists) > 0:
+                    texts.append(f"Playlists: {', '.join(playlists)}")
+                else:
+                    texts.append('Playlists: This song is not in any playlist')
+
             max_len = max(map(len, texts))
             print('-'*(max_len))
             if show_num:

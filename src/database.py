@@ -72,6 +72,7 @@ class Database:
     # Song
 
     def song_exists(self, id):
+        # if a song exists
         row = self.execute('SELECT 1 FROM songs WHERE id = ?', id).fetchone()
         if row is not None:
             result = True
@@ -81,6 +82,7 @@ class Database:
         return result
 
     def get_all_song_info(self):
+        # info of all songs (playlist and aliases not included)
         info = []
         rows = self.execute('SELECT * from songs').fetchall()
         for row in rows:
@@ -89,6 +91,7 @@ class Database:
         return info
 
     def get_song_info(self, ids):
+        # info of songs
         if not isinstance(ids, list):
             ids = [ids]
         rows = self.execute(f'SELECT * from songs WHERE id IN ({', '.join('?'*len(ids))})', *ids).fetchall()
@@ -97,6 +100,7 @@ class Database:
         return info
 
     def get_song_aliases(self, id):
+        # all aliases bound to a song
         if self.song_exists(id):
             aliases = []
             rows = self.execute('SELECT name FROM aliases WHERE song_id = ?', id).fetchall()
@@ -109,6 +113,7 @@ class Database:
             return SENTINELS.SONG_NOT_FOUND
 
     def get_song_via_alias(self, alias):
+        # get the song an alias was bound to
         row = self.execute('SELECT song_id FROM aliases JOIN songs ON aliases.song_id = songs.id WHERE aliases.name = ?', alias).fetchone()
         if row is not None:
             id = row['song_id']
@@ -119,6 +124,7 @@ class Database:
             return SENTINELS.ALIAS_NOT_FOUND
 
     def get_song_via_path(self, path):
+        # get a song by its path
         row = self.execute('SELECT id FROM songs WHERE path = ?', path).fetchone()
         if row is not None:
             id = row['id']
@@ -129,6 +135,7 @@ class Database:
             return SENTINELS.SONG_NOT_FOUND
 
     def add_song(self, path) -> tuple[int, bool]: # return id of the song + whether it already exists and is ignored.
+        # add a new song
         cursor = self.execute('INSERT OR IGNORE INTO songs(path) VALUES (?)', path)
         ignored = cursor.rowcount != 1
         if ignored:
@@ -139,6 +146,7 @@ class Database:
         return song_id, ignored
 
     def delete_song(self, id):
+        # delete a song
         if self.song_exists(id):
             self.execute('DELETE FROM songs WHERE id = ?', id)
             logger.debug(f'Deleted song with id {id}')
@@ -149,6 +157,7 @@ class Database:
             return SENTINELS.SONG_NOT_FOUND
 
     def get_song_meta(self, song_id, meta):
+        # get a metadata of a song
         if meta in METADATA: # Seems odd if I put this in set_song_meta but no here
             if self.song_exists(song_id):
                 row = self.execute(f'SELECT {meta} FROM songs WHERE id = ?', song_id).fetchone()
@@ -163,6 +172,7 @@ class Database:
 
 
     def set_song_meta(self, song_id, meta, value): # pass SENTINEL.CLEAR_META to value to delete metadata
+        # set a metadata of a song
         if meta in METADATA: # To prevent SQL injection. Probably useless
             if self.song_exists(song_id):
                 if value is SENTINELS.CLEAR_META: # bullshit code. don't complain
@@ -182,6 +192,7 @@ class Database:
     # Alias
 
     def alias_exists(self, name):
+        # is an alias exists
         row = self.execute('SELECT 1 FROM aliases WHERE name = ?', name).fetchone()
         if row is not None:
             result = True
@@ -191,6 +202,7 @@ class Database:
         return result
 
     def bind_alias(self, id, alias):
+        # bind an alias to a song
         if self.song_exists(id):
             if not self.alias_exists(alias):
                 self.execute('INSERT INTO aliases(name, song_id) VALUES (?, ?)', alias, id)
@@ -204,6 +216,7 @@ class Database:
             return SENTINELS.SONG_NOT_FOUND
 
     def unbind_alias(self, alias):
+        # delete an alias
         if self.alias_exists(alias):
             self.execute('DELETE FROM aliases WHERE name = ?', alias)
             logger.debug(f'Deleted alias \"{alias}\"')
@@ -215,6 +228,7 @@ class Database:
     # Playlist
 
     def playlist_exists(self, id):
+        # if a playlist exists
         row = self.execute('SELECT 1 FROM playlists WHERE id = ?', id).fetchone()
         if row is not None:
             result = True
@@ -224,6 +238,7 @@ class Database:
         return result
 
     def playlist_song_exists(self, playlist_id, song_id):
+        # if a song is in a playlist
         row = self.execute('SELECT 1 FROM playlist_songs WHERE playlist_id = ? AND song_id = ?', playlist_id, song_id).fetchone()
         if row is not None:
             result = True
@@ -233,18 +248,30 @@ class Database:
         return result
 
     def get_all_playlists(self):
+        # get info of all playlists
         rows = self.execute('SELECT * FROM playlists').fetchall()
         playlists = list(map(lambda row: dict(row), rows))
         logger.debug(f'Got information of {len(playlists)} playlist(s)')
         return playlists
 
+    def get_playlists_info(self, ids):
+        # info of playlists
+        if not isinstance(ids, list):
+            ids = [ids]
+        rows = self.execute(f'SELECT * FROM playlists WHERE id IN ({', '.join('?' * len(ids))})', *ids).fetchall()
+        info = list(map(lambda row: dict(row), rows))
+        logger.debug(f'Got information of playlist {ids}: {info}')
+        return info
+
     def get_song_playlists(self, id):
+        # get all playlists that a song is in
         rows = self.execute('SELECT playlist_id FROM playlist_songs WHERE song_id = ?', id).fetchall()
         playlists = list(map(lambda row: row['playlist_id'], rows))
         logger.debug(f'Got ids of playlist(s) contains song with id {id}: {playlists}')
         return playlists
 
     def get_playlist_via_name(self, name):
+        # get a playlist by its name
         row = self.execute('SELECT id FROM playlists WHERE name = ?', name).fetchone()
         if row is not None:
             id = row['id']
@@ -254,6 +281,7 @@ class Database:
             return SENTINELS.PLAYLIST_NOT_FOUND
 
     def get_playlist_songs(self, id):
+        # get all songs in a playlist
         if self.playlist_exists(id):
             rows = self.execute('SELECT song_id FROM playlist_songs WHERE playlist_id = ?', id).fetchall()
             if len(rows) > 0:
@@ -268,6 +296,7 @@ class Database:
             return SENTINELS.PLAYLIST_NOT_FOUND
 
     def create_playlist(self, name):
+        # create a new playlist
         cursor = self.execute('INSERT OR IGNORE INTO playlists (name) VALUES (?)', name)
         ignored = cursor.rowcount != 1
         if ignored:
@@ -278,6 +307,7 @@ class Database:
         return playlist_id, ignored
 
     def del_playlist(self, playlist_id):
+        # delete a playlist
         if self.playlist_exists(playlist_id):
             self.execute('DELETE FROM playlists WHERE id=?', playlist_id)
             logger.debug(f'Deleted playlist with id {playlist_id}')
@@ -287,6 +317,7 @@ class Database:
             return SENTINELS.PLAYLIST_NOT_FOUND
 
     def add_song_to_playlist(self, playlist_id, song_id):
+        # add a song to a playlist
         if self.song_exists(song_id):
             if self.playlist_exists(playlist_id):
                 cursor = self.execute('INSERT OR IGNORE INTO playlist_songs (playlist_id, song_id) VALUES (?, ?)', playlist_id, song_id)
@@ -301,6 +332,7 @@ class Database:
             return SENTINELS.SONG_NOT_FOUND
 
     def del_song_from_playlist(self, playlist_id, song_id):
+        # remove a song from a playlist
         if self.song_exists(song_id):
             if self.playlist_exists(playlist_id):
                 if self.playlist_song_exists(playlist_id, song_id):
@@ -320,6 +352,7 @@ class Database:
     # Position
 
     def pos_memorized(self, path, log=True):
+        # if the pos of a path is memorized
         row = self.execute('SELECT 1 FROM positions WHERE path = ?', path).fetchone()
         if row is not None:
             result = True
@@ -330,6 +363,7 @@ class Database:
         return result
 
     def get_pos(self, path):
+        # get the memorized pos of a path
         row = self.execute('SELECT position FROM positions WHERE path = ?', path).fetchone()
         if row is not None:
             logger.debug(f'Got position of {path}: {row['position']}ms')
@@ -339,6 +373,7 @@ class Database:
             return SENTINELS.POS_NOT_FOUND
 
     def set_pos(self, path, pos, log=True):
+        # memorize the pos of a path
         if self.pos_memorized(path, log=log):
             self.execute('UPDATE positions SET position = ? WHERE path = ?', pos, path)
             msg = f'Updated memorized position of {path} to {pos}ms'
@@ -351,6 +386,7 @@ class Database:
         return SENTINELS.SUCCESS
 
     def del_pos(self, path):
+        # delete the memorized pos of a path
         if self.pos_memorized(path):
             self.execute('DELETE FROM positions WHERE path = ?', path)
             logger.debug(f'Deleted the position of {path} from memory')
@@ -358,14 +394,18 @@ class Database:
         else:
             return SENTINELS.POS_NOT_FOUND
 
-    # Break stuff
+    # Let's break stuff
 
     def reset(self):
+        # Delete the whole database and rebuild it
         self.execute("PRAGMA foreign_keys = OFF")
         rows = self.execute('SELECT name FROM sqlite_master WHERE type = \'table\'').fetchall()
         tables = list(map(lambda row: row['name'], rows))
         for table in tables:
             self.execute(f'DROP TABLE IF EXISTS {table}')
+
+        self.execute(f'PRAGMA user_version = 0')
+
         self._init_database()
         logger.debug('All tables dropped and recreated')
         
