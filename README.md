@@ -63,6 +63,7 @@ python -m src
 | `cadence shuffle`      | Toggle shuffle mode                                    |
 | `cadence loop`         | Toggle loop mode                                       |
 | `cadence switch <num>` | Switch to a song in current playlist via number        |
+| `cadence seek <time>`  | Jump to a specific time (HH:MM:SS)                     |
 | `cadence jump <pct>`   | Jump to progress of the current song (percentage)      |
 | `cadence restart`      | Clear memorized progress and restart the current song  |
 | `cadence volume <pct>` | Set volume (0-100)                                     |
