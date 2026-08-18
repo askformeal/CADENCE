@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## [0.8.0] - 2026-08-18
+
+### Added
+
+- Duration metadata — auto-extracted from audio files, stored in the library, shown in `lib list`
+- Database migration system — `user_version`-based, idempotent schema upgrades on startup
+
+### Changed
+
+- Status `unknown` placeholders now use `[brackets]` (e.g. `[path unknown]`)
+- `format_ms(None)` returns `--:--:--` instead of crashing
+
 ## [0.7.0] - 2026-08-18
 
 ### Added

@@ -150,7 +150,7 @@ class Backend:
                         vlc.State.Playing: 'playing',
                         vlc.State.Paused: 'paused',
                         vlc.State.Stopped: 'stopped'
-                    }.get(self.player.player.get_state(), 'unknown')
+                    }.get(self.player.player.get_state(), '[unknown]')
 
                     if self.current_song_info is None:
                         info = {}
@@ -158,10 +158,10 @@ class Backend:
                         info = self.current_song_info[self.current_song_num]
 
                     status = {
-                        'path': info.get('path', 'path unknown'),
-                        'name': info.get('name', 'name unknown'),
-                        'artist': info.get('artist', 'artist unknown'),
-                        'album': info.get('album', 'album unknown'),
+                        'path': info.get('path', '[path unknown]'),
+                        'name': info.get('name', '[name unknown]'),
+                        'artist': info.get('artist', '[artist unknown]'),
+                        'album': info.get('album', '[album unknown]'),
                         'in_library': self.current_song_in_lib,
                         'player_status': player_status,
                         'volume': self.player.volume,
@@ -758,6 +758,10 @@ class Backend:
                         if value is not None:
                             count += 1
                     meta_response = gen_response.success(f'set {count} metadata of the song from file')
+                else:
+                    duration = meta.get('duration', None)
+                    self.database.set_song_meta(song_id, 'duration', duration)
+                    meta_response = gen_response.success(f'set duration to {format_ms(duration)}')
 
                 # --- auto bind alias ---
                 if bind_alias:
@@ -810,6 +814,12 @@ class Backend:
                 tags[meta] = file.get(file_tag, [None])[0]
                 if tags[meta] == '':
                     tags[meta] = None
+
+            tags['duration'] = getattr(file.info, 'length', None)
+
+            if tags['duration'] is not None:
+                tags['duration'] = int(tags['duration'] * 1000)
+
             logger.debug(f'Extracted metadata from {path}: {tags}')
             return tags
         else:

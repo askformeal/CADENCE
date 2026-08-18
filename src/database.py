@@ -25,56 +25,50 @@ class Database:
             logger.debug(f'{__name__} initiated')
 
     def _init_database(self):
-        self.execute("PRAGMA foreign_keys = ON")
-        self.execute('''CREATE TABLE IF NOT EXISTS songs (
-                            id INTEGER NOT NULL PRIMARY KEY,
-                            name TEXT,
-                            artist TEXT,
-                            album TEXT,
-                            path TEXT NOT NULL UNIQUE COLLATE NOCASE
-                        )''')
 
-        self.execute('''CREATE TABLE IF NOT EXISTS aliases (
-                            id INTEGER NOT NULL PRIMARY KEY,
-                            name TEXT NOT NULL UNIQUE,
-                            song_id INTEGER,
-                            FOREIGN KEY(song_id) REFERENCES songs(id) ON DELETE CASCADE
-                        )''')
+        self.execute('PRAGMA foreign_keys = ON')
+        
+        INIT_DATABASE = [
+            '''CREATE TABLE IF NOT EXISTS songs (
+                id INTEGER NOT NULL PRIMARY KEY,
+                name TEXT,
+                artist TEXT,
+                album TEXT,
+                path TEXT NOT NULL UNIQUE COLLATE NOCASE
+            )''',
 
-        self.execute('''CREATE TABLE IF NOT EXISTS playlists (
-                            id INTEGER NOT NULL PRIMARY KEY,
-                            name TEXT NOT NULL UNIQUE COLLATE NOCASE
-                        )''')
+            '''CREATE TABLE IF NOT EXISTS aliases (
+                id INTEGER NOT NULL PRIMARY KEY,
+                name TEXT NOT NULL UNIQUE,
+                song_id INTEGER,
+                FOREIGN KEY(song_id) REFERENCES songs(id) ON DELETE CASCADE
+            )''',
+            '''CREATE TABLE IF NOT EXISTS playlists (
+                    id INTEGER NOT NULL PRIMARY KEY,
+                    name TEXT NOT NULL UNIQUE COLLATE NOCASE
+                )''',
+            '''CREATE TABLE IF NOT EXISTS playlist_songs (
+                playlist_id INTEGER NOT NULL,
+                song_id INTEGER NOT NULL,
+                PRIMARY KEY (playlist_id, song_id),
+                FOREIGN KEY (playlist_id) REFERENCES playlists(id) ON DELETE CASCADE, 
+                FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE
+            )''',
+            '''CREATE TABLE IF NOT EXISTS positions (
+                path TEXT NOT NULL PRIMARY KEY,
+                position INTEGER NOT NULL
+            )''',
 
-        self.execute('''CREATE TABLE IF NOT EXISTS playlist_songs (
-                            playlist_id INTEGER NOT NULL,
-                            song_id INTEGER NOT NULL,
-                            PRIMARY KEY (playlist_id, song_id),
-                            FOREIGN KEY (playlist_id) REFERENCES playlists(id) ON DELETE CASCADE, 
-                            FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE
-                        )''')
-
-        self.execute('''CREATE TABLE IF NOT EXISTS positions (
-                            path TEXT NOT NULL PRIMARY KEY,
-                            position INTEGER NOT NULL
-                        )''')
-
-        try:
-            self.execute('ALTER TABLE songs ADD COLUMN name TEXT')
-        except sqlite3.OperationalError:
-            ...
-
-        try:
-            self.execute('ALTER TABLE songs ADD COLUMN artist TEXT')
-        except sqlite3.OperationalError:
-            ...
-
-        try:
-            self.execute('ALTER TABLE songs ADD COLUMN album TEXT')
-        except sqlite3.OperationalError:
-            ...
-
-
+            'ALTER TABLE songs ADD COLUMN duration INTEGER'
+        ]
+        version = self.execute('PRAGMA user_version').fetchone()[0]
+        for i, sql in enumerate(INIT_DATABASE):
+            if i + 1 > version:
+                try:
+                    self.execute(sql)
+                except sqlite3.OperationalError as e:
+                    logger.warning(f'Error while initializing database with {sql}: {e}')
+                self.execute(f'PRAGMA user_version = {i+1}')
     # Song
 
     def song_exists(self, id):

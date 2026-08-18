@@ -142,7 +142,7 @@ ATTACHMENT_REQUIRED_ACTIONS = [
     'lib.playlist.list',
 ]
 
-METADATA = ['name', 'artist', 'album']
+METADATA = ['name', 'artist', 'album', 'duration']
 FILE_META = {
     'title': 'name',
     'artist': 'artist',

@@ -3,16 +3,19 @@
 from src.sentinels import SENTINELS
 
 def format_ms(ms):
-    ms = int(ms)
-    if ms == -1:
+    if ms is None:
         return '--:--:--'
-    if ms == 0:
-        return '00:00:00'
     else:
-        hours, remain = divmod(ms, 3600000) # 3600000 = 1000 * 60 * 60
-        minutes, remain = divmod(remain, 60000) # 60000 = 1000 * 60
-        seconds = remain // 1000
-        return f'{hours:02}:{minutes:02}:{seconds:02}'
+        ms = int(ms)
+        if ms == -1:
+            return '--:--:--'
+        if ms == 0:
+            return '00:00:00'
+        else:
+            hours, remain = divmod(ms, 3600000) # 3600000 = 1000 * 60 * 60
+            minutes, remain = divmod(remain, 60000) # 60000 = 1000 * 60
+            seconds = remain // 1000
+            return f'{hours:02}:{minutes:02}:{seconds:02}'
 
 def parse_time(time):
     # Technically it can parse things like 999999:9999999:999999 but I decided to count that as a feature

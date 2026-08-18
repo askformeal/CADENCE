@@ -35,6 +35,7 @@ def main():
     start_parser = command_sub.add_parser('start', help='Start CADENCE backend')
     start_parser.add_argument('--dev', action='store_true', help='Start in development mode')
     reboot_parser = command_sub.add_parser('reboot', help='Reboot CADENCE backend. Will fail if backend is not running')
+    reboot_parser.add_argument('--dev', action='store_true', help='Reboot in development mode')
     status_parser = command_sub.add_parser('status', help='Show CADENCE status')
     open_parser = command_sub.add_parser('open', help='Open a song or playlist. Supports alias, file path and playlist name')
     open_parser.add_argument('song', type=str, help='Song to open')
@@ -203,7 +204,7 @@ def main():
                     return 1
                     
                 print('Starting backend...')
-                _start_backend()
+                _start_backend(CADENCE_DEV=int(args['dev']))
 
             if action == 'lib.scan' and not args['preview']: # just to be clear
                 if len(failed) > 0:
@@ -326,9 +327,10 @@ def _show_song_info(info, empty_msg, show_aliases=False, show_num=False):
             song = info[i]
             texts = [
                 f'Name: {song["name"]}',
-                f'Path: {song["path"]}',
                 f'Artist: {song["artist"]}',
                 f'Album: {song["album"]}',
+                f'Duration: {format_ms(song["duration"])}',
+                f'Path: {song["path"]}',
             ]
             if show_aliases:
                 aliases = song['aliases']

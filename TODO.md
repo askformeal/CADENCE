@@ -3,7 +3,7 @@
 - [X] Loop mode
 - [X] Release
 - [X] Seek command
-- [ ] Duration metadata
+- [X] Duration metadata
 - [ ] Library search
 - [ ] Start and continue last song
 - [ ] More user-friendly library management (no idea yet)

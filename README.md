@@ -9,7 +9,7 @@ Retrieves collections of mechanically-represented wave data from persistent stor
 ## Features
 
 - Play songs, playlists, or your entire library from the command line
-- Library with metadata, aliases, and playlists (persisted in SQLite)
+- Library with metadata (including duration), aliases, and playlists (persisted in SQLite)
 - Auto metadata extraction and alias binding from file tags
 - Memorized playback position — resume where you left off
 - Shuffle mode
