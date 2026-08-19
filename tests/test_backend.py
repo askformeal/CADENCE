@@ -688,8 +688,8 @@ def test_seek_pos_too_late(backend, audio_file):
 
 def test_seek_hours_parsed_correctly(backend):
     """1:02:03 must resolve to 1h2m3s (the 3600000 fix), verified without a player."""
-    from src.utils import parse_time, format_ms
-    assert format_ms(parse_time('1:02:03')) == '01:02:03'
+    from src.utils import parse_time, format_time
+    assert format_time(parse_time('1:02:03')) == '01:02:03'
 
 
 def test_scan_missing_dir(backend):

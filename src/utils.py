@@ -1,22 +1,29 @@
 # divide into separate files (time_utils.py, etc) if things got messy
+from typing import Literal
 
 from src.sentinels import SENTINELS
 
-def format_ms(ms):
-    if ms is None:
+def format_time(raw_time, unit: Literal['ms', 'sec']='ms'):
+    if raw_time is None:
         return '--:--:--'
     else:
-        ms = int(ms)
-        if ms == -1:
-            return '--:--:--'
-        if ms == 0:
-            return '00:00:00'
-        else:
-            hours, remain = divmod(ms, 3600000) # 3600000 = 1000 * 60 * 60
-            minutes, remain = divmod(remain, 60000) # 60000 = 1000 * 60
-            seconds = remain // 1000
-            return f'{hours:02}:{minutes:02}:{seconds:02}'
+        raw_time = int(raw_time)
 
+        if raw_time == -1:
+            return '--:--:--'
+        elif raw_time == 0:
+            return '00:00:00'
+
+        if unit == 'sec':
+            ms = raw_time * 1000
+        else:
+            ms = raw_time
+
+        hours, remain = divmod(ms, 3600000) # 3600000 = 1000 * 60 * 60
+        minutes, remain = divmod(remain, 60000) # 60000 = 1000 * 60
+        seconds = remain // 1000
+        return f'{hours:02}:{minutes:02}:{seconds:02}'
+        
 def parse_time(time):
     # Technically it can parse things like 999999:9999999:999999 but I decided to count that as a feature
     parts = time.split(':')

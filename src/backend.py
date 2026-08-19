@@ -6,6 +6,7 @@ import random
 import socket
 import queue
 from time import sleep
+from time import time
 from pathlib import Path
 import vlc
 import mutagen
@@ -23,12 +24,13 @@ from src.connection import recv_json, send_json
 from src.response import gen_response
 from src.database import Database
 from src.player import Player
-from src.utils import format_ms, parse_time
+from src.utils import format_time, parse_time
 
 logger = setup_logger(__name__, BACKEND_LOG_PATH)
 
 class Backend:
     def __init__(self):
+        self.start_time = time()
         self.dev = {'0': False, '1': True}.get(os.environ.get('CADENCE_DEV', '0'), False)
 
         if self.dev:
@@ -154,8 +156,12 @@ class Backend:
 
                     if self.current_song_info is None:
                         info = {}
+                        playlist_len = None
+                        current_num = None
                     else:
                         info = self.current_song_info[self.current_song_num]
+                        playlist_len = len(self.current_song_info)
+                        current_num = self.current_song_num
 
                     status = {
                         'path': info.get('path', '[path unknown]'),
@@ -165,7 +171,10 @@ class Backend:
                         'in_library': self.current_song_in_lib,
                         'player_status': player_status,
                         'volume': self.player.volume,
-                        'mute': self.player.mute
+                        'mute': self.player.mute,
+                        'playlist_len': playlist_len,
+                        'current_num': current_num,
+                        'run_time': time() - self.start_time
                     }
                     progress = self.player.get_progress()
                     status['length'] = progress['length']
@@ -270,13 +279,16 @@ class Backend:
                         pool.remove(self.current_song_num)
                         num = random.choice(pool)
                         result = self.player.load_number(num)
+
+                        if result is SENTINELS.SUCCESS:
+                            self.current_song_num = self.player.number
+
                         response = {
-                            SENTINELS.SUCCESS: gen_response.success(f'diced to the {num+1}nd song in current playlist'),
+                            SENTINELS.SUCCESS: gen_response.success(f'diced to the {num+1}nd song in current playlist: {self._get_output_current_name()}'),
                             SENTINELS.PLAYER_EMPTY: gen_response.player_empty(f'switch to the {num+1}nd song in current playlist'),
                             SENTINELS.VLC_ERROR: gen_response.vlc_error(f'switch to the {num+1}nd song in current playlist'),
                             SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout(f'switch to the {num+1}nd song in current playlist'),
                         }[result]
-                        self.current_song_num = self.player.number
 
                 elif action == 'switch':
                     num = request['number']
@@ -292,13 +304,16 @@ class Backend:
                         result = self.player.load_number(self._switch_shuffle(-1))
                     else:
                         result = self.player.switch_prev()
+                    
+                    if result is SENTINELS.SUCCESS:
+                        self.current_song_num = self.player.number
+
                     response = {
-                        SENTINELS.SUCCESS: gen_response.success('switched to previous song'),
+                        SENTINELS.SUCCESS: gen_response.success(f'switched to previous song: {self._get_output_current_name()}'),
                         SENTINELS.PLAYER_EMPTY: gen_response.player_empty('switch to previous song'),
                         SENTINELS.VLC_ERROR: gen_response.vlc_error('switch to previous song'),
                         SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout('switch to previous song')
                     }[result]
-                    self.current_song_num = self.player.number
                     if result is SENTINELS.SUCCESS:
                         response = gen_response.merge(response, self._replay())
 
@@ -319,21 +334,24 @@ class Backend:
                             result = self.player.load_number(self._switch_shuffle(1))
                         else:
                             result = self.player.switch_next()
+
+                        if result is SENTINELS.SUCCESS:
+                            self.current_song_num = self.player.number
+
                         response = {
-                            SENTINELS.SUCCESS: gen_response.success('switched to next song'),
+                            SENTINELS.SUCCESS: gen_response.success(f'switched to next song: {self._get_output_current_name()}'),
                             SENTINELS.PLAYER_EMPTY: gen_response.player_empty('switch to next song'),
                             SENTINELS.VLC_ERROR: gen_response.vlc_error('switch to next song'),
                             SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout('switch to next song')
                         }[result]
-                        self.current_song_num = self.player.number
                         if result is SENTINELS.SUCCESS:
                             response = gen_response.merge(response, self._replay())
 
                 elif action == 'seek':
-                    time = request['time']
-                    pos = parse_time(time)
+                    raw_time = request['time']
+                    pos = parse_time(raw_time)
                     if pos is SENTINELS.INVALID_TIME:
-                        response = gen_response.failed(f'invalid time: {time}')
+                        response = gen_response.failed(f'invalid time: {raw_time}')
                     else:
                         response = self._jump_to_pos(pos)
 
@@ -388,6 +406,9 @@ class Backend:
                                 if keyword in alias.lower():
                                     results.append(song)
                                     break
+                            else:
+                                if keyword in str(Path(song['path']).stem).lower():
+                                    results.append(song)
 
                     response = gen_response.success(f'{len(results)} result(s) found in library', results)
 
@@ -700,13 +721,16 @@ class Backend:
         else:
             num_to_load = num
         result = self.player.load_number(num_to_load)
+
+        if result is SENTINELS.SUCCESS:
+            self.current_song_num = self.player.number
+
         response = {
-            SENTINELS.SUCCESS: gen_response.success(f'switched to the {num+1}nd song in current playlist'),
+            SENTINELS.SUCCESS: gen_response.success(f'switched to the {num+1}nd song in current playlist: {self._get_output_current_name()}'),
             SENTINELS.PLAYER_EMPTY: gen_response.player_empty(f'switch to the {num+1}nd song in current playlist'),
             SENTINELS.VLC_ERROR: gen_response.vlc_error(f'switch to the {num+1}nd song in current playlist'),
             SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout(f'switch to the {num+1}nd song in current playlist'),
         }[result]
-        self.current_song_num = self.player.number
         if result is SENTINELS.SUCCESS:
             response = gen_response.merge(response, self._jump_to_memorized_pos())
 
@@ -744,8 +768,8 @@ class Backend:
     def _jump_to_pos(self, pos):
         result = self.player.jump_pos(pos)
         return {
-            SENTINELS.SUCCESS: gen_response.success(f'jumped to {format_ms(pos)}'),
-            SENTINELS.POS_TOO_LATE: gen_response.failed(f'can not jumps to {format_ms(pos)} because it is later than the end of the current song'), 
+            SENTINELS.SUCCESS: gen_response.success(f'jumped to {format_time(pos)}'),
+            SENTINELS.POS_TOO_LATE: gen_response.failed(f'can not jumps to {format_time(pos)} because it is later than the end of the current song'), 
             SENTINELS.INVALID_PLAYER_STATE: gen_response.not_playing_paused('jump to progress')
         }[result]
 
@@ -804,6 +828,18 @@ class Backend:
         else:
             return SENTINELS.MISSING_CWD
 
+    def _get_output_current_name(self):
+        if self.current_song_info is None or self.current_song_num >= len(self.current_song_info):
+            return 'no song playing'
+        else:
+            return self._get_output_song_name(self.current_song_info[self.current_song_num])
+
+    def _get_output_song_name(self, info):
+        name = info.get('name', None)
+        if name is None:
+            name = Path(info['path']).stem
+        return name
+
     def _add_song(self, path, set_meta=True, bind_alias=True, alias=None, return_id=False):
         song_id = None
         if Path(path).is_file():
@@ -837,7 +873,7 @@ class Backend:
                 else:
                     duration = meta.get('duration', None)
                     self.database.set_song_meta(song_id, 'duration', duration)
-                    meta_response = gen_response.success(f'set duration to {format_ms(duration)}')
+                    meta_response = gen_response.success(f'set duration to {format_time(duration)}')
 
                 # --- auto bind alias ---
                 if bind_alias:

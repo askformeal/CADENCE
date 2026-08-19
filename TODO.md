@@ -6,10 +6,11 @@
 - [X] Duration metadata
 - [X] Library search
 - [X] Prune - find songs in library which path no longer exists
-- [ ] Search by filename
-- [ ] More Detailed status
-  - [ ] Run time
-  - [ ] Number of songs in current playlist
+- [X] Search by filename
+- [X] More Detailed status
+  - [X] Run time
+  - [X] Number of songs in current playlist
+- [ ] Stay in current playlist if opened song is in it
 - [ ] Bitrate and other tech metadata
 - [ ] Start and continue last song
 - [ ] More user-friendly library management

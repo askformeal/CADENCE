@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## [0.10.0] - 2026-08-19
+
+### Added
+
+- `lib search` now also matches by filename (without extension), case-insensitive, after name/artist/album/alias
+- `status` reports `playlist_len` (songs in current playlist) and `current_num` (0-based position); CLI shows `[current / total]`
+- `status` reports `run_time` (backend uptime in seconds); CLI shows it formatted
+- `prev` / `next` / `switch` / `dice` success messages include the resulting song's name
+
+### Changed
+
+- `format_ms` renamed to `format_time(raw_time, unit='ms'|'sec')` — one formatter for both milliseconds and seconds (uses `typing.Literal` for the unit parameter)
+- Client socket `TIMEOUT` raised from 3s to 10s (slow `open` on network drives / large files)
+- `current_song_num` is only synced after a successful `prev` / `next` / `switch` / `dice` — a failed switch no longer moves the reported current song
+
 ## [0.9.0] - 2026-08-19
 
 ### Added

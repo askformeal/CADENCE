@@ -9,7 +9,7 @@ from src.sentinels import SENTINELS
 from src.client import send_request, test_alive
 from src.starter import start
 from src.constants import RESTART_NUM, RESTART_POLL_INTERVAL, ATTACHMENT_REQUIRED_ACTIONS
-from src.utils import format_ms
+from src.utils import format_time
 
 def _path(val):
     return str(Path(val).absolute())
@@ -237,8 +237,20 @@ def main():
                         volume = attachment.get('volume', '?')
                         mute = {True: 'Yes', False: 'No', None: '?'}[attachment.get('mute', None)]
 
-                        time = format_ms(raw_time)
-                        length = format_ms(raw_length)
+                        time = format_time(raw_time)
+                        length = format_time(raw_length)
+
+                        playlist_len = attachment.get('playlist_len', None)
+                        if playlist_len is None:
+                            playlist_len = '?'
+
+                        current_num = attachment.get('current_num', None)
+                        if current_num is None:
+                            current_num = '?'
+                        else:
+                            current_num += 1
+
+                        run_time = format_time(attachment.get('run_time', -1), 'sec')
 
                         dev = attachment.get('dev', False)
 
@@ -249,7 +261,7 @@ def main():
 
 
                         print('-'*50)
-                        print(f'\n{name} - {artist}')
+                        print(f'\n{name} - {artist} [{current_num} / {playlist_len}]')
                         print(f'[{time} / {length}] {percentage}%\n')
                         print(f'In library: {in_lib}')
                         print(f'Album: {album}')
@@ -257,6 +269,7 @@ def main():
                         print(f'Player status: {player_status}')
                         print(f'Volume: {volume}%')
                         print(f'Mute: {mute}')
+                        print(f'\nCADENCE backend had been running for {run_time}')
 
                         if dev:
                             print('\nDEVELOPMENT MODE ON')
@@ -340,7 +353,7 @@ def _show_song_info(info, empty_msg, show_aliases=False, show_playlists=False, s
                 f'Name: {song["name"]}',
                 f'Artist: {song["artist"]}',
                 f'Album: {song["album"]}',
-                f'Duration: {format_ms(song["duration"])}',
+                f'Duration: {format_time(song["duration"])}',
                 f'Path: {song["path"]}',
             ]
             if show_aliases:
