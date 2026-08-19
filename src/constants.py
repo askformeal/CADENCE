@@ -56,6 +56,7 @@ SOURCES = {
 }
 
 # 'key name': (type, is_required)
+# literal type: ((<list, tuple, etc>, element_type), is_required). every element needs to match
 ACTION_KEYS = {
     'open': {
         'song': (str, True)
@@ -88,11 +89,15 @@ ACTION_KEYS = {
     'lib.del': {
         'song': (str, True)
     },
+    'lib.prune':
+    {
+        'dry_run': (bool, False),
+    },
     'lib.scan': {
         'dir': (str, True),
         'playlist': (str, False),
         'recurse': (bool, False),
-        'preview': (bool, False),
+        'dry_run': (bool, False),
         'skip_meta': (bool, False),
         'skip_alias': (bool, False)
     },
@@ -142,6 +147,7 @@ ATTACHMENT_REQUIRED_ACTIONS = [
     'list',
     'lib.search',
     'lib.list',
+    'lib.prune',
     'lib.scan',
     'lib.alias.list',
     'lib.playlist.list',

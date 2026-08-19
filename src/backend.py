@@ -214,12 +214,7 @@ class Backend:
                         response = gen_response.failed('can not open all songs because there is none in library')
 
                 elif action == 'stop':
-                    result = self.player.stop()
-                    response = {
-                        SENTINELS.SUCCESS: gen_response.success('player stopped'),
-                        SENTINELS.VLC_ERROR: gen_response.vlc_error('stop player'),
-                        SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout('stop player')
-                    }[result]
+                    response = self._stop_player()
 
                 elif action == 'pause':
                     result = self.player.pause()
@@ -285,26 +280,12 @@ class Backend:
 
                 elif action == 'switch':
                     num = request['number']
-                    max_num = len(self.player.medias)
-
                     if num == 0:
-                        num_to_load = 0
-                    elif num > max_num:
-                        num_to_load = max_num - 1 # 9999999999 will switch the last song
+                        response = self._switch_song(0)
                     elif num < 0:
-                        num_to_load = max(max_num + num, 0) # -3 will switch the third from last song, -9999999999 will switch to the first song
+                        response = self._switch_song(num)
                     else:
-                        num_to_load = num - 1
-                    result = self.player.load_number(num_to_load)
-                    response = {
-                        SENTINELS.SUCCESS: gen_response.success(f'switched to the {num}nd song in current playlist'),
-                        SENTINELS.PLAYER_EMPTY: gen_response.player_empty(f'switch to the {num}nd song in current playlist'),
-                        SENTINELS.VLC_ERROR: gen_response.vlc_error(f'switch to the {num}nd song in current playlist'),
-                        SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout(f'switch to the {num}nd song in current playlist'),
-                    }[result]
-                    self.current_song_num = self.player.number
-                    if result is SENTINELS.SUCCESS:
-                        response = gen_response.merge(response, self._jump_to_memorized_pos())
+                        response = self._switch_song(num-1)
 
                 elif action == 'prev':
                     if self.shuffle:
@@ -354,13 +335,7 @@ class Backend:
                     if pos is SENTINELS.INVALID_TIME:
                         response = gen_response.failed(f'invalid time: {time}')
                     else:
-                        result = self.player.jump_pos(pos)
-                        response = {
-                            # why formate_ms instead of time: if user input something crazy like 99999:999999 this will make it sane.
-                            SENTINELS.SUCCESS: gen_response.success(f'jumped to {format_ms(pos)}'), 
-                            SENTINELS.POS_TOO_LATE: gen_response.failed(f'can not jumps to {format_ms(pos)} because it is later than the end of the current song'),
-                            SENTINELS.INVALID_PLAYER_STATE: gen_response.not_playing_paused('jump to progress')
-                        }[result]
+                        response = self._jump_to_pos(pos)
 
                 elif action == 'jump':
                     percent = request['progress']
@@ -374,14 +349,7 @@ class Backend:
                             response = gen_response.not_playing_paused('jump to progress')
                         else:
                             pos = length * (percent / 100)
-                            result = self.player.jump_pos(pos)
-                            response = {
-                                SENTINELS.SUCCESS: gen_response.success(f'jumped to {format_ms(pos)}'),
-                                SENTINELS.POS_TOO_LATE: gen_response.failed(f'can not jumps to {format_ms(pos)} because it is later than the end of the current song'), 
-                                # ^^^ not very possible, but didn't feel really impossible ^^^
-                                SENTINELS.INVALID_PLAYER_STATE: gen_response.not_playing_paused('jump to progress')
-                            }[result]
-
+                            response = self._jump_to_pos(pos)
                 elif action == 'replay':
                     response = self._replay()
                     if response['code'] == 0:
@@ -459,6 +427,25 @@ class Backend:
                     else:
                         response = gen_response.song_not_exist(f'delete {song}')
 
+                elif action == 'lib.prune':
+                    dry_run = request.get('dry_run', False)
+                    info = self.database.get_all_song_info()
+                    found = []
+                    for song in info:
+                        if not Path(song['path']).is_file():
+                            found.append(song)
+                    if dry_run:
+                        response = gen_response.success(f'{len(found)} song(s) with unavailable path(s) found in library', attachment=found)
+                    else:
+                        failed = []
+                        for song in found:
+                            self.database.delete_song(song['id'])
+                            del_response = self._remove_from_current(song['path'])
+                            if del_response['code'] != 0:
+                                failed.append(del_response)
+                        
+                        response = gen_response.success(f'{len(found)} song(s) with unavailable path(s) found and was removed from library', attachment=found, failed=failed)
+
                 elif action == 'lib.scan':
                     missing_cwd = False
                     directory = request['dir']
@@ -473,7 +460,7 @@ class Backend:
                         playlist = request.get('playlist', None)
 
                         is_recurse = request.get('recurse', False)
-                        is_preview = request.get('preview', False)
+                        dry_run = request.get('dry_run', False)
 
                         set_meta = not request.get('skip_meta', False)
                         bind_alias = not request.get('skip_alias', False)
@@ -485,7 +472,7 @@ class Backend:
                                 paths = self._recurse_scan(directory)
                             else:
                                 paths = self._scan(directory)
-                            if is_preview:
+                            if dry_run:
                                 response = gen_response.success(f'{len(paths)} supported audio files found under {directory}', paths)
                             else:
                                 ids = []
@@ -656,7 +643,7 @@ class Backend:
 
         return response
 
-    def _load_paths(self, paths, song):
+    def _load_paths(self, paths, song, jump_to_mem=True):
         result = self.player.load_paths(paths)
         response = {
             SENTINELS.SUCCESS: gen_response.success(f'opened song/playlist \"{song}\"'),
@@ -664,10 +651,67 @@ class Backend:
             SENTINELS.VLC_ERROR: gen_response.vlc_error('load path(s)'),
             SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout('load path(s)'),
         }[result]
-        if result is SENTINELS.SUCCESS:
+        if jump_to_mem and result is SENTINELS.SUCCESS:
             response = gen_response.merge(response, self._jump_to_memorized_pos())
         return response
 
+    def _stop_player(self):
+        result = self.player.stop()
+        return {
+            SENTINELS.SUCCESS: gen_response.success('player stopped'),
+            SENTINELS.VLC_ERROR: gen_response.vlc_error('stop player'),
+            SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout('stop player')
+        }[result]
+
+    def _remove_from_current(self, path):        
+        if self.current_song_info is not None:
+            paths = list(map(lambda s: s['path'], self.current_song_info))
+            if path in paths:
+                removed_num = paths.index(path)
+                paths.remove(path)
+                self.current_song_info = self.current_song_info[:removed_num] + self.current_song_info[removed_num+1:]
+                if len(paths) > 0:
+                    num = self.current_song_num
+                    if removed_num < num: # removed before current
+                        num -= 1
+                    elif removed_num == num:
+                        if num >= len(paths):
+                            num = len(paths) - 1
+
+                    response = self._load_paths(paths, 'reload current playlist due to deleted song', jump_to_mem=False)
+                    response = gen_response.merge(response, self._switch_song(num))
+                    return response
+                else:
+                    self.current_song_info = None
+                    self.current_song_num = None
+                    self.current_song_in_lib = False
+                    return self._stop_player()
+            else:
+                return gen_response.success('path not in current playlist') # not that anyone will actually read this but, you know, for good measure
+        else:
+            return gen_response.success('current playlist empty') # same as above
+
+    def _switch_song(self, num):
+        max_num = len(self.player.medias)
+        if num >= max_num:
+            num_to_load = max_num - 1 # 9999999999 will switch the last song
+        elif num < 0:
+            num_to_load = max(max_num + num, 0) # -3 will switch the third from last song, -9999999999 will switch to the first song
+        else:
+            num_to_load = num
+        result = self.player.load_number(num_to_load)
+        response = {
+            SENTINELS.SUCCESS: gen_response.success(f'switched to the {num+1}nd song in current playlist'),
+            SENTINELS.PLAYER_EMPTY: gen_response.player_empty(f'switch to the {num+1}nd song in current playlist'),
+            SENTINELS.VLC_ERROR: gen_response.vlc_error(f'switch to the {num+1}nd song in current playlist'),
+            SENTINELS.PLAYER_TIMEOUT: gen_response.player_timeout(f'switch to the {num+1}nd song in current playlist'),
+        }[result]
+        self.current_song_num = self.player.number
+        if result is SENTINELS.SUCCESS:
+            response = gen_response.merge(response, self._jump_to_memorized_pos())
+
+        return response
+    
     def _toggle_shuffle(self):
         self.shuffle = not self.shuffle
         logger.info(f'Shuffle set to {self.shuffle}')
@@ -691,14 +735,19 @@ class Backend:
         path = self.current_song_info[self.current_song_num]['path']
         pos = self.database.get_pos(path)
         if pos is not SENTINELS.POS_NOT_FOUND:
-            result = self.player.jump_pos(pos)
-            return {
-                SENTINELS.SUCCESS: gen_response.success(f'jumped to {pos/1000:.2f}s'),
-                SENTINELS.POS_TOO_LATE: gen_response.pos_too_late('jump to memorized position'),
-                SENTINELS.INVALID_PLAYER_STATE: gen_response.not_playing_paused('jump to memorized position')
-            }[result]
+            response = gen_response.success('try to jump to memorized pos')
+            response = gen_response.merge(response, self._jump_to_pos(pos), join_char='->')
+            return response
         else:
             return gen_response.success(f'no memorized position')
+
+    def _jump_to_pos(self, pos):
+        result = self.player.jump_pos(pos)
+        return {
+            SENTINELS.SUCCESS: gen_response.success(f'jumped to {format_ms(pos)}'),
+            SENTINELS.POS_TOO_LATE: gen_response.failed(f'can not jumps to {format_ms(pos)} because it is later than the end of the current song'), 
+            SENTINELS.INVALID_PLAYER_STATE: gen_response.not_playing_paused('jump to progress')
+        }[result]
 
     def _replay(self):
         result = self.player.jump_pos(0)

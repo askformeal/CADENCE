@@ -704,14 +704,14 @@ def test_scan_invalid_directory(backend, tmp_path):
     assert 'not a valid directory' in response['msg']
 
 
-def test_scan_preview(backend, tmp_path):
+def test_scan_dry_run(backend, tmp_path):
     _make_wav(tmp_path / 'test_a.wav')
     _make_wav(tmp_path / 'test_b.wav')
-    response = _request(backend, 'lib.scan', dir=str(tmp_path), preview=True)
+    response = _request(backend, 'lib.scan', dir=str(tmp_path), dry_run=True)
     assert response['code'] == 0
     assert len(response['attachment']) == 2
     assert response['attachment'][0].endswith('test_a.wav')
-    # preview must not add anything to the library
+    # dry run must not add anything to the library
     assert _request(backend, 'lib.list')['attachment'] == []
 
 
@@ -760,6 +760,55 @@ def test_scan_with_playlist(backend, tmp_path):
     assert 'added 1 song(s) to playlist' in response['msg']
     playlist_id = database.get_playlist_via_name('scanlist')
     assert len(database.get_playlist_songs(playlist_id)) == 1
+
+
+def test_lib_prune_dry_run_empty(backend, audio_file):
+    _request(backend, 'lib.add', path=audio_file)
+    response = _request(backend, 'lib.prune', dry_run=True)
+    assert response['code'] == 0
+    assert response['attachment'] == []
+
+
+def test_lib_prune_dry_run_finds_missing(backend, tmp_path):
+    database = backend.database
+    ghost = str(tmp_path / 'ghost.wav')
+    database.add_song(ghost)
+    response = _request(backend, 'lib.prune', dry_run=True)
+    assert response['code'] == 0
+    assert len(response['attachment']) == 1
+    assert response['attachment'][0]['path'] == ghost
+    # dry run must not delete anything
+    assert database.song_exists(1)
+
+
+def test_lib_prune_removes_missing(backend, tmp_path):
+    database = backend.database
+    ghost = str(tmp_path / 'ghost.wav')
+    ghost_id, _ = database.add_song(ghost)
+    real = str(tmp_path / 'real.wav')
+    _make_wav(real)
+    real_id, _ = database.add_song(real)
+    response = _request(backend, 'lib.prune')
+    assert response['code'] == 0
+    assert database.song_exists(ghost_id) is False
+    assert database.song_exists(real_id) is True
+
+
+def test_lib_prune_removes_from_current_playlist(backend, audio_file, tmp_path):
+    """A song in the current playlist whose file disappears later must be removed from both DB and playlist."""
+    second = str(tmp_path / 'test_b.wav')
+    _make_wav(second)
+    _open_playlist_with_songs(backend, [audio_file, second], 'pair')
+    assert backend.current_song_info is not None
+    assert len(backend.current_song_info) == 2
+
+    os.remove(second)  # file goes missing after the playlist was opened
+    response = _request(backend, 'lib.prune')
+    assert response['code'] == 0
+    assert len(backend.database.get_all_song_info()) == 1
+    paths = [s['path'] for s in backend.current_song_info]
+    assert second not in paths
+    assert audio_file in paths
 
 
 def test_shuffle_toggle_on_off(backend):

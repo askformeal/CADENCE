@@ -5,8 +5,17 @@
 - [X] Seek command
 - [X] Duration metadata
 - [X] Library search
+- [X] Prune - find songs in library which path no longer exists
+- [ ] Search by filename
+- [ ] More Detailed status
+  - [ ] Run time
+  - [ ] Number of songs in current playlist
+- [ ] Bitrate and other tech metadata
 - [ ] Start and continue last song
-- [ ] More user-friendly library management (no idea yet)
+- [ ] More user-friendly library management
+  - [ ] Interactive management
+  - [ ] Batch management
+  - [ ] Regex matching (not now)
 - [ ] Bluetooth frontend
 - [ ] Tray icon frontend
 - [ ] Configure system

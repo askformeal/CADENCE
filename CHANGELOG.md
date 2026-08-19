@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## [0.9.0] - 2026-08-19
+
+### Added
+
+- `lib prune` — delete all songs from the library whose file no longer exists on disk; `-d/--dry-run` shows what would be removed without deleting
+
+### Changed
+
+- `lib scan`'s `-p/--preview` renamed to `-d/--dry-run` (same behavior, standard naming)
+- `merge` gained a `join_char` parameter (default `'|'`) so composite messages can join with a custom separator
+- Backend refactor: `switch`, `jump`, and `stop` extracted into `_switch_song` / `_jump_to_pos` / `_stop_player` helpers; `_load_paths` gained a `jump_to_mem` flag; new `_remove_from_current` keeps the current playlist consistent when a song is pruned
+
 ## [0.8.2] - 2026-08-18
 
 ### Added

@@ -84,11 +84,14 @@ def main():
     lib_del_parser = lib_sub.add_parser('del', help='Delete a song from library')
     lib_del_parser.add_argument('song', type=str, help='Song to delete')
 
+    lib_prune_parser = lib_sub.add_parser('prune', help='Delete all songs which file no longer exists')
+    lib_prune_parser.add_argument('-d', '--dry-run', action='store_true', help='Show found files without deleting')
+
     lib_scan_parser = lib_sub.add_parser('scan', help='Scan a directory for all supported audio files and add them to library')
     lib_scan_parser.add_argument('dir', type=_path, help='directory to scan')
     lib_scan_parser.add_argument('--playlist', type=str, default=None, help='Playlist to add all found songs to')
     lib_scan_parser.add_argument('-r', '--recurse', action='store_true', help='Enable recursive scanning')
-    lib_scan_parser.add_argument('-p', '--preview', action='store_true', help='Show found files without adding to library')
+    lib_scan_parser.add_argument('-d', '--dry-run', action='store_true', help='Show found files without adding to library')
     lib_scan_parser.add_argument('--skip-meta', action='store_true', help='Disable automatic setting metadata')
     lib_scan_parser.add_argument('--skip-alias', action='store_true', help='Disable automatic binding alias')
 
@@ -210,7 +213,7 @@ def main():
                 print('Starting backend...')
                 _start_backend(CADENCE_DEV=int(args['dev']))
 
-            if action == 'lib.scan' and not args['preview']: # just to be clear
+            if action == 'lib.scan' and not args['dry_run']: # just to be clear
                 if len(failed) > 0:
                     print('-'*50)
                     print('Failed to add the following file(s) to library:')
@@ -267,7 +270,14 @@ def main():
                     elif action == 'lib.list':
                         _show_song_info(attachment, 'No songs in library', show_aliases=args['show_aliases'], show_playlists=args['show_playlists'])
 
-                    elif action == 'lib.scan' and args['preview']:
+                    elif action == 'lib.prune':
+                        _show_song_info(attachment, 'No songs to be shown')
+                        if len(failed) > 0:
+                            print('There are failed actions:')
+                            for failed_response in failed:
+                                print(failed_response['msg'])
+
+                    elif action == 'lib.scan' and args['dry_run']:
                         if len(attachment) > 0:
                             print('-'*50)
                             for path in attachment:

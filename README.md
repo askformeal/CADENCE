@@ -77,7 +77,8 @@ python -m src
 | `cadence lib search <kw>`   | Search songs in library by name/artist/album/alias |
 | `cadence lib add <path>`    | Add a new song to library                          |
 | `cadence lib del <song>`    | Delete a song from library                         |
-| `cadence lib scan <dir>`    | Scan a directory for audio files and add them      |
+| `cadence lib scan <dir>`    | Scan a directory for audio files and add them (`-d` dry run) |
+| `cadence lib prune`         | Delete all songs whose file no longer exists (`-d` dry run)  |
 | `cadence lib reset`         | Reset library and delete all data (confirmation)   |
 | `cadence lib meta set`      | Set metadata of a song (use `""` to clear)         |
 | `cadence lib alias ...`     | List/bind/unbind aliases                           |

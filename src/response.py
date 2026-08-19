@@ -54,7 +54,7 @@ class Response:
     def pos_too_late(self, action):
         return self.failed(f'can not {action} because the position to jump to is later than the end of the song')
 
-    def merge(self, *responses, attachment=None, failed=None):
+    def merge(self, *responses, join_char='|', attachment=None, failed=None):
         messages = []
         codes = []
 
@@ -64,7 +64,7 @@ class Response:
                 codes.append(response['code'])
 
         if len(codes) > 0:
-            msg = ' | '.join(messages)
+            msg = f' {join_char} '.join(messages)
             code = max(codes)
             return self._response(msg, code, attachment=attachment, failed=failed)
         else:
