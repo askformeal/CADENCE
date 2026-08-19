@@ -9,24 +9,26 @@ from src.connection import send_json, recv_json
 
 logger = setup_logger(__name__, SOCKET_LOG_PATH)
 
-def send_request(**kwargs):
+def send_request(expect_reset=False, **kwargs):
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(TIMEOUT)
         sock.connect((HOST, PORT))
-        if send_json(sock, kwargs):
-            response = recv_json(sock)
+        if send_json(sock, kwargs, expect_reset=expect_reset):
+            response = recv_json(sock, expect_reset=expect_reset)
             if response is not None:
                 sock.close()
                 return response
             else:
                 sock.close()
-                logger.error('Failed receive response from CADENCE backend')
+                if not expect_reset:
+                    logger.error('Failed to receive response from CADENCE backend')
                 return {'code': 2, 'msg': 'failed receive response from CADENCE backend', 'attachment': {}} 
             # code 0: everything's ok. code 1: backend failed to complete this action. code 2: can not connect to backend
         else:
             sock.close()
-            logger.error('Failed to send message to CADENCE backend')
+            if not expect_reset:
+                logger.error('Failed to send message to CADENCE backend')
             return {'code': 2, 'msg': 'failed to send message to CADENCE backend', 'attachment': {}}
 
     except (ConnectionRefusedError, OSError) as e:
@@ -37,7 +39,7 @@ def send_request(**kwargs):
         }
 
 def test_alive():
-    response = send_request(action='test_alive', source='alive')
+    response = send_request(action='test_alive', source='alive', expect_reset=True)
     return response['code'] != 2
 
 def test_heartbeat():

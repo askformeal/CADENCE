@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [0.10.1] - 2026-08-19
+
+### Fixed
+
+- Restart (`reboot`) no longer spams error logs with `[WinError 10054]` when the dying backend resets the connection mid-poll — `send_request` gained `expect_reset` (used by `test_alive`), silencing the expected reset in both `send_json` and `recv_json`
+- `send_json` returns `False` on `ConnectionResetError` instead of implicitly falling through to `None`
+
 ## [0.10.0] - 2026-08-19
 
 ### Added

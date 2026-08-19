@@ -7,19 +7,23 @@ from src.sentinels import SENTINELS
 
 logger = setup_logger(__name__, SOCKET_LOG_PATH)
 
-def send_json(connection, data):
+def send_json(connection, data, expect_reset=False):
     try:
         data_bytes = json.dumps(data, ensure_ascii=False).encode(CONNECTION_ENCODING)
         length = len(data_bytes)
         connection.sendall(length.to_bytes(HEADER_LEN, byteorder='big'))
         connection.sendall(data_bytes)
         return True
-    except (BrokenPipeError, ConnectionResetError, TimeoutError, OSError) as e:
+    except ConnectionResetError as e:
+        if not expect_reset:
+            logger.error(f'Socket connection reset while sending: {e}')
+        return False
+    except (BrokenPipeError, TimeoutError, OSError) as e:
         logger.error(f'A socket error occurred during sending: {e}')
         return False
 
-def recv_json(connection):
-    raw_len = _recv_exact(connection, HEADER_LEN)
+def recv_json(connection, expect_reset=False):
+    raw_len = _recv_exact(connection, HEADER_LEN, expect_reset=expect_reset)
     if raw_len is SENTINELS.LOST:
         return None
     else:
@@ -34,7 +38,7 @@ def recv_json(connection):
             return None
 
         else:
-            raw_data = _recv_exact(connection, length)
+            raw_data = _recv_exact(connection, length, expect_reset=expect_reset)
             if raw_data is SENTINELS.LOST:
                 logger.error('Connection lost')
                 return None
@@ -48,13 +52,14 @@ def recv_json(connection):
                 else:
                     return json_data
 
-def _recv_exact(connection, length):
+def _recv_exact(connection, length, expect_reset=False):
     data = b''
     while len(data) < length:
         try:
             chunk = connection.recv(length - len(data))
         except (ConnectionResetError, TimeoutError, OSError) as e:
-            logger.error(f'A socket error occurred during receiving: {e}')
+            if not expect_reset:
+                logger.error(f'A socket error occurred during receiving: {e}')
             return SENTINELS.LOST
         else:
             if not chunk:
