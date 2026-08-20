@@ -4,10 +4,14 @@ from src.log import setup_logger
 from src.constants import SOCKET_LOG_PATH
 from src.constants import HEADER_LEN, CONNECTION_ENCODING, MAX_JSON_SIZE
 from src.sentinels import SENTINELS
+from src.gen_response import Response
 
 logger = setup_logger(__name__, SOCKET_LOG_PATH)
 
 def send_json(connection, data, expect_reset=False):
+    if isinstance(data, Response):
+        data = dict(data)
+        
     try:
         data_bytes = json.dumps(data, ensure_ascii=False).encode(CONNECTION_ENCODING)
         length = len(data_bytes)

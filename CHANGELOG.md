@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## [0.11.0] - 2026-08-20
+
+### Changed
+
+- Response system refactored from dict factories (`src/response.py`) to classes (`src/gen_response.py`): `Response` base + `Success` / `Failed` / `Dying` / `Undefined` / `UnknownAction` and typed failure subclasses
+- Responses support `+` / `+=` / `append()` for merging (replacing `merge()`); `append()` preserves the caller's `attachment` / `failed` unless new values are explicitly given
+- Invalid action message is now more specific: `unknown action received: "<action>"` instead of generic `invalid action`
+- `[DEV]` prefix applied via attribute instead of dict access
+
 ## [0.10.1] - 2026-08-19
 
 ### Fixed

@@ -29,7 +29,7 @@ def test_status_missing_cwd(backend):
 def test_invalid_action(backend):
     response = _request(backend, 'bogus')
     assert response['code'] == 1
-    assert 'invalid action' in response['msg']
+    assert 'unknown action received: "bogus"' in response['msg']
 
 
 def test_missing_action_key(backend):

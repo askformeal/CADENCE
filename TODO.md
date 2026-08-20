@@ -10,13 +10,15 @@
 - [X] More Detailed status
   - [X] Run time
   - [X] Number of songs in current playlist
+- [X] Class-ize response system
 - [ ] Stay in current playlist if opened song is in it
 - [ ] Bitrate and other tech metadata
 - [ ] Start and continue last song
 - [ ] More user-friendly library management
-  - [ ] Interactive management
   - [ ] Batch management
+  - [ ] Manage by library ID
   - [ ] Regex matching (not now)
+  - [ ] Interactive management (not now)
 - [ ] Bluetooth frontend
 - [ ] Tray icon frontend
 - [ ] Configure system
