@@ -109,6 +109,7 @@ def main():
     command_sub = parser.add_subparsers(dest='action', required=True)
 
     start_parser = command_sub.add_parser('start', help='Start CADENCE backend')
+    start_parser.add_argument('-c', '--continue', action='store_true', help='Continue playing last song')
     start_parser.add_argument('--dev', action='store_true', help='Start in development mode')
     reboot_parser = command_sub.add_parser('reboot', help='Reboot CADENCE backend. Will fail if backend is not running')
     reboot_parser.add_argument('--dev', action='store_true', help='Reboot in development mode')
@@ -230,7 +231,7 @@ def main():
 
 
     if args['action'] == 'start':
-        _start_backend(CADENCE_DEV=int(args['dev']))
+        _start_backend(CADENCE_DEV=int(args['dev'], CADENCE_CONTINUE=int(args['continue'])))
 
     else:
         if args.get('meta_action', None) is not None:
@@ -292,7 +293,7 @@ def main():
                     return 1
                     
                 print('Starting backend...')
-                _start_backend(CADENCE_DEV=int(args['dev']))
+                _start_backend(CADENCE_DEV=int(args['dev']), CADENCE_CONTINUE=int(args['continue']))
 
             if action == 'lib.scan' and not args['dry_run']: # just to be clear
                 if len(failed) > 0:

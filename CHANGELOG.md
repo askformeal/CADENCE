@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## [0.14.0] - 2026-08-20
+
+### Added
+
+- `cadence start -c/--continue` — resume the last opened song/playlist on backend startup (reads `last_song` / `last_num` / `last_cwd` settings); open action is now factored into `_open_song()` and reused by both paths
+- `settings` table (key-value) in the database for persistent backend state; `last_song` stores the raw user input (alias/path/playlist name) so resume reproduces exactly how the song was opened
+- `current_song_num` is persisted via `_set_current_num()` on every navigation (prev/next/switch/dice), so the resume position stays in sync
+- `backend` source added to `SOURCES` for internal inter-process requests
+
 ## [0.13.0] - 2026-08-20
 
 ### Added

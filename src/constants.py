@@ -49,6 +49,7 @@ POS_MEMORIZE_INTERVAL = 5
 SOURCES = {
     SENTINELS.SOURCE_NOT_PROVIDED: '[source not provided]',
     'cli': 'teletypewriter interface (non-interactive)',
+    'backend': 'backend inter-process communication from backend',
     'player': 'backend inter-process communication from player',
     'hotkey': 'Hotkey control service',
     'alive': 'alive test',

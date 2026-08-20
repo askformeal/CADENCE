@@ -46,6 +46,8 @@ class Sentinels:
 
         self.POS_NOT_FOUND = Sentinel('Position not in memory')
 
+        self.SETTING_NOT_FOUND = Sentinel('Setting not found')
+
         # Player
 
         self.PLAYER_EMPTY = Sentinel('Current playlist is empty')
