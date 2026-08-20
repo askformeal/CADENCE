@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [0.15.0] - 2026-08-20
+
+### Added
+
+- `cadence reboot -c/--continue` — resume playback after rebooting the backend, same as `start -c`
+- `play-all` now records `last_is_all` so `--continue` can resume an "all songs" session; `_play_all()` factored out and shared with `continue_last`
+
 ## [0.14.0] - 2026-08-20
 
 ### Added

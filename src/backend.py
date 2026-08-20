@@ -193,32 +193,28 @@ class Backend:
                     response = self._open_song(song, cwd)
 
                 elif action == 'play-all':
-                    info = self.database.get_all_song_info()
-                    if len(info) > 0:
-                        self._set_current_song(info, True)
-                        paths = list(map(lambda x: x['path'], info))
-                        response = self._load_paths(paths, 'all-songs')
-                    else:
-                        response = gen_response.Failed('can not open all songs because there is none in library')
+                   response = self._play_all()
 
                 elif action == 'continue_last':
+                    is_all = self.database.get_setting('last_is_all')
                     song = self.database.get_setting('last_song')
                     num = self.database.get_setting('last_num')
                     last_cwd = self.database.get_setting('last_cwd')
-            
-                    if SENTINELS.SETTING_NOT_FOUND in (song, num):
-                        response = gen_response.Success('No last song to open')
+
+                    if num is SENTINELS.SETTING_NOT_FOUND:
+                        response = gen_response.Failed('No last song to open')
                     else:
                         num = int(num)
-                        open_response = self._open_song(song, last_cwd)
-                        if open_response.ok():
-                            switch_response = self._switch_song(num)
-                            if switch_response.ok():
-                                response = gen_response.Success(f'Opened last song \"{song}\", the {num+1}nd in the playlist')
-                            else:
-                                response = gen_response.Failed(f'Failed to switch to the last song') + switch_response
+                        if is_all == '1':
+                            response = self._play_all()
                         else:
-                            response = gen_response.Failed(f'Failed to open the last song or the playlist of the last song') + open_response
+                            if song is SENTINELS.SETTING_NOT_FOUND:
+                                response = gen_response.Failed('No last song to open')
+                            else:
+                                response = self._open_song(song, last_cwd)
+
+                        if response.ok():
+                            response += self._switch_song(num)
 
                     logger.debug(response.msg)
 
@@ -748,6 +744,18 @@ class Backend:
             response += self._jump_to_memorized_pos()
         return response
 
+    def _play_all(self):
+        info = self.database.get_all_song_info()
+        if len(info) > 0:
+            self._set_current_song(info, True)
+            paths = list(map(lambda x: x['path'], info))
+            response = self._load_paths(paths, 'all-songs')
+            if response.ok():
+                self.database.set_setting('last_is_all', '1')
+        else:
+            response = gen_response.Failed('can not open all songs because there is none in library')
+        return response
+
     def _stop_player(self) -> gen_response.Response:
         result = self.player.stop()
         return {
@@ -1036,6 +1044,7 @@ class Backend:
         return paths
 
     def _save_last_song(self, song, cwd):
+        self.database.set_setting('last_is_all', '0')
         self.database.set_setting('last_song', song)
         self.database.set_setting('last_cwd', cwd)
         self.database.set_setting('last_num', self.current_song_num)

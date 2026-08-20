@@ -113,6 +113,7 @@ def main():
     start_parser.add_argument('--dev', action='store_true', help='Start in development mode')
     reboot_parser = command_sub.add_parser('reboot', help='Reboot CADENCE backend. Will fail if backend is not running')
     reboot_parser.add_argument('--dev', action='store_true', help='Reboot in development mode')
+    reboot_parser.add_argument('-c', '--continue', action='store_true', help='Continue playing last song')
     status_parser = command_sub.add_parser('status', help='Show CADENCE status')
     open_parser = command_sub.add_parser('open', help='Open a song or playlist. Supports alias, file path and playlist name')
     open_parser.add_argument('song', type=str, help='Song to open')
@@ -231,7 +232,7 @@ def main():
 
 
     if args['action'] == 'start':
-        _start_backend(CADENCE_DEV=int(args['dev'], CADENCE_CONTINUE=int(args['continue'])))
+        _start_backend(CADENCE_DEV=int(args['dev']), CADENCE_CONTINUE=int(args['continue']))
 
     else:
         if args.get('meta_action', None) is not None:
