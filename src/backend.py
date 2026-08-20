@@ -183,14 +183,16 @@ class Backend:
                     response = gen_response.Success('status obtained', status)
                     
                 elif action == 'open':
-                    paths_to_load = None
+                    info_to_set = None
+                    paths_to_load = None # MUST be a list!!!
                     song = request['song']
+                    
                     id = self._get_song(song, cwd)
                     if id is SENTINELS.MISSING_CWD:
                         response = self._missing_key('open', 'cwd')
                     elif id is not SENTINELS.NOT_IN_LIB:
-                        self._set_current_song(self.database.get_song_info(id))
-                        paths_to_load = self.current_song_info[0]['path']
+                        info_to_set = (self.database.get_song_info(id),)
+                        paths_to_load = [info_to_set[0][0]['path']]
                     else:
                         path = Path(cwd) / song
                         info = self._get_playlist_songs(song)
@@ -198,20 +200,31 @@ class Backend:
                             response = gen_response.Failed(f'can not open playlist \"{song}\" because it is empty')
 
                         elif info is not SENTINELS.PLAYLIST_NOT_FOUND:
-                            self._set_current_song(info)
+                            info_to_set = (info,)
                             paths_to_load = list(map(lambda i: i['path'], info))
 
                         else:
                             # Not in library, try to open as path
                             if path.is_file():
-                                self._set_current_song([{'path': str(path)}], False)
-                                paths_to_load = str(path)
+                                info_to_set = ([{'path': str(path)}], False)
+                                paths_to_load = [str(path)]
                             else:
                                 logger.warning(f'Can not open {path}')
                                 response = gen_response.InvalidPath(str(path))
 
                     if paths_to_load is not None:
-                        response = self._load_paths(paths_to_load, song)
+                        if self.current_song_info is None:
+                            current_paths = []
+                        else:
+                            current_paths = list(map(lambda s: s['path'], self.current_song_info))
+
+                        if len(paths_to_load) == 1 and paths_to_load[0] in current_paths:
+                            num = current_paths.index(paths_to_load[0])
+                            response = gen_response.Success('song in current playlist. try to switch')
+                            response.append(self._switch_song(num), join_char='->')
+                        else:
+                            self._set_current_song(*info_to_set)
+                            response = self._load_paths(paths_to_load, song)
 
                 elif action == 'play-all':
                     info = self.database.get_all_song_info()
@@ -664,7 +677,7 @@ class Backend:
 
         return response
 
-    def _load_paths(self, paths, song, jump_to_mem=True):
+    def _load_paths(self, paths, song, jump_to_mem=True) -> gen_response.Response:
         result = self.player.load_paths(paths)
         response = {
             SENTINELS.SUCCESS: gen_response.Success(f'opened song/playlist \"{song}\"'),
@@ -676,7 +689,7 @@ class Backend:
             response += self._jump_to_memorized_pos()
         return response
 
-    def _stop_player(self):
+    def _stop_player(self) -> gen_response.Response:
         result = self.player.stop()
         return {
             SENTINELS.SUCCESS: gen_response.Success('player stopped'),
@@ -684,7 +697,7 @@ class Backend:
             SENTINELS.PLAYER_TIMEOUT: gen_response.PlayerTimeout('stop player')
         }[result]
 
-    def _remove_from_current(self, path):        
+    def _remove_from_current(self, path) -> gen_response.Response:
         if self.current_song_info is not None:
             paths = list(map(lambda s: s['path'], self.current_song_info))
             if path in paths:
@@ -712,7 +725,7 @@ class Backend:
         else:
             return gen_response.Success('current playlist empty') # same as above
 
-    def _switch_song(self, num):
+    def _switch_song(self, num) -> gen_response.Response:
         max_num = len(self.player.medias)
         if num >= max_num:
             num_to_load = max_num - 1 # 9999999999 will switch the last song
@@ -755,7 +768,7 @@ class Backend:
         else:
             return SENTINELS.PLAYER_EMPTY
 
-    def _jump_to_memorized_pos(self):
+    def _jump_to_memorized_pos(self) -> gen_response.Response:
         path = self.current_song_info[self.current_song_num]['path']
         pos = self.database.get_pos(path)
         if pos is not SENTINELS.POS_NOT_FOUND:
@@ -765,7 +778,7 @@ class Backend:
         else:
             return gen_response.Success(f'no memorized position')
 
-    def _jump_to_pos(self, pos):
+    def _jump_to_pos(self, pos) -> gen_response.Response:
         result = self.player.jump_pos(pos)
         return {
             SENTINELS.SUCCESS: gen_response.Success(f'jumped to {format_time(pos)}'),
@@ -773,7 +786,7 @@ class Backend:
             SENTINELS.INVALID_PLAYER_STATE: gen_response.NotPlayingPaused('jump to progress')
         }[result]
 
-    def _replay(self):
+    def _replay(self) -> gen_response.Response:
         result = self.player.jump_pos(0)
         return {
             SENTINELS.SUCCESS: gen_response.Success('jumped to beginning'),
@@ -781,7 +794,7 @@ class Backend:
             SENTINELS.INVALID_PLAYER_STATE: gen_response.NotPlayingPaused('jump to beginning')
         }[result]
 
-    def _missing_key(self, action, key):
+    def _missing_key(self, action, key) -> gen_response.Response:
         logger.error(f'Missed key for action \"{action}\": \"{key}\"')
         return gen_response.MissingKey(action, key)
 
@@ -840,7 +853,7 @@ class Backend:
             name = Path(info['path']).stem
         return name
 
-    def _add_song(self, path, set_meta=True, bind_alias=True, alias=None, return_id=False):
+    def _add_song(self, path, set_meta=True, bind_alias=True, alias=None, return_id=False) -> tuple[int, gen_response.Response] | gen_response.Response:
         song_id = None
         if Path(path).is_file():
             add_response = None
@@ -902,14 +915,6 @@ class Backend:
             return song_id, response
         else:
             return response
-        
-    def _memorize_pos(self):
-        while self.running:
-            if self.current_song_info is not None and self.player.player.get_state() == vlc.State.Playing:
-                path = self.current_song_info[self.current_song_num]['path']
-                pos = self.player.get_progress()['time']
-                self.database.set_pos(path, pos, log=False)
-            sleep(POS_MEMORIZE_INTERVAL)
 
     def _del_current_pos(self):
         if self.current_song_info is not None:
@@ -953,6 +958,14 @@ class Backend:
                 if path.suffix.lower() in AUDIO_EXTENSIONS:
                     paths.append(str(path.resolve()))
         return paths
+
+    def _memorize_pos(self):
+        while self.running:
+            if self.current_song_info is not None and self.player.player.get_state() == vlc.State.Playing:
+                path = self.current_song_info[self.current_song_num]['path']
+                pos = self.player.get_progress()['time']
+                self.database.set_pos(path, pos, log=False)
+            sleep(POS_MEMORIZE_INTERVAL)
 
     def _listen(self):
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

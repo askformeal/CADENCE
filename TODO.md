@@ -11,7 +11,7 @@
   - [X] Run time
   - [X] Number of songs in current playlist
 - [X] Class-ize response system
-- [ ] Stay in current playlist if opened song is in it
+- [X] Stay in current playlist if opened song is in it
 - [ ] Bitrate and other tech metadata
 - [ ] Start and continue last song
 - [ ] More user-friendly library management

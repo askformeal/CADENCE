@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [0.12.0] - 2026-08-20
+
+### Added
+
+- Opening a song that is already in the current playlist now switches to it directly instead of reloading the whole list — playback position and current song index are preserved (`open` detects the path in `current_song_info` and calls `_switch_song`)
+
 ## [0.11.0] - 2026-08-20
 
 ### Changed
