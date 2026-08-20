@@ -9,7 +9,83 @@ from src.sentinels import SENTINELS
 from src.client import send_request, test_alive
 from src.starter import start
 from src.constants import RESTART_NUM, RESTART_POLL_INTERVAL, ATTACHMENT_REQUIRED_ACTIONS
-from src.utils import format_time
+from src.utils import format_time, box
+
+class SongOutput:
+    # generate outputs of from song info
+    def __init__(self, info=None):
+        if info is None:
+            info = {}
+        self.extract_from_dict(info)
+
+    def extract_from_dict(self, info):      
+        self.path = info.get('path', '?')
+
+        self.name = info.get('name', '?')
+        if self.name is None:
+            if self.path != '?' and self.path is not None:
+                self.name = Path(self.path).stem
+
+        self.artist = info.get('artist', '?')
+        self.album = info.get('album', '?')
+
+        self.duration = format_time(info.get('duration', -1))
+        self.bitrate = info.get('bitrate', '?')
+        if isinstance(self.bitrate, int):
+            self.bitrate = f'{self.bitrate/1000:.10g}'
+        self.sample_rate = info.get('sample_rate', '?')
+        self.channels = info.get('channels', '?')
+
+        self.in_lib = {True: 'Yes', False: 'No', '?': '?'}[info.get('in_library', '?')]
+        self.lib_id = info.get('id', '?')
+
+        self.aliases = info.get('aliases', '?')
+        self.aliases_num = '?'
+        if self.aliases != '?':
+            self.aliases_num = len(self.aliases)
+            if len(self.aliases) > 0:
+                self.aliases = ', '.join(self.aliases)
+            else:
+                self.aliases = 'No aliases are bond to this song'
+
+        self.playlists = info.get('playlists', '?')
+        self.playlists_num = '?'
+        if self.playlists != '?':
+            self.playlists_num = len(self.playlists)
+            if len(self.playlists) > 0:
+                self.playlists = ', '.join(self.playlists)
+            else:
+                self.playlists = '[This song is not in any playlists]'
+
+        self.player_status = info.get('player_status', '?')
+
+        raw_time = info.get('time', -1)
+        raw_length = info.get('length', -1)
+
+        self.time = format_time(raw_time)
+        self.length = format_time(raw_length)
+    
+        if raw_length != -1:
+            self.percentage = f'{raw_time / raw_length * 100:.0f}'
+        else:
+            self.percentage = '--'
+
+        self.volume = info.get('volume', '?')
+        self.mute = {True: 'Yes', False: 'No', '?': '?'}[info.get('mute', '?')]
+
+        self.playlist_len = info.get('playlist_len', '?')
+
+        self.current_num = info.get('current_num', '?')
+        if isinstance(self.current_num, int):
+            self.current_num += 1
+    
+        self.run_time = format_time(info.get('run_time', -1), 'sec')
+    
+        self.dev = info.get('dev', False)
+
+        for key, value in vars(self).items():
+            if value is None:
+                setattr(self, key, 'N/A')
 
 def _path(val):
     return str(Path(val).absolute())
@@ -67,6 +143,11 @@ def main():
     lib_parser = command_sub.add_parser('lib', help='Manage library')
 
     lib_sub = lib_parser.add_subparsers(dest='lib_action', required=True)
+
+    lib_info_parser = lib_sub.add_parser('info', help='Show information of a song')
+    lib_info_parser.add_argument('song', type=str, help='Song to show')
+    lib_info_parser.add_argument('-a', '--show-aliases', action='store_true', help='Show aliases of the song')
+    lib_info_parser.add_argument('-p', '--show-playlists', action='store_true', help='Show playlists the song is in')
 
     lib_list_parser = lib_sub.add_parser('list', help='Show all songs in library')
     lib_list_parser.add_argument('-a', '--show-aliases', action='store_true', help='Show aliases of songs')
@@ -224,64 +305,56 @@ def main():
                 if attachment is not None:
                     # these actions will be expecting an attachment
                     if action == 'status':
-                        name = attachment.get('name', '?')
-                        artist = attachment.get('artist', '?')
-                        album = attachment.get('album', '?')
-                        in_lib = {True: 'Yes', False: 'No', None: '?'}[attachment.get('in_library', None)]
-                        path = attachment.get('path', '?')
-                        player_status = attachment.get('player_status', '?')
+                        
+                        output = SongOutput(attachment)
 
-                        raw_time = attachment.get('time', -1)
-                        raw_length = attachment.get('length', -1)
+                        text = '\n'.join((
+                                        f'\n{output.name} - {output.artist} [{output.current_num} / {output.playlist_len}]',
+                                        f'[{output.time} / {output.length}] {output.percentage}%\n',
+                                        f'In library: {output.in_lib}',
+                                        f'Album: {output.album}',
+                                        f'Path: {output.path}\n',
+                                        f'Player status: {output.player_status}',
+                                        f'Volume: {output.volume}%',
+                                        f'Mute: {output.mute}',
+                                        f'\nCADENCE backend had been running for {output.run_time}',
+                        ))
 
-                        volume = attachment.get('volume', '?')
-                        mute = {True: 'Yes', False: 'No', None: '?'}[attachment.get('mute', None)]
+                        if output.dev:
+                            text += '\n\nDEVELOPMENT MODE ON'
 
-                        time = format_time(raw_time)
-                        length = format_time(raw_length)
-
-                        playlist_len = attachment.get('playlist_len', None)
-                        if playlist_len is None:
-                            playlist_len = '?'
-
-                        current_num = attachment.get('current_num', None)
-                        if current_num is None:
-                            current_num = '?'
-                        else:
-                            current_num += 1
-
-                        run_time = format_time(attachment.get('run_time', -1), 'sec')
-
-                        dev = attachment.get('dev', False)
-
-                        if raw_length != -1:
-                            percentage = f'{raw_time / raw_length * 100:.0f}'
-                        else:
-                            percentage = '--'
-
-
-                        print('-'*50)
-                        print(f'\n{name} - {artist} [{current_num} / {playlist_len}]')
-                        print(f'[{time} / {length}] {percentage}%\n')
-                        print(f'In library: {in_lib}')
-                        print(f'Album: {album}')
-                        print(f'Path: {path}\n')
-                        print(f'Player status: {player_status}')
-                        print(f'Volume: {volume}%')
-                        print(f'Mute: {mute}')
-                        print(f'\nCADENCE backend had been running for {run_time}')
-
-                        if dev:
-                            print('\nDEVELOPMENT MODE ON')
+                        print(box(text))
 
                     elif action == 'list':
                         _show_song_info(attachment, 'No songs are being played', show_num=True)
 
-                    elif action == 'lib.search':
-                        _show_song_info(attachment, 'No results to be shown')
+                    elif action == 'lib.info':
+                        output = SongOutput(attachment)
+
+                        text = '\n'.join((
+                                        f'{output.name}',
+                                        f'\nArtist: {output.artist}',
+                                        f'Album: {output.album}',
+                                        f'\nDuration: {output.duration}',
+                                        f'Bitrate: {output.bitrate} kbps',
+                                        f'Sample Rate: {output.sample_rate}',
+                                        f'Channels: {output.channels}',
+                                        f'\nLibrary ID: {output.lib_id}'
+                                        ))
+
+                        if args['show_aliases']:
+                            text += f'\n\nAliases ({output.aliases_num}): {output.aliases}'
+
+                        if args['show_playlists']:
+                            text += f'\n\nPlaylists ({output.playlists_num}): {output.playlists}'
+
+                        print(box(text))
 
                     elif action == 'lib.list':
                         _show_song_info(attachment, 'No songs in library', show_aliases=args['show_aliases'], show_playlists=args['show_playlists'])
+
+                    elif action == 'lib.search':
+                        _show_song_info(attachment, 'No results to be shown')
 
                     elif action == 'lib.prune':
                         _show_song_info(attachment, 'No songs to be shown')
@@ -343,43 +416,31 @@ def _start_backend(**kwargs):
         print(f'CADENCE backend is already running')
     elif result is SENTINELS.FAILED_START_BACKEND:
         print(f'Failed to start CADENCE backend')
-    return result
+    return result    
 
 def _show_song_info(info, empty_msg, show_aliases=False, show_playlists=False, show_num=False):
     if len(info) > 0:
         for i in range(len(info)):
-            song = info[i]
-            texts = [
-                f'Name: {song["name"]}',
-                f'Artist: {song["artist"]}',
-                f'Album: {song["album"]}',
-                f'Duration: {format_time(song["duration"])}',
-                f'Path: {song["path"]}',
+            output = SongOutput(info[i])
+            lines = [
+                f'Name: {output.name}',
+                f'Artist: {output.artist}',
+                f'Album: {output.album}',
+                f'Duration: {output.duration}',
+                f'Path: {output.path}',
+                f'Library ID: {output.lib_id}'
             ]
             if show_aliases:
-                aliases = song['aliases']
-                if len(aliases) > 0:
-                    texts.append(f"Aliases: {', '.join(aliases)}")
-                else:
-                    texts.append('Aliases: No aliases are bound to this song')
+                lines.append(f"\nAliases ({output.aliases_num}): {output.aliases}")
 
             if show_playlists:
-                playlists = song['playlists']
-                if len(playlists) > 0:
-                    texts.append(f"Playlists: {', '.join(playlists)}")
-                else:
-                    texts.append('Playlists: This song is not in any playlist')
+                lines.append(f"\nPlaylists ({output.playlists_num}): {output.playlists}")
 
-            max_len = max(map(len, texts))
-            print('-'*(max_len))
             if show_num:
-                print(f'{i+1}.')
-            print('\n'.join(texts))
-            print('-'*(max_len))
-            print()
+                lines = [f'{i+1}.'] + lines
+            print(box('\n'.join(lines)))
     else:
         print(empty_msg)
 
 if __name__ == '__main__':
     sys.exit(main())
-    

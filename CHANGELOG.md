@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## [0.13.0] - 2026-08-20
+
+### Added
+
+- `lib info <song> [-a] [-p]` — show detailed information of a single library song: name, artist, album, duration, bitrate, sample rate, channels, library ID, plus optional aliases (`-a`) and playlists (`-p`)
+- Technical metadata now extracted and stored per song: `bitrate` (bps), `sample_rate`, `channels` — read from the audio file when adding songs (mutagen), displayed in `lib info` as kbps
+- `SongOutput` class unifies how CLI renders song info (status / lib info / lib list); missing values display as `N/A` (file lacks it) vs `?` (backend did not provide it)
+- Boxed output frames (`box()` + `wcwidth`) for status, lib info, and lib list — CJK-aware alignment
+- Dependencies moved to pip-compile workflow: `requirements.in` (direct deps) compiles to `requirements.txt`; `requirements-dev.in` compiles to `requirements-dev.txt` (adds `pytest`, `bump-my-version`, `pip-tools`); `wcwidth` added as runtime dep
+
+### Changed
+
+- `status` attachment now uses `null` for unknown path/name/artist/album (was `'[path unknown]'` etc.) — CLI renders these as `?`/`N/A`
+- `lib list` now also shows `Library ID` per song
+
 ## [0.12.0] - 2026-08-20
 
 ### Added

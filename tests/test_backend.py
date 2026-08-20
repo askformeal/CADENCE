@@ -15,7 +15,7 @@ def _request(backend, action, **extra):
 def test_status_before_open(backend):
     response = _request(backend, 'status')
     assert response['code'] == 0
-    assert response['attachment']['path'] == '[path unknown]'
+    assert response['attachment']['path'] is None
     assert response['attachment']['in_library'] is False
 
 

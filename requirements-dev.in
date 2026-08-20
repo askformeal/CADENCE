@@ -1,2 +1,4 @@
+-r requirements.txt
 pytest
 bump-my-version
+pip-tools

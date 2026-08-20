@@ -73,6 +73,12 @@ ACTION_KEYS = {
     'volume': {
         'volume': (int, True)
     },
+    'lib.info':
+    {
+        'song': (str, True),
+        'show_aliases': (bool, False),
+        'show_playlists': (bool, False)
+    },
     'lib.list': {
         'show_aliases': (bool, False),
         'show_playlists': (bool, False)
@@ -145,15 +151,16 @@ READABLE_TYPE_NAMES = {
 ATTACHMENT_REQUIRED_ACTIONS = [
     'status',
     'list',
-    'lib.search',
+    'lib.info',
     'lib.list',
+    'lib.search',
     'lib.prune',
     'lib.scan',
     'lib.alias.list',
     'lib.playlist.list',
 ]
 
-METADATA = ['name', 'artist', 'album', 'duration']
+METADATA = ['name', 'artist', 'album', 'duration', 'bitrate', 'sample_rate', 'channels']
 SEARCH_META = ['name', 'artist', 'album'] # metadata that can be used for searching
 
 FILE_META = {

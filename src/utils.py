@@ -1,5 +1,6 @@
 # divide into separate files (time_utils.py, etc) if things got messy
 from typing import Literal
+from wcwidth import wcswidth
 
 from src.sentinels import SENTINELS
 
@@ -44,3 +45,18 @@ def parse_time(time):
         parts = [0, 0] + parts
         ms = parts[-1] * 1000 + parts[-2] * 60000 + parts[-3] * 3600000
         return ms
+
+def box(text: str):
+    lines = text.split('\n')
+    max_len = max(map(wcswidth, lines))
+
+    result = f" {'_' * (max_len + 4)} \n"
+    result += f"/  {' ' * max_len}  \\\n"
+
+    for line in lines:
+        pad = ' ' * (max_len - wcswidth(line))
+        result += f'|  {line}{pad}  |\n'
+
+    result += f"\\{'_' * (max_len + 4)}/\n"
+
+    return result

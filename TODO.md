@@ -12,7 +12,7 @@
   - [X] Number of songs in current playlist
 - [X] Class-ize response system
 - [X] Stay in current playlist if opened song is in it
-- [ ] Bitrate and other tech metadata
+- [X] Bitrate and other tech metadata
 - [ ] Start and continue last song
 - [ ] More user-friendly library management
   - [ ] Batch management

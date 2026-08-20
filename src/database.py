@@ -59,7 +59,10 @@ class Database:
                 position INTEGER NOT NULL
             )''',
 
-            'ALTER TABLE songs ADD COLUMN duration INTEGER'
+            'ALTER TABLE songs ADD COLUMN duration INTEGER',
+            'ALTER TABLE songs ADD COLUMN bitrate INTEGER',
+            'ALTER TABLE songs ADD COLUMN sample_rate INTEGER',
+            'ALTER TABLE songs ADD COLUMN channels INTEGER',
         ]
         version = self.execute('PRAGMA user_version').fetchone()[0]
         for i, sql in enumerate(INIT_DATABASE):

@@ -152,7 +152,7 @@ class Backend:
                         vlc.State.Playing: 'playing',
                         vlc.State.Paused: 'paused',
                         vlc.State.Stopped: 'stopped'
-                    }.get(self.player.player.get_state(), '[unknown]')
+                    }.get(self.player.player.get_state(), None)
 
                     if self.current_song_info is None:
                         info = {}
@@ -164,10 +164,10 @@ class Backend:
                         current_num = self.current_song_num
 
                     status = {
-                        'path': info.get('path', '[path unknown]'),
-                        'name': info.get('name', '[name unknown]'),
-                        'artist': info.get('artist', '[artist unknown]'),
-                        'album': info.get('album', '[album unknown]'),
+                        'path': info.get('path', None),
+                        'name': info.get('name', None),
+                        'artist': info.get('artist', None),
+                        'album': info.get('album', None),
                         'in_library': self.current_song_in_lib,
                         'player_status': player_status,
                         'volume': self.player.volume,
@@ -401,6 +401,46 @@ class Backend:
                     mode = {True: 'on', False: 'off'}[self.player.mute]
                     response = gen_response.Success(f'turned mute mode {mode}')
 
+                elif action == 'lib.info':
+                    song = request['song']
+                    show_aliases = request.get('show_aliases', False)
+                    show_playlists = request.get('show_playlists', False)
+
+                    song_id = self._get_song(song, cwd)
+                    if song_id is SENTINELS.MISSING_CWD:
+                        response = self._missing_key('lib.info', 'cwd')
+                    elif song_id is SENTINELS.NOT_IN_LIB:
+                        response = gen_response.SongNotExist(f'get information of song \"{song}\"')
+                    else:
+                        info = self.database.get_song_info(song_id)[0]
+
+                        if show_aliases:
+                            aliases = self.database.get_song_aliases(song_id)
+                            info['aliases'] = aliases
+
+                        if show_playlists:
+                            playlist_ids = self.database.get_song_playlists(song_id)
+                            playlist_info = self.database.get_playlists_info(playlist_ids)
+                            playlist_names = list(map(lambda pl: pl['name'], playlist_info))
+                            info['playlists'] = playlist_names
+
+                        response = gen_response.Success(f'got information of song \"{song}\"', attachment=info)
+
+                elif action == 'lib.list':
+                    info = self.database.get_all_song_info()
+                    if request.get('show_aliases', False):
+                        for song in info:
+                            aliases = self.database.get_song_aliases(song['id'])
+                            song['aliases'] = aliases
+
+                    if request.get('show_playlists', False):
+                        for song in info:
+                            playlists_id = self.database.get_song_playlists(song['id'])
+                            playlists_info = self.database.get_playlists_info(playlists_id)
+                            song['playlists'] = list(map(lambda pl: pl['name'], playlists_info))
+
+                    response = gen_response.Success('obtained information of all songs in library', self.sort_songs(info))
+
                 elif action == 'lib.search':
                     keyword = request['keyword'].lower()
                     results = []
@@ -424,21 +464,6 @@ class Backend:
                                     results.append(song)
 
                     response = gen_response.Success(f'{len(results)} result(s) found in library', results)
-
-                elif action == 'lib.list':
-                    info = self.database.get_all_song_info()
-                    if request.get('show_aliases', False):
-                        for song in info:
-                            aliases = self.database.get_song_aliases(song['id'])
-                            song['aliases'] = aliases
-
-                    if request.get('show_playlists', False):
-                        for song in info:
-                            playlists_id = self.database.get_song_playlists(song['id'])
-                            playlists_info = self.database.get_playlists_info(playlists_id)
-                            song['playlists'] = list(map(lambda pl: pl['name'], playlists_info))
-
-                    response = gen_response.Success('obtained information of all songs in library', self.sort_songs(info))
 
                 elif action == 'lib.add':
                     alias = request.get('alias', None)
@@ -885,8 +910,16 @@ class Backend:
                     meta_response = gen_response.Success(f'set {count} metadata of the song from file')
                 else:
                     duration = meta.get('duration', None)
+                    bitrate = meta.get('bitrate', None)
+                    sample_rate = meta.get('sample_rate', None)
+                    channels = meta.get('channels', None)
+                    
                     self.database.set_song_meta(song_id, 'duration', duration)
-                    meta_response = gen_response.Success(f'set duration to {format_time(duration)}')
+                    self.database.set_song_meta(song_id, 'bitrate', bitrate)
+                    self.database.set_song_meta(song_id, 'sample_rate', sample_rate)
+                    self.database.set_song_meta(song_id, 'channels', channels)
+
+                    meta_response = gen_response.Success(f'set duration to {format_time(duration)}, bitrate to {bitrate}, sample rate to {sample_rate} and channels to {channels}')
 
                 # --- auto bind alias ---
                 if bind_alias:
@@ -933,6 +966,9 @@ class Backend:
                     tags[meta] = None
 
             tags['duration'] = getattr(file.info, 'length', None)
+            tags['bitrate'] = getattr(file.info, 'bitrate', None)
+            tags['sample_rate'] = getattr(file.info, 'sample_rate', None)
+            tags['channels'] = getattr(file.info, 'channels', None)
 
             if tags['duration'] is not None:
                 tags['duration'] = int(tags['duration'] * 1000)
