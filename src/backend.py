@@ -119,7 +119,7 @@ class Backend:
                 response = self.dispatch(request)
             except Exception as e:
                 logger.exception(f'Failed to dispatch request:')
-                response = gen_response.Failed(f'failed to dispatch request: \"{e}\"')
+                response = gen_response.Failed(f'a CADENCE backend error occurred: \"{e}\"')
 
             if self.dev:
                 response.msg = f'[DEV] {response.msg}'
@@ -367,29 +367,39 @@ class Backend:
                 response = gen_response.Success(f'turned mute mode {mode}')
 
             elif action == 'lib.info':
-                song = request['song']
+                songs = request['songs']
                 show_aliases = request.get('show_aliases', False)
                 show_playlists = request.get('show_playlists', False)
 
-                song_id = self._get_song(song, cwd)
-                if song_id is SENTINELS.MISSING_CWD:
-                    response = self._missing_key('lib.info', 'cwd')
-                elif song_id is SENTINELS.NOT_IN_LIB:
-                    response = gen_response.SongNotExist(f'get information of song \"{song}\"')
+                failed = []
+                info = []
+
+                for song in songs:
+                    song_id = self._get_song(song, cwd)
+                    if song_id is SENTINELS.MISSING_CWD:
+                        failed.append(self._missing_key('lib.info', 'cwd'))
+                    elif song_id is SENTINELS.NOT_IN_LIB:
+                        failed.append(gen_response.SongNotExist(f'get information of song \"{song}\"'))
+                    else:
+                        song_info = self.database.get_song_info(song_id)[0]
+
+                        if show_aliases:
+                            aliases = self.database.get_song_aliases(song_id)
+                            song_info['aliases'] = aliases
+
+                        if show_playlists:
+                            playlist_ids = self.database.get_song_playlists(song_id)
+                            playlist_info = self.database.get_playlists_info(playlist_ids)
+                            playlist_names = list(map(lambda pl: pl['name'], playlist_info))
+                            song_info['playlists'] = playlist_names
+
+                        info.append(song_info)
+
+                msg = f'got information of [{len(info)}/{len(songs)}] songs'
+                if len(info) > 0 or len(songs) == 0:
+                    response = gen_response.Success(msg, attachment=info, failed=failed)
                 else:
-                    info = self.database.get_song_info(song_id)[0]
-
-                    if show_aliases:
-                        aliases = self.database.get_song_aliases(song_id)
-                        info['aliases'] = aliases
-
-                    if show_playlists:
-                        playlist_ids = self.database.get_song_playlists(song_id)
-                        playlist_info = self.database.get_playlists_info(playlist_ids)
-                        playlist_names = list(map(lambda pl: pl['name'], playlist_info))
-                        info['playlists'] = playlist_names
-
-                    response = gen_response.Success(f'got information of song \"{song}\"', attachment=info)
+                    response = gen_response.Failed(msg, failed=failed)
 
             elif action == 'lib.list':
                 info = self.database.get_all_song_info()
@@ -402,26 +412,42 @@ class Backend:
                 response = gen_response.Success('obtained information of all songs in library', self._sort_songs(info))
 
             elif action == 'lib.search':
-                keyword = request['keyword'].lower()
+                keywords = request['keyword']
+                keywords = list(map(lambda k:k.lower(), keywords))
+                is_or = request.get('or', False)
+
                 results = []
 
                 info = self.database.get_all_song_info()
-                for song in info:
-                    aliases = self.database.get_song_aliases(song['id'])
-                    song['aliases'] = aliases
+                song_ids = list(map(lambda s: s['id'], info))
+                aliases = {}
+                if len(song_ids) > 0:
+                    for song_id, alias in self.database.get_multi_song_aliases(song_ids):
+                        aliases[song_id] = aliases.get(song_id, []) + [alias]
 
+                for song in info:
+                    song['aliases'] = aliases.get(song['id'], [])
+
+                    search_values = []
                     for key, value in song.items():
-                        if key in SEARCH_META and keyword in str(value).lower():
-                            results.append(song)
-                            break
-                    else:
-                        for alias in aliases:
-                            if keyword in alias.lower():
-                                results.append(song)
-                                break
-                        else:
-                            if keyword in str(Path(song['path']).stem).lower():
-                                results.append(song)
+                        if key in SEARCH_META and value is not None:
+                            search_values.append(str(value))
+
+                    search_values += song['aliases']
+
+                    search_values.append(str(Path(song['path']).stem))
+
+                    search_values = list(map(lambda v: v.lower(), search_values))
+
+                    matched = dict(zip(keywords, [False] * len(keywords)))
+
+                    for keyword in keywords:
+                        for value in search_values:
+                            if keyword in value:
+                                matched[keyword] = True
+
+                    if all(matched.values()) or (True in matched.values() and is_or):
+                        results.append(song)
 
                 response = gen_response.Success(f'{len(results)} result(s) found in library', results)
 
@@ -502,7 +528,11 @@ class Backend:
                                 else:
                                     ids.append(song_id)
 
-                            response = gen_response.Success(f'successfully added [{len(ids)}/{len(paths)}] file(s) to library', failed=failed_responses)
+                            msg = f'successfully added [{len(ids)}/{len(paths)}] file(s) to library'
+                            if len(ids) > 0 or len(paths) == 0:
+                                response = gen_response.Success(msg, failed=failed_responses)
+                            else:
+                                response = gen_response.Failed(msg, failed=failed_responses)
 
                             if playlist is not None:
                                 playlist_id = self.database.get_playlist_via_name(playlist)
@@ -513,7 +543,7 @@ class Backend:
                                         self.database.add_song_to_playlist(playlist_id, song_id) # all songs are freshly added, no chance of ignored
 
                                     playlist_msg = f'added {len(ids)} song(s) to playlist {playlist}'
-                                response.append(gen_response.Success(playlist_msg), failed=failed_responses)
+                                response += gen_response.Success(playlist_msg)
 
                     else:
                         response = gen_response.Failed(f'\"{directory}\" is not a valid directory')

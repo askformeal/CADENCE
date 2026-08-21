@@ -81,7 +81,7 @@ ACTION_KEYS = {
     },
     'lib.info':
     {
-        'song': (str, True),
+        'songs': (IterType(str), True),
         'show_aliases': (bool, False),
         'show_playlists': (bool, False)
     },
@@ -91,7 +91,8 @@ ACTION_KEYS = {
         'show_tech': (bool, False)
     },
     'lib.search': {
-        'keyword': (str, True)
+        'keyword': (IterType(str), True),
+        'or': (bool, False)
     },
     'lib.add': {
         'path': (str, True),

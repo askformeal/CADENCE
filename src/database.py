@@ -125,6 +125,10 @@ class Database:
             logger.warning(f'Tried to get aliases of song with id {id} but it does not exist')
             return SENTINELS.SONG_NOT_FOUND
 
+    def get_multi_song_aliases(self, ids):
+        rows = self.execute(f'SELECT name, song_id FROM aliases WHERE song_id IN ({', '.join('?'*len(ids))})', *ids).fetchall()
+        return list(map(lambda row: (row['song_id'], row['name']), rows))
+
     def get_song_via_alias(self, alias):
         # get the song an alias was bound to
         row = self.execute('SELECT song_id FROM aliases JOIN songs ON aliases.song_id = songs.id WHERE aliases.name = ?', alias).fetchone()

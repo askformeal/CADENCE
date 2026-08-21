@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## [0.18.0] - 2026-08-21
+
+### Added
+
+- `lib info <song>...` — accept multiple songs at once; each missing song goes to the `failed` list instead of failing the whole request, and the message reports `got information of [ok/total] songs` (`0` successes still returns a failed response)
+- `lib search <keyword>...` — multi-keyword search; by default all keywords must match (AND), `-o/--or` switches to any-keyword match (OR)
+- `get_multi_song_aliases()` batch query so `lib search` fetches all aliases in one SQL call instead of one query per song
+
+### Changed
+
+- `lib.search` request key `keyword` now requires a list/tuple of strings (`IterType(str)`); the CLI takes `nargs='+'`
+- `lib.scan` with a directory that contains no supported audio files is a success (`0/0`), matching the `lib.info` empty-list convention
+
+### Fixed
+
+- `lib.search` no longer matches `None` metadata fields (`str(None)` was searchable as `'none'`)
+- `lib.scan` no longer references a `found` variable that belonged to `lib.prune` (`UnboundLocalError` when scanning an empty directory)
+
 ## [0.17.0] - 2026-08-21
 
 ### Added

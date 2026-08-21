@@ -17,8 +17,8 @@
 - [X] Memorize number in playlist
 - [ ] More user-friendly library management
   - [ ] Batch management
-    - [ ] lib.info
-    - [ ] lib.search (multi-keyword, and/or option)
+    - [X] lib.info
+    - [X] lib.search (multi-keyword, and/or option)
     - [ ] lib.add
     - [ ] lib.del
     - [ ] lib.alias.bind (multi-alias)

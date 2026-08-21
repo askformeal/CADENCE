@@ -556,7 +556,7 @@ def test_search_missing_keyword(backend):
 
 def test_search_no_results(backend, audio_file):
     _request(backend, 'lib.add', path=audio_file)
-    response = _request(backend, 'lib.search', keyword='nonexistent')
+    response = _request(backend, 'lib.search', keyword=['nonexistent'])
     assert response['code'] == 0
     assert response['attachment'] == []
 
@@ -566,7 +566,7 @@ def test_search_by_name(backend, audio_file):
     _request(backend, 'lib.add', path=audio_file)
     song_id = database.get_all_song_info()[0]['id']
     database.set_song_meta(song_id, 'name', 'My Awesome Song')
-    response = _request(backend, 'lib.search', keyword='awesome')
+    response = _request(backend, 'lib.search', keyword=['awesome'])
     assert response['code'] == 0
     assert len(response['attachment']) == 1
     assert response['attachment'][0]['name'] == 'My Awesome Song'
@@ -574,7 +574,7 @@ def test_search_by_name(backend, audio_file):
 
 def test_search_by_alias(backend, audio_file):
     _request(backend, 'lib.add', path=audio_file, alias='MyAlias')
-    response = _request(backend, 'lib.search', keyword='alias')
+    response = _request(backend, 'lib.search', keyword=['alias'])
     assert response['code'] == 0
     assert len(response['attachment']) == 1
 
@@ -584,7 +584,7 @@ def test_search_case_insensitive(backend, audio_file):
     _request(backend, 'lib.add', path=audio_file)
     song_id = database.get_all_song_info()[0]['id']
     database.set_song_meta(song_id, 'artist', 'Metallica')
-    response = _request(backend, 'lib.search', keyword='METALLICA')
+    response = _request(backend, 'lib.search', keyword=['METALLICA'])
     assert response['code'] == 0
     assert len(response['attachment']) == 1
 
@@ -594,9 +594,45 @@ def test_search_partial_match(backend, audio_file):
     _request(backend, 'lib.add', path=audio_file)
     song_id = database.get_all_song_info()[0]['id']
     database.set_song_meta(song_id, 'name', 'Hello World')
-    response = _request(backend, 'lib.search', keyword='wor')
+    response = _request(backend, 'lib.search', keyword=['wor'])
     assert response['code'] == 0
     assert len(response['attachment']) == 1
+
+
+def test_search_multi_keyword_and(backend, audio_file):
+    database = backend.database
+    _request(backend, 'lib.add', path=audio_file)
+    song_id = database.get_all_song_info()[0]['id']
+    database.set_song_meta(song_id, 'name', 'My Awesome Song')
+    database.set_song_meta(song_id, 'artist', 'Metallica')
+
+    # AND(默认):两个 keyword 都命中 → 匹配
+    response = _request(backend, 'lib.search', keyword=['awesome', 'metallica'])
+    assert response['code'] == 0
+    assert len(response['attachment']) == 1
+
+    # AND:一个不命中 → 不匹配
+    response = _request(backend, 'lib.search', keyword=['awesome', 'ghost'])
+    assert response['code'] == 0
+    assert response['attachment'] == []
+
+
+def test_search_multi_keyword_or(backend, audio_file):
+    database = backend.database
+    _request(backend, 'lib.add', path=audio_file)
+    song_id = database.get_all_song_info()[0]['id']
+    database.set_song_meta(song_id, 'name', 'My Awesome Song')
+
+    # OR:任一 keyword 命中 → 匹配
+    response = _request(backend, 'lib.search', keyword=['awesome', 'ghost'], **{'or': True})
+    assert response['code'] == 0
+    assert len(response['attachment']) == 1
+
+    # OR:全不命中 → 不匹配
+    response = _request(backend, 'lib.search', keyword=['ghost1', 'ghost2'], **{'or': True})
+    assert response['code'] == 0
+    assert response['attachment'] == []
+
 
 
 def test_jump_missing_progress(backend):
@@ -760,6 +796,103 @@ def test_scan_with_playlist(backend, tmp_path):
     assert 'added 1 song(s) to playlist' in response['msg']
     playlist_id = database.get_playlist_via_name('scanlist')
     assert len(database.get_playlist_songs(playlist_id)) == 1
+
+
+def test_lib_info_single_song(backend, audio_file):
+    database = backend.database
+    song_id, _ = database.add_song(audio_file)
+    response = _request(backend, 'lib.info', songs=[audio_file])
+    assert response['code'] == 0
+    assert 'got information of [1/1] songs' in response['msg']
+    assert len(response['attachment']) == 1
+    assert response['attachment'][0]['id'] == song_id
+    assert response['attachment'][0]['path'] == audio_file
+    assert response['failed'] == []
+
+
+def test_lib_info_multiple_songs(backend, audio_file, tmp_path):
+    second = str(tmp_path / 'test_b.wav')
+    _make_wav(second)
+    database = backend.database
+    database.add_song(audio_file)
+    database.add_song(second)
+
+    response = _request(backend, 'lib.info', songs=[audio_file, second])
+    assert response['code'] == 0
+    assert 'got information of [2/2] songs' in response['msg']
+    assert len(response['attachment']) == 2
+
+
+def test_lib_info_by_alias(backend, audio_file):
+    database = backend.database
+    song_id, _ = database.add_song(audio_file)
+    database.bind_alias(song_id, 'my_song')
+    response = _request(backend, 'lib.info', songs=['my_song'])
+    assert response['code'] == 0
+    assert response['attachment'][0]['id'] == song_id
+
+
+def test_lib_info_partial_failure(backend, audio_file):
+    database = backend.database
+    song_id, _ = database.add_song(audio_file)
+    response = _request(backend, 'lib.info', songs=[audio_file, 'ghost_song'])
+    # 至少一个成功 → code 0,失败的进 failed
+    assert response['code'] == 0
+    assert 'got information of [1/2] songs' in response['msg']
+    assert len(response['attachment']) == 1
+    assert len(response['failed']) == 1
+    assert 'does not exist' in response['failed'][0]['msg']
+
+
+def test_lib_info_all_failed(backend, audio_file):
+    response = _request(backend, 'lib.info', songs=['ghost_a', 'ghost_b'])
+    # 全部失败 → code 1
+    assert response['code'] == 1
+    assert 'got information of [0/2] songs' in response['msg']
+    assert response['attachment'] == {}
+    assert len(response['failed']) == 2
+
+
+def test_lib_info_missing_songs_key(backend, audio_file):
+    backend.database.add_song(audio_file)
+    response = _request(backend, 'lib.info')
+    assert response['code'] == 1
+    assert 'songs' in response['msg']
+
+
+def test_lib_info_songs_must_be_list(backend, audio_file):
+    backend.database.add_song(audio_file)
+    # IterType(str):单字符串不是 list/tuple → InvalidKeyType
+    response = _request(backend, 'lib.info', songs=audio_file)
+    assert response['code'] == 1
+    assert 'must be a list or tuple' in response['msg']
+
+
+def test_lib_info_songs_element_type(backend, audio_file):
+    backend.database.add_song(audio_file)
+    # 元素类型不对 → InvalidElementType
+    response = _request(backend, 'lib.info', songs=[123])
+    assert response['code'] == 1
+    assert 'every element' in response['msg']
+
+
+def test_lib_info_with_aliases(backend, audio_file):
+    database = backend.database
+    song_id, _ = database.add_song(audio_file)
+    database.bind_alias(song_id, 'my_song')
+    response = _request(backend, 'lib.info', songs=[audio_file], show_aliases=True)
+    assert response['code'] == 0
+    assert response['attachment'][0]['aliases'] == ['my_song']
+
+
+def test_lib_info_with_playlists(backend, audio_file):
+    database = backend.database
+    song_id, _ = database.add_song(audio_file)
+    playlist_id = database.create_playlist('work')[0]
+    database.add_song_to_playlist(playlist_id, song_id)
+    response = _request(backend, 'lib.info', songs=[audio_file], show_playlists=True)
+    assert response['code'] == 0
+    assert response['attachment'][0]['playlists'] == ['work']
 
 
 def test_lib_prune_dry_run_empty(backend, audio_file):

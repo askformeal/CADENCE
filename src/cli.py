@@ -164,7 +164,7 @@ def main():
     lib_sub = lib_parser.add_subparsers(dest='lib_action', required=True)
 
     lib_info_parser = lib_sub.add_parser('info', help='Show information of a song')
-    lib_info_parser.add_argument('song', type=str, help='Song to show')
+    lib_info_parser.add_argument('songs', type=str, nargs='+', help='Song to show')
     lib_info_parser.add_argument('-a', '--show-aliases', action='store_true', help='Show aliases of the song')
     lib_info_parser.add_argument('-p', '--show-playlists', action='store_true', help='Show playlists the song is in')
 
@@ -174,7 +174,8 @@ def main():
     lib_list_parser.add_argument('-t', '--show-tech', action='store_true', help='Show technical information')
 
     lib_search_parser = lib_sub.add_parser('search', help='Search for songs in library')
-    lib_search_parser.add_argument('keyword', type=str, help='Keyword to search')
+    lib_search_parser.add_argument('keyword', type=str, nargs='+', help='Keyword to search')
+    lib_search_parser.add_argument('-o', '--or', action='store_true', help='Get all results that match any one the keywords')
 
     lib_add_parser = lib_sub.add_parser('add', help='Add a new song to library')
     lib_add_parser.add_argument('path', type=_path, help='Path of the song to add')
@@ -318,15 +319,10 @@ def main():
                 print('Starting backend...')
                 _start_backend(CADENCE_DEV=int(args['dev']), CADENCE_CONTINUE=int(args['continue']))
 
-            if action == 'lib.scan' and not args['dry_run']: # just to be clear
-                if len(failed) > 0:
-                    print('-'*50)
-                    print('Failed to add the following file(s) to library:')
-                    for add_response in failed:
-                        print(f'  {add_response['msg']}')
-
-            elif action in ATTACHMENT_REQUIRED_ACTIONS:
-                if attachment is not None:
+            if action in ATTACHMENT_REQUIRED_ACTIONS:
+                if attachment is None and not (action == 'lib.scan' and not args['dry_run']):
+                    print(f'[Failed]: action {action} was expecting an attachment but none was received from CADENCE backend')
+                else:
                     # these actions will be expecting an attachment
                     if action == 'status':
                         
@@ -370,10 +366,6 @@ def main():
 
                     elif action == 'lib.prune':
                         _show_song_info(attachment, 'No songs to be shown')
-                        if len(failed) > 0:
-                            print('There are failed actions:')
-                            for failed_response in failed:
-                                print(failed_response['msg'])
 
                     elif action == 'lib.scan' and args['dry_run']:
                         if len(attachment) > 0:
@@ -404,8 +396,6 @@ def main():
                                     print(f'  {playlist['name']}')
                             else:
                                 print('No playlists in library')
-                else:
-                    print(f'[Failed]: action {action} was expecting an attachment but none was received from CADENCE backend')
 
         elif code == 1:
             print(f'[Failed]: {response['msg']}')
@@ -420,6 +410,11 @@ def main():
 
         elif code == 4:
             print('[Failed]: CADENCE backend is exiting')
+
+        if len(failed) > 0:
+            lines = ['There are failed actions:\n']
+            lines += list(map(lambda x: f'  {x['msg']}', failed))
+            print(box('\n'.join(lines)))
 
         print()
         return code
