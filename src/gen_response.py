@@ -119,7 +119,7 @@ class PosTooLate(Failed):
     def __init__(self, action, attachment=None, failed=None):
         super().__init__(f'can not {action} because the position to jump to is later than the end of the song', attachment, failed)
 
-def merge(*responses: Response, join_char='|', attachment=None, failed=None):
+def merge(*responses: Response, joiner='|', attachment=None, failed=None):
     messages = []
     codes = []
 
@@ -129,7 +129,7 @@ def merge(*responses: Response, join_char='|', attachment=None, failed=None):
             codes.append(response.code)
 
     if len(codes) > 0:
-        msg = f' {join_char} '.join(messages)
+        msg = f' {joiner} '.join(messages)
         code = max(codes)
         return Response(msg, code, attachment=attachment, failed=failed)
     else:

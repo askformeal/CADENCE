@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## [0.16.0] - 2026-08-21
+
+### Added
+
+- Per-playlist playback position memory: `playlists` table gains a `last_num` column (migration), `_set_current_num()` writes the current song number into the active playlist, and reopening a playlist jumps back to the last played song (`_get_playlist_songs()` now also returns the playlist id)
+- Play-all position memory: play-all sessions track their own `last_play_all_num` setting so `play-all` resumes where the previous all-songs session left off
+- `current_song_num` is reset to 0 when loading a new list, but with `_set_current_num(0, update_database=False)` so initialization never overwrites a playlist's stored position
+
+### Changed
+
+- `current_song_open` renamed to `current_playlist`; `PLAY_ALL` sentinel marks an active play-all session
+- `continue_last` no longer reads the global `last_num` setting — resume position now lives with the playlist (or play-all), so stale `last_num` values are ignored
+
+### Fixed
+
+- `get_playlist_last_num()` was missing `.fetchone()`, raising `TypeError: 'sqlite3.Cursor' object is not subscriptable` — now reads the row properly
+- `set_playlist_last_num()` updated the wrong column (`SET num` instead of `SET last_num`), raising `no such column` — corrected
+- `_get_playlist_songs()` returned `None` when `return_id=False`, breaking `lib playlist list <name>` — now falls through to `return result`
+- `_play_all()` passed the raw string from `get_setting()` into `_switch_song()`, causing a `str`/`int` comparison error when resuming — now `int(last_num)`
+
 ## [0.15.0] - 2026-08-20
 
 ### Added

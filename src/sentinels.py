@@ -30,6 +30,8 @@ class Sentinels:
         self.EXIT_FLUSHING = Sentinel('Exit Flushing')
         self.NOT_IN_LIB = Sentinel('Song Not in Library')
 
+        self.PLAY_ALL = Sentinel('Play All Song in Library')
+
         # Database
 
         self.SONG_NOT_FOUND = Sentinel('Song Not Found')

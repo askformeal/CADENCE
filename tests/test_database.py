@@ -138,6 +138,27 @@ def test_get_playlist_via_name_missing(database):
     assert database.get_playlist_via_name('ghost') is SENTINELS.PLAYLIST_NOT_FOUND
 
 
+def test_get_playlist_last_num_default_none(database):
+    # 新建 playlist 从未播放过 → last_num 列是 NULL → 返回 None(不是 sentinel)
+    playlist_id, _ = database.create_playlist('work')
+    assert database.get_playlist_last_num(playlist_id) is None
+
+
+def test_get_playlist_last_num_missing(database):
+    assert database.get_playlist_last_num(9999) is SENTINELS.PLAYLIST_NOT_FOUND
+
+
+def test_set_playlist_last_num(database):
+    playlist_id, _ = database.create_playlist('work')
+    database.set_playlist_last_num(playlist_id, 3)
+    assert database.get_playlist_last_num(playlist_id) == 3
+
+
+def test_set_playlist_last_num_missing(database):
+    # playlist 不存在时静默失败,不抛异常
+    database.set_playlist_last_num(9999, 3)
+
+
 def test_del_song_from_playlist(database):
     song_id, _ = database.add_song(r'C:\music\song.flac')
     playlist_id, _ = database.create_playlist('work')

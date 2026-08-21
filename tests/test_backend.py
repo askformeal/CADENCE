@@ -977,3 +977,160 @@ def test_lib_meta_set_missing_song_key(backend):
     response = _request(backend, 'lib.meta.set', name='Foo')
     assert response['code'] == 1
     assert 'song' in response['msg']
+
+
+def test_play_all_empty_library(backend):
+    response = _request(backend, 'play-all')
+    assert response['code'] == 1
+    assert 'none in library' in response['msg']
+
+
+def test_play_all_two_songs(backend, audio_file, tmp_path):
+    second = str(tmp_path / 'test_b.wav')
+    _make_wav(second)
+    backend.database.add_song(audio_file)
+    backend.database.add_song(second)
+
+    response = _request(backend, 'play-all')
+    assert response['code'] == 0
+    assert backend.current_playlist is SENTINELS.PLAY_ALL
+    assert backend.current_song_num == 0
+    status = _request(backend, 'status')
+    assert status['attachment']['path'] == audio_file
+
+
+def test_play_all_restores_last_num(backend, audio_file, tmp_path):
+    first = audio_file
+    second = str(tmp_path / 'test_b.wav')
+    _make_wav(second)
+    backend.database.add_song(first)
+    backend.database.add_song(second)
+
+    _request(backend, 'play-all')
+    _request(backend, 'switch', number=2)
+    assert backend.current_song_num == 1
+
+    response = _request(backend, 'play-all')
+    assert response['code'] == 0
+    assert 'last played number detected' in response['msg']
+    assert backend.current_song_num == 1
+    status = _request(backend, 'status')
+    assert status['attachment']['path'] == second
+
+
+def test_play_all_restores_zero_when_never_played(backend, audio_file, tmp_path):
+    second = str(tmp_path / 'test_b.wav')
+    _make_wav(second)
+    backend.database.add_song(audio_file)
+    backend.database.add_song(second)
+
+    response = _request(backend, 'play-all')
+    assert response['code'] == 0
+    # 从未播过 → 从 0 开始,不应有 'last played number detected'
+    assert 'last played number detected' not in response['msg']
+    assert backend.current_song_num == 0
+
+
+def test_continue_last_no_last_song(backend):
+    response = _request(backend, 'continue_last')
+    assert response['code'] == 1
+    assert 'No last song' in response['msg']
+
+
+def test_continue_last_opens_last_song(backend, audio_file):
+    database = backend.database
+    song_id, _ = database.add_song(audio_file)
+    database.set_setting('last_is_all', '0')
+    database.set_setting('last_song', audio_file)
+    database.set_setting('last_cwd', os.getcwd())
+
+    response = _request(backend, 'continue_last')
+    assert response['code'] == 0
+    assert backend.current_song_num == 0
+    status = _request(backend, 'status')
+    assert status['attachment']['path'] == audio_file
+
+
+def test_continue_last_play_all_mode(backend, audio_file, tmp_path):
+    second = str(tmp_path / 'test_b.wav')
+    _make_wav(second)
+    backend.database.add_song(audio_file)
+    backend.database.add_song(second)
+
+    database = backend.database
+    database.set_setting('last_is_all', '1')
+    database.set_setting('last_song', audio_file)
+    database.set_setting('last_cwd', os.getcwd())
+
+    response = _request(backend, 'continue_last')
+    assert response['code'] == 0
+    assert backend.current_playlist is SENTINELS.PLAY_ALL
+
+
+def test_continue_last_ignores_num_setting(backend, audio_file):
+    # 旧的全局 last_num setting 不应再影响 continue_last(已被 playlist last_num 取代)
+    database = backend.database
+    database.add_song(audio_file)
+    database.set_setting('last_is_all', '0')
+    database.set_setting('last_song', audio_file)
+    database.set_setting('last_cwd', os.getcwd())
+    database.set_setting('last_num', 999)  # 毒数据:若被读取会导致越界
+
+    response = _request(backend, 'continue_last')
+    assert response['code'] == 0
+    assert backend.current_song_num == 0
+
+
+def test_open_playlist_restores_last_num(backend, audio_file, tmp_path):
+    first, second = _open_two_song_playlist(backend, audio_file, tmp_path)
+    assert backend.current_song_num == 0
+
+    # 切到第二首 → last_num 应写入该 playlist
+    _request(backend, 'switch', number=2)
+    assert backend.current_song_num == 1
+    playlist_id = backend.database.get_playlist_via_name('pair')
+    assert backend.database.get_playlist_last_num(playlist_id) == 1
+
+    # 重新打开同一 playlist → 恢复到上次位置
+    response = _request(backend, 'open', song='pair')
+    assert response['code'] == 0
+    assert 'last played number detected' in response['msg']
+    assert backend.current_song_num == 1
+    status = _request(backend, 'status')
+    assert status['attachment']['path'] == second
+
+
+def test_open_playlist_first_time_starts_at_zero(backend, audio_file, tmp_path):
+    first, _ = _open_two_song_playlist(backend, audio_file, tmp_path)
+    # 首次打开:last_num 不存在 → 走 else 分支,写 0 并从头播,无恢复消息
+    assert backend.current_song_num == 0
+    playlist_id = backend.database.get_playlist_via_name('pair')
+    assert backend.database.get_playlist_last_num(playlist_id) == 0
+
+
+def test_switch_saves_playlist_last_num(backend, audio_file, tmp_path):
+    first, second = _open_two_song_playlist(backend, audio_file, tmp_path)
+    playlist_id = backend.database.get_playlist_via_name('pair')
+    assert backend.database.get_playlist_last_num(playlist_id) == 0
+
+    _request(backend, 'switch', number=2)
+    assert backend.database.get_playlist_last_num(playlist_id) == 1
+
+    _request(backend, 'switch', number=1)
+    assert backend.database.get_playlist_last_num(playlist_id) == 0
+
+
+def test_set_current_song_does_not_overwrite_last_num(backend, audio_file, tmp_path):
+    # _set_current_song 初始化 current_song_num=0 时不应写库(update_database=False)
+    first, _ = _open_two_song_playlist(backend, audio_file, tmp_path)
+    playlist_id = backend.database.get_playlist_via_name('pair')
+
+    _request(backend, 'switch', number=2)
+    assert backend.database.get_playlist_last_num(playlist_id) == 1
+
+    # 打开单曲(不在当前列表)→ _set_current_song 被调用,不应把 playlist 的 last_num 覆盖成 0
+    other_file = audio_file.replace('test_audio', 'test_other')
+    _request(backend, 'open', song=other_file)
+    assert backend.database.get_playlist_last_num(playlist_id) == 1
+
+

@@ -52,7 +52,7 @@ class Backend:
         self.current_song_info = None
         self.current_song_num = None
         self.current_song_in_lib = False # Use this to prevent KeyError
-        self.current_song_open = None
+        self.current_playlist = None
         
         self.dispatch_buffer = queue.Queue() # single way
         try:
@@ -198,23 +198,15 @@ class Backend:
                 elif action == 'continue_last':
                     is_all = self.database.get_setting('last_is_all')
                     song = self.database.get_setting('last_song')
-                    num = self.database.get_setting('last_num')
                     last_cwd = self.database.get_setting('last_cwd')
 
-                    if num is SENTINELS.SETTING_NOT_FOUND:
-                        response = gen_response.Failed('No last song to open')
+                    if is_all == '1':
+                        response = self._play_all()
                     else:
-                        num = int(num)
-                        if is_all == '1':
-                            response = self._play_all()
+                        if song in (SENTINELS.SETTING_NOT_FOUND, None):
+                            response = gen_response.Failed('No last song to open')
                         else:
-                            if song is SENTINELS.SETTING_NOT_FOUND:
-                                response = gen_response.Failed('No last song to open')
-                            else:
-                                response = self._open_song(song, last_cwd)
-
-                        if response.ok():
-                            response += self._switch_song(num)
+                            response = self._open_song(song, last_cwd)
 
                     logger.debug(response.msg)
 
@@ -688,25 +680,30 @@ class Backend:
     def _open_song(self, song, cwd=None) -> gen_response.Response:
         info_to_set = None
         paths_to_load = None # MUST be a list!!!
+        playlist_id = None
         
         id = self._get_song(song, cwd)
         if id is SENTINELS.MISSING_CWD:
             response = self._missing_key('open', 'cwd')
         elif id is not SENTINELS.NOT_IN_LIB:
+            # open single song by path / alias
             info_to_set = (self.database.get_song_info(id),)
             paths_to_load = [info_to_set[0][0]['path']]
         else:
             path = Path(cwd) / song
-            info = self._get_playlist_songs(song)
+            info, playlist_id = self._get_playlist_songs(song, return_id=True)
             if info is SENTINELS.PLAYLIST_EMPTY:
+                playlist_id = None
                 response = gen_response.Failed(f'can not open playlist \"{song}\" because it is empty')
 
             elif info is not SENTINELS.PLAYLIST_NOT_FOUND:
+                # open playlist
                 info_to_set = (info,)
                 paths_to_load = list(map(lambda i: i['path'], info))
 
             else:
                 # Not in library, try to open as path
+                playlist_id = None
                 if path.is_file():
                     info_to_set = ([{'path': str(path)}], False)
                     paths_to_load = [str(path)]
@@ -723,13 +720,22 @@ class Backend:
             if len(paths_to_load) == 1 and paths_to_load[0] in current_paths:
                 num = current_paths.index(paths_to_load[0])
                 response = gen_response.Success('song in current playlist. try to switch')
-                response.append(self._switch_song(num), join_char='->')
+                response.append(self._switch_song(num), joiner='->')
             else:
                 self._set_current_song(*info_to_set)
                 response = self._load_paths(paths_to_load, song)
+
                 if response.ok():
                     self._save_last_song(song, cwd)
-                
+                    self.current_playlist = playlist_id
+                    if playlist_id is not None:
+                        last_num = self.database.get_playlist_last_num(playlist_id)
+                        if last_num not in (None, SENTINELS.PLAYLIST_NOT_FOUND):
+                            response += gen_response.Success('last played number detected, switching')
+                            response.append(self._switch_song(last_num), joiner='->')
+                        else:
+                            self._set_current_num(0)
+
         return response
 
     def _load_paths(self, paths, song, jump_to_mem=True) -> gen_response.Response:
@@ -752,6 +758,15 @@ class Backend:
             response = self._load_paths(paths, 'all-songs')
             if response.ok():
                 self.database.set_setting('last_is_all', '1')
+                self.current_playlist = SENTINELS.PLAY_ALL
+                last_num = self.database.get_setting('last_play_all_num')
+                if last_num not in (SENTINELS.SETTING_NOT_FOUND, None):
+                    last_num = int(last_num)
+
+                    response += gen_response.Success('last played number detected, switching')
+                    response.append(self._switch_song(last_num), joiner='->')
+                else:
+                    self._set_current_num(0)
         else:
             response = gen_response.Failed('can not open all songs because there is none in library')
         return response
@@ -786,7 +801,7 @@ class Backend:
                     self.current_song_info = None
                     self.current_song_num = None
                     self.current_song_in_lib = False
-                    self.current_song_open = None
+                    self.current_playlist = None
                     return self._stop_player()
             else:
                 return gen_response.Success('path not in current playlist') # not that anyone will actually read this but, you know, for good measure
@@ -817,10 +832,16 @@ class Backend:
 
         return response
 
-    def _set_current_num(self, num):
+    def _set_current_num(self, num, update_database=True):
         self.current_song_num = num
-        self.database.set_setting('last_num', num)
-        logger.info(f'Updated current playlist number and last song number to {num}')
+
+        if update_database and self.current_playlist is not None:
+            if self.current_playlist is SENTINELS.PLAY_ALL:
+                self.database.set_setting('last_play_all_num', num)
+            else:
+                self.database.set_playlist_last_num(self.current_playlist, num)
+
+        logger.info(f'Updated current playlist number to {num}')
     
     def _toggle_shuffle(self):
         self.shuffle = not self.shuffle
@@ -846,7 +867,7 @@ class Backend:
         pos = self.database.get_pos(path)
         if pos is not SENTINELS.POS_NOT_FOUND:
             response = gen_response.Success('try to jump to memorized pos')
-            response.append(self._jump_to_pos(pos), join_char='->')
+            response.append(self._jump_to_pos(pos), joiner='->')
             return response
         else:
             return gen_response.Success(f'no memorized position')
@@ -876,24 +897,29 @@ class Backend:
             info = [info]
         self.current_song_info = info
         self.current_song_in_lib = in_lib
-        self._set_current_num(0)
+        self._set_current_num(0, update_database=False)
         self.shuffle_order = list(range(len(self.current_song_info)))
         if self.shuffle:
             random.shuffle(self.shuffle_order)
         logger.info(f'Set current info of current songs to {info}, in library {in_lib}')
 
-    def _get_playlist_songs(self, name):
+    def _get_playlist_songs(self, name, return_id=False):
         playlist_id = self.database.get_playlist_via_name(name)
         if playlist_id is not SENTINELS.PLAYLIST_NOT_FOUND:
             ids = self.database.get_playlist_songs(playlist_id)
             if ids is not SENTINELS.PLAYLIST_EMPTY:
                 info = self.database.get_song_info(ids)
                 info = self.sort_songs(info)
-                return info
+                result = info
             else:
-                return SENTINELS.PLAYLIST_EMPTY
+                result = SENTINELS.PLAYLIST_EMPTY
         else:
-            return SENTINELS.PLAYLIST_NOT_FOUND
+            result = SENTINELS.PLAYLIST_NOT_FOUND
+
+        if return_id:
+            return result, playlist_id
+        else:
+            return result
         
     def sort_songs(self, info):
         return sorted(info, key=lambda x: Path(x['path']).name.lower())
@@ -1047,7 +1073,6 @@ class Backend:
         self.database.set_setting('last_is_all', '0')
         self.database.set_setting('last_song', song)
         self.database.set_setting('last_cwd', cwd)
-        self.database.set_setting('last_num', self.current_song_num)
 
     def _memorize_pos(self):
         while self.running:

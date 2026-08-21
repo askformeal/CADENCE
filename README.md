@@ -41,8 +41,10 @@ python -m src
 | Command                   | Description                          |
 | ------------------------- | ------------------------------------ |
 | `cadence start`           | Start the CADENCE backend (daemon)   |
+| `cadence start -c`        | Start backend and resume last session|
 | `cadence start --dev`     | Start backend with dev database      |
 | `cadence reboot`          | Restart the backend                  |
+| `cadence reboot -c`       | Restart and resume last session      |
 | `cadence exit`            | Stop the backend                     |
 | `cadence status`          | Show current playback status         |
 

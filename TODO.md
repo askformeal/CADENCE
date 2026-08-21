@@ -14,7 +14,7 @@
 - [X] Stay in current playlist if opened song is in it
 - [X] Bitrate and other tech metadata
 - [X] Start and continue last song
-- [ ] Memorize number in playlist
+- [X] Memorize number in playlist
 - [ ] More user-friendly library management
   - [ ] Batch management
   - [ ] Manage by library ID

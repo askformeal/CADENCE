@@ -70,7 +70,9 @@ class Database:
             '''CREATE TABLE IF NOT EXISTS settings (
                 key TEXT PRIMARY KEY,
                 value TEXT
-            )'''
+            )''',
+
+            'ALTER TABLE playlists ADD COLUMN last_num INTEGER',
         ]
         version = self.execute('PRAGMA user_version').fetchone()[0]
         for i, sql in enumerate(INIT_DATABASE):
@@ -305,6 +307,23 @@ class Database:
         else:
             logger.debug(f'Failed to get songs of playlist with id {id} because the playlist does not exist')
             return SENTINELS.PLAYLIST_NOT_FOUND
+
+    def get_playlist_last_num(self, id):
+        row = self.execute('SELECT last_num FROM playlists WHERE id = ?', id).fetchone()
+        if row is None:
+            logger.debug(f'Failed to get last played number of playlist with id {id} because it does not exists')
+            return SENTINELS.PLAYLIST_NOT_FOUND
+        else:
+            logger.debug(f"Got last played number of playlist with id {id}: {row['last_num']}")
+            return row['last_num']
+
+    def set_playlist_last_num(self, id, num):
+        if self.playlist_exists(id):
+            self.execute('UPDATE playlists SET last_num = ? WHERE id = ?', num, id)
+            logger.debug(f'Set the last played number of playlist with id {id} to {num}')
+        else:
+            logger.debug(f'Failed to the last played number of playlist with id {id} to {num} because the playlist does not exist')
+
 
     def create_playlist(self, name):
         # create a new playlist
