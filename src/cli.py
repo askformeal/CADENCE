@@ -111,30 +111,47 @@ def main():
     start_parser = command_sub.add_parser('start', help='Start CADENCE backend')
     start_parser.add_argument('-c', '--continue', action='store_true', help='Continue playing last song')
     start_parser.add_argument('--dev', action='store_true', help='Start in development mode')
+
     reboot_parser = command_sub.add_parser('reboot', help='Reboot CADENCE backend. Will fail if backend is not running')
     reboot_parser.add_argument('--dev', action='store_true', help='Reboot in development mode')
     reboot_parser.add_argument('-c', '--continue', action='store_true', help='Continue playing last song')
+
     status_parser = command_sub.add_parser('status', help='Show CADENCE status')
+
     open_parser = command_sub.add_parser('open', help='Open a song or playlist. Supports alias, file path and playlist name')
     open_parser.add_argument('song', type=str, help='Song to open')
+
     play_all_parser = command_sub.add_parser('play-all', help='Play all songs in library')
+
     pause_parser = command_sub.add_parser('pause', help='Pause playing media')
+
     resume_parser = command_sub.add_parser('resume', help='Resume paused media')
+
     toggle_parser = command_sub.add_parser('toggle', help='Switch between playing and paused')
+
     stop_parser = command_sub.add_parser('stop', help='Stop playing')
+
     list_parser = command_sub.add_parser('list', help='Show current playlist')
+
     loop_parser = command_sub.add_parser('loop', help='Toggle loop mode')
+
     shuffle_parser = command_sub.add_parser('shuffle', help='Toggle shuffle mode')
+
     dice_parser = command_sub.add_parser('dice', help='Switch to a random song in current playlist')
+
     switch_parser = command_sub.add_parser('switch', help='Switch to a song in current playlist via number')
     switch_parser.add_argument('number', type=int, help='Number in playlist of song to switch. Negative number means count from the last')
+
     prev_parser = command_sub.add_parser('prev', help='Switch to the previous song in current playlist')
+
     next_parser = command_sub.add_parser('next', help='Switch to the next song in current playlist')
 
     seek_parser = command_sub.add_parser('seek', help='Jump to a specific time')
     seek_parser.add_argument('time', help='Time to jump to (HH:MM:SS)')
+
     jump_parser = command_sub.add_parser('jump', help='Jump to progress of the current song')
     jump_parser.add_argument('progress', type=_percent, help='Progress to jump to (percentage)')
+
     replay_parser = command_sub.add_parser('replay', help='Clear memorized progress and jump to the beginning of the current playing song')
 
     volume_parser = command_sub.add_parser('volume', help='Set volume')
@@ -154,6 +171,7 @@ def main():
     lib_list_parser = lib_sub.add_parser('list', help='Show all songs in library')
     lib_list_parser.add_argument('-a', '--show-aliases', action='store_true', help='Show aliases of songs')
     lib_list_parser.add_argument('-p', '--show-playlists', action='store_true', help='Show playlists each song is in')
+    lib_list_parser.add_argument('-t', '--show-tech', action='store_true', help='Show technical information')
 
     lib_search_parser = lib_sub.add_parser('search', help='Search for songs in library')
     lib_search_parser.add_argument('keyword', type=str, help='Keyword to search')
@@ -196,6 +214,7 @@ def main():
 
     alias_parser = lib_sub.add_parser('alias', help='Manage aliases of songs in library')
     alias_sub = alias_parser.add_subparsers(dest='alias_action', required=True)
+
     alias_list_parser = alias_sub.add_parser('list', help='Show all bound aliases of a song in library')
     alias_list_parser.add_argument('song', type=str, help='Song to list aliases')
 
@@ -211,6 +230,9 @@ def main():
 
     playlist_list_parser = playlist_sub.add_parser('list', help='Show all songs in a playlist. Show names of all playlists in library if no playlists are given')
     playlist_list_parser.add_argument('playlist', type=str, nargs='?', default=None, help='Name of playlist to list')
+    playlist_list_parser.add_argument('-a', '--show-aliases', action='store_true', help='Show aliases of songs')
+    playlist_list_parser.add_argument('-p', '--show-playlists', action='store_true', help='Show playlists each song is in')
+    playlist_list_parser.add_argument('-t', '--show-tech', action='store_true', help='Show technical information')
     
     playlist_create_parser = playlist_sub.add_parser('create', help='Create a new playlist')
     playlist_create_parser.add_argument('name', type=str, help='Name of playlist to create')
@@ -331,29 +353,17 @@ def main():
                         _show_song_info(attachment, 'No songs are being played', show_num=True)
 
                     elif action == 'lib.info':
-                        output = SongOutput(attachment)
-
-                        text = '\n'.join((
-                                        f'{output.name}',
-                                        f'\nArtist: {output.artist}',
-                                        f'Album: {output.album}',
-                                        f'\nDuration: {output.duration}',
-                                        f'Bitrate: {output.bitrate} kbps',
-                                        f'Sample Rate: {output.sample_rate}',
-                                        f'Channels: {output.channels}',
-                                        f'\nLibrary ID: {output.lib_id}'
-                                        ))
-
-                        if args['show_aliases']:
-                            text += f'\n\nAliases ({output.aliases_num}): {output.aliases}'
-
-                        if args['show_playlists']:
-                            text += f'\n\nPlaylists ({output.playlists_num}): {output.playlists}'
-
-                        print(box(text))
+                        _show_song_info(attachment, 
+                                        show_tech=True, 
+                                        show_aliases=args['show_aliases'],
+                                        show_playlists=args['show_playlists'])
 
                     elif action == 'lib.list':
-                        _show_song_info(attachment, 'No songs in library', show_aliases=args['show_aliases'], show_playlists=args['show_playlists'])
+                        _show_song_info(attachment, 
+                                        'No songs in library', 
+                                        show_tech=args['show_tech'],
+                                        show_aliases=args['show_aliases'], 
+                                        show_playlists=args['show_playlists'])
 
                     elif action == 'lib.search':
                         _show_song_info(attachment, 'No results to be shown')
@@ -382,7 +392,11 @@ def main():
 
                     elif action == 'lib.playlist.list':
                         if args['playlist'] is not None:
-                            _show_song_info(attachment, 'Playlist empty')
+                            _show_song_info(attachment, 
+                                            'Playlist empty',
+                                            show_tech=args['show_tech'],
+                                            show_aliases=args['show_aliases'],
+                                            show_playlists=args['show_playlists'])
                         else:
                             if len(attachment) > 0:
                                 print(f'Found {len(attachment)} playlist(s) in library:')
@@ -420,26 +434,42 @@ def _start_backend(**kwargs):
         print(f'Failed to start CADENCE backend')
     return result    
 
-def _show_song_info(info, empty_msg, show_aliases=False, show_playlists=False, show_num=False):
+def _show_song_info(info, empty_msg='No information to be shown', show_aliases=False, show_playlists=False, show_num=False, show_tech=False):
+    if not isinstance(info, (list, tuple)):
+        info = (info,)
     if len(info) > 0:
-        for i in range(len(info)):
-            output = SongOutput(info[i])
-            lines = [
-                f'Name: {output.name}',
-                f'Artist: {output.artist}',
-                f'Album: {output.album}',
-                f'Duration: {output.duration}',
-                f'Path: {output.path}',
-                f'Library ID: {output.lib_id}'
-            ]
-            if show_aliases:
-                lines.append(f"\nAliases ({output.aliases_num}): {output.aliases}")
-
-            if show_playlists:
-                lines.append(f"\nPlaylists ({output.playlists_num}): {output.playlists}")
+        for i, song in enumerate(info):
+            output = SongOutput(song)
 
             if show_num:
-                lines = [f'{i+1}.'] + lines
+                lines = [f'{i+1}. {output.name}']
+            else:
+                lines = [f'{output.name}']
+
+            lines += [
+                f'\nArtist: {output.artist}',
+                f'Album: {output.album}',
+                f'\nDuration: {output.duration}',
+            ]
+
+            if show_tech:
+                lines += [
+                    f'\nBitrate: {output.bitrate} kbps',
+                    f'Sample Rate: {output.sample_rate}',
+                    f'Channels: {output.channels}',
+                ]
+
+            lines += [
+                f'\nPath: {output.path}',
+                f'\nLibrary ID: {output.lib_id}'
+            ]
+
+            if show_aliases:
+                lines += [f"\nAliases ({output.aliases_num}): {output.aliases}"]
+
+            if show_playlists:
+                lines += [f"\nPlaylists ({output.playlists_num}): {output.playlists}"]
+
             print(box('\n'.join(lines)))
     else:
         print(empty_msg)

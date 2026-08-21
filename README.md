@@ -75,7 +75,7 @@ python -m src
 
 | Command                     | Description                                        |
 | --------------------------- | -------------------------------------------------- |
-| `cadence lib list`          | Show all songs in library (`-a` aliases, `-p` playlists) |
+| `cadence lib list`          | Show all songs in library (`-a` aliases, `-p` playlists, `-t` tech metadata) |
 | `cadence lib search <kw>`   | Search songs in library by name/artist/album/alias |
 | `cadence lib add <path>`    | Add a new song to library                          |
 | `cadence lib del <song>`    | Delete a song from library                         |
@@ -84,7 +84,7 @@ python -m src
 | `cadence lib reset`         | Reset library and delete all data (confirmation)   |
 | `cadence lib meta set`      | Set metadata of a song (use `""` to clear)         |
 | `cadence lib alias ...`     | List/bind/unbind aliases                           |
-| `cadence lib playlist ...`  | List/create/add/kick/delete playlists              |
+| `cadence lib playlist ...`  | List/create/add/kick/delete playlists (`lib playlist list` supports `-a`/`-p`/`-t`) |
 
 `open` accepts a song alias, a library song name, a playlist name, or a file path.
 

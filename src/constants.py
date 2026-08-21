@@ -4,6 +4,11 @@ import logging
 
 from src.sentinels import SENTINELS
 
+class IterType:
+    # can be list or tuple
+    def __init__(self, element_type):
+        self.element_type = element_type
+
 dirs = PlatformDirs('cadence', ensure_exists=True)
 
 LOG_DIR = Path(dirs.user_log_dir)
@@ -57,7 +62,7 @@ SOURCES = {
 }
 
 # 'key name': (type, is_required)
-# literal type: ((<list, tuple, etc>, element_type), is_required). every element needs to match
+# literal type: (IterType(element_type), is_required). every element needs to match
 ACTION_KEYS = {
     'open': {
         'song': (str, True)
@@ -82,7 +87,8 @@ ACTION_KEYS = {
     },
     'lib.list': {
         'show_aliases': (bool, False),
-        'show_playlists': (bool, False)
+        'show_playlists': (bool, False),
+        'show_tech': (bool, False)
     },
     'lib.search': {
         'keyword': (str, True)
@@ -125,7 +131,10 @@ ACTION_KEYS = {
         'alias': (str, True)
     },
     'lib.playlist.list': {
-        'playlist': (str, False)
+        'playlist': (str, False),
+        'show_aliases': (bool, False),
+        'show_playlists': (bool, False),
+        'show_tech': (bool, False)
     },
     'lib.playlist.create': {
         'name': (str, True)
@@ -146,7 +155,8 @@ ACTION_KEYS = {
 READABLE_TYPE_NAMES = {
     str: 'string',
     int: 'integer',
-    bool: 'boolean'
+    bool: 'boolean',
+    IterType: 'list or tuple'
 }
 
 ATTACHMENT_REQUIRED_ACTIONS = [

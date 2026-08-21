@@ -17,9 +17,18 @@
 - [X] Memorize number in playlist
 - [ ] More user-friendly library management
   - [ ] Batch management
+    - [ ] lib.info
+    - [ ] lib.search (multi-keyword, and/or option)
+    - [ ] lib.add
+    - [ ] lib.del
+    - [ ] lib.alias.bind (multi-alias)
+    - [ ] lib.alias.unbind
+    - [ ] lib.playlist.add (multi-song)
+    - [ ] lib.playlist.kick (multi-song)
   - [ ] Manage by library ID
   - [ ] Regex matching (not now)
   - [ ] Interactive management (not now)
+- [X] Request validation with element types (IterType for list/tuple keys)
 - [ ] Bluetooth frontend
 - [ ] Tray icon frontend
 - [ ] Configure system

@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## [0.17.0] - 2026-08-21
+
+### Added
+
+- Request validation extracted into `_request_verify()` — dispatch now verifies all keys before running the action, and validation supports element types via `IterType(element_type)` so a key can require a list/tuple of a specific type (e.g. `(IterType(str), False)` means "optional list/tuple of strings")
+- `InvalidKeyType` now reports the received type; new `InvalidElementType` response for mismatched elements inside a list/tuple
+- `lib list -t/--show-tech` — show technical metadata (bitrate, sample rate, channels) in library listing
+- `lib playlist list <name>` supports `-a` (aliases), `-p` (playlists), `-t` (tech metadata) like `lib list`
+
+### Changed
+
+- `lib info` and `lib list` share the same `_show_song_info()` renderer (was duplicated); `show_tech` controls technical metadata lines
+- `sort_songs()` renamed to `_sort_songs()` (private); `_play_all()` now sorts songs by filename like playlists do
+- Alias/playlist enrichment extracted into `_add_songs_aliases()` / `_add_songs_playlist_names()` helpers, reused by `lib.list` and `lib.playlist.list`
+
+### Fixed
+
+- `IterType` used a method named `self` and lacked `__init__`, so `IterType(str)` raised `TypeError` and chained calls returned `None` — replaced with a proper `__init__`
+- `READABLE_TYPE_NAMES` lookup used the `IterType` instance as key while the dict stored the class, raising `KeyError` on validation failure — now looks up the class
+
 ## [0.16.0] - 2026-08-21
 
 ### Added
