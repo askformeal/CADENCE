@@ -101,7 +101,7 @@ ACTION_KEYS = {
         'skip_alias': (bool, False)
     },
     'lib.del': {
-        'song': (str, True)
+        'songs': (IterType(str), True)
     },
     'lib.prune':
     {

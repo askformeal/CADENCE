@@ -479,19 +479,32 @@ class Backend:
                         response = gen_response.Failed(msg, failed=failed)
 
             elif action == 'lib.del':
-                song = request['song']
-                id = self._get_song(song, cwd)
-                if id is SENTINELS.MISSING_CWD:
-                    response = self._missing_key('lib.del', 'cwd')
-                elif id is not SENTINELS.NOT_IN_LIB:
-                    path = self.database.get_song_info(id)[0]['path']
-                    if self.current_song_info is not None and self.current_song_info[self.current_song_num].get('id', None) == id:
-                        self.current_song_info[self.current_song_num] = {'path': path} 
-                        self.current_song_in_lib = False
-                    self.database.delete_song(id)
-                    response = gen_response.Success(f'deleted song \"{song}\" from library')
+                songs = request['songs']
+
+                if len(songs) == 0:
+                    response = gen_response.Failed('received empty list of songs')
                 else:
-                    response = gen_response.SongNotExist(f'delete {song}')
+                    failed = []
+
+                    for song in songs:
+                        id = self._get_song(song, cwd)
+                        if id is SENTINELS.MISSING_CWD:
+                            failed.append(self._missing_key('lib.del', 'cwd'))
+                        elif id is SENTINELS.NOT_IN_LIB:
+                            failed.append(gen_response.SongNotExist(f'delete {song}'))
+                        else:
+                            path = self.database.get_song_info(id)[0]['path']
+                            if self.current_song_info is not None and self.current_song_info[self.current_song_num].get('id', None) == id:
+                                self.current_song_info[self.current_song_num] = {'path': path} 
+                                self.current_song_in_lib = False
+
+                            self.database.delete_song(id)
+
+                    msg = f'successfully removed [{len(songs)-len(failed)}/{len(songs)}] songs from library'
+                    if len(failed) < len(songs):
+                        response = gen_response.Success(msg, failed=failed)
+                    else:
+                        response = gen_response.Failed(msg, failed=failed)
 
             elif action == 'lib.prune':
                 dry_run = request.get('dry_run', False)

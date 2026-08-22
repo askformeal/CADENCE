@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## [0.20.0] - 2026-08-22
+
+> **⚠️ Breaking Changes**
+> - `lib.del` request key renamed: `song` → `songs` — now takes a list/tuple of strings (`IterType(str)`); the CLI takes multiple positional songs.
+
+### Added
+
+- `lib del <song>...` — delete multiple songs in one request (each can be a path or alias)
+- Batch delete reports per-song failures in the `failed` list (song not in library, etc.) and the message shows `successfully removed [ok/total] songs from library` — partial success is a success, all-failed is a failed response (same convention as `lib.add`/`lib.scan`)
+- Deleting the currently-playing song still degrades it to a raw path and flips `in_library` to false, same as before
+
+### Changed
+
+- `lib.del` with an empty song list returns a failed response (`received empty list of songs`), matching `lib.add`'s empty-path behavior
+
 ## [0.19.0] - 2026-08-22
 
 > **⚠️ Breaking Changes**

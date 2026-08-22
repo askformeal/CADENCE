@@ -371,7 +371,7 @@ def test_lib_list_without_show_playlists(backend, audio_file):
 
 def test_lib_del_by_path(backend, audio_file):
     _request(backend, 'lib.add', paths=[audio_file])
-    response = _request(backend, 'lib.del', song=audio_file)
+    response = _request(backend, 'lib.del', songs=[audio_file])
     assert response['code'] == 0
     assert backend.database.song_exists(1) is False
 
@@ -380,21 +380,21 @@ def test_lib_del_by_alias(backend, audio_file):
     database = backend.database
     song_id, _ = database.add_song(audio_file)
     database.bind_alias(song_id, 'test_alias')
-    response = _request(backend, 'lib.del', song='test_alias')
+    response = _request(backend, 'lib.del', songs=['test_alias'])
     assert response['code'] == 0
     assert backend.database.song_exists(song_id) is False
 
 
 def test_lib_del_not_in_library(backend):
-    response = _request(backend, 'lib.del', song='ghost_song')
+    response = _request(backend, 'lib.del', songs=['ghost_song'])
     assert response['code'] == 1
-    assert 'does not exist' in response['msg']
+    assert 'does not exist' in response['failed'][0]['msg']
 
 
 def test_lib_del_when_nothing_open(backend, audio_file):
     """Deleting a lib song while nothing is open must not crash (regression: Path(None))."""
     _request(backend, 'lib.add', paths=[audio_file])
-    response = _request(backend, 'lib.del', song=audio_file)
+    response = _request(backend, 'lib.del', songs=[audio_file])
     assert response['code'] == 0
 
 
@@ -404,7 +404,7 @@ def test_lib_del_current_song_resets_state(backend, audio_file):
     _request(backend, 'open', song=audio_file)
     assert backend.current_song_in_lib is True
 
-    response = _request(backend, 'lib.del', song=audio_file)
+    response = _request(backend, 'lib.del', songs=[audio_file])
     assert response['code'] == 0
     assert backend.current_song_in_lib is False
     assert backend.current_song_info[0] == {'path': audio_file}
@@ -414,8 +414,43 @@ def test_lib_del_cascades_alias(backend, audio_file):
     database = backend.database
     song_id, _ = database.add_song(audio_file)
     database.bind_alias(song_id, 'test_alias')
-    _request(backend, 'lib.del', song=audio_file)
+    _request(backend, 'lib.del', songs=[audio_file])
     assert database.get_song_via_alias('test_alias') is SENTINELS.ALIAS_NOT_FOUND
+
+
+def test_lib_del_batch_multiple(backend, tmp_path):
+    _make_wav(tmp_path / 'a.wav')
+    _make_wav(tmp_path / 'b.wav')
+    paths = [str(tmp_path / 'a.wav'), str(tmp_path / 'b.wav')]
+    _request(backend, 'lib.add', paths=paths)
+    response = _request(backend, 'lib.del', songs=paths)
+    assert response['code'] == 0
+    assert '2/2' in response['msg']
+    assert backend.database.song_exists(1) is False
+    assert backend.database.song_exists(2) is False
+
+
+def test_lib_del_batch_partial_failure(backend, audio_file):
+    _request(backend, 'lib.add', paths=[audio_file])
+    response = _request(backend, 'lib.del', songs=[audio_file, 'ghost_song'])
+    assert response['code'] == 0
+    assert '1/2' in response['msg']
+    assert len(response['failed']) == 1
+    assert 'does not exist' in response['failed'][0]['msg']
+    assert backend.database.song_exists(1) is False
+
+
+def test_lib_del_batch_all_failed(backend):
+    response = _request(backend, 'lib.del', songs=['ghost_a', 'ghost_b'])
+    assert response['code'] == 1
+    assert '0/2' in response['msg']
+    assert len(response['failed']) == 2
+
+
+def test_lib_del_batch_empty(backend):
+    response = _request(backend, 'lib.del', songs=[])
+    assert response['code'] == 1
+    assert 'empty list of songs' in response['msg']
 
 
 def test_lib_alias_bind(backend, audio_file):

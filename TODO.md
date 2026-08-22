@@ -20,7 +20,7 @@
     - [X] lib.info
     - [X] lib.search (multi-keyword, and/or option)
     - [X] lib.add (batch)
-    - [ ] lib.del
+    - [X] lib.del (batch)
     - [ ] lib.alias.bind (multi-alias)
     - [ ] lib.alias.unbind
     - [ ] lib.playlist.add (multi-song)

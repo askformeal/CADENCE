@@ -183,8 +183,8 @@ def main():
     lib_add_parser.add_argument('--skip-meta', action='store_true', help='Disable automatic setting metadata')
     lib_add_parser.add_argument('--skip-alias', action='store_true', help='Disable automatic binding alias')
 
-    lib_del_parser = lib_sub.add_parser('del', help='Delete a song from library')
-    lib_del_parser.add_argument('song', type=str, help='Song to delete')
+    lib_del_parser = lib_sub.add_parser('del', help='Delete songs from library')
+    lib_del_parser.add_argument('songs', type=str, nargs='+', help='Songs to delete')
 
     lib_prune_parser = lib_sub.add_parser('prune', help='Delete all songs which file no longer exists')
     lib_prune_parser.add_argument('-d', '--dry-run', action='store_true', help='Show found files without deleting')
