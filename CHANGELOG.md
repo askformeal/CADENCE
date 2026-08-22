@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## [0.19.0] - 2026-08-22
+
+> **⚠️ Breaking Changes**
+> - `lib.add` request keys renamed: `path` → `paths`, `alias` → `aliases` — both now take a list/tuple of strings (`IterType(str)`); the CLI takes multiple positional paths and `-a/--aliases` takes multiple alias values.
+
+### Added
+
+- `lib add <path>...` — add multiple songs in one request; manual aliases via `-a/--aliases` bind positionally to the paths (count must match)
+- Batch add reports per-song failures in the `failed` list (duplicate, invalid path, etc.) and the message shows `successfully added [ok/total] songs to library` — partial success is a success, all-failed is a failed response (same convention as `lib.info`)
+
+### Changed
+
+- `lib.scan` on a directory with no supported audio files now returns a success with a clear message (`No supported audio file found under <dir>`) instead of a self-contradicting `successfully added [0/0]` failed response
+- `lib.scan` all-failed now returns a failed response with failures in the `failed` list (was success whenever the directory was non-empty)
+- `lib.meta.set` message wording: `no metadata was given` → `no metadata was provided`
+
+### Fixed
+
+- `lib.add` `aliases` key in `ACTION_KEYS` had trailing spaces, silently disabling manual aliases
+
 ## [0.18.0] - 2026-08-21
 
 ### Added

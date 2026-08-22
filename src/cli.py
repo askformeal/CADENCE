@@ -178,8 +178,8 @@ def main():
     lib_search_parser.add_argument('-o', '--or', action='store_true', help='Get all results that match any one the keywords')
 
     lib_add_parser = lib_sub.add_parser('add', help='Add a new song to library')
-    lib_add_parser.add_argument('path', type=_path, help='Path of the song to add')
-    lib_add_parser.add_argument('-a', '--alias', type=str, default=None, help='Alias to bind to the new song')
+    lib_add_parser.add_argument('paths', type=_path, nargs='+', help='Path of songs to add')
+    lib_add_parser.add_argument('-a', '--aliases', type=str, nargs='+', default=None, help='Aliases to bind to the new songs')
     lib_add_parser.add_argument('--skip-meta', action='store_true', help='Disable automatic setting metadata')
     lib_add_parser.add_argument('--skip-alias', action='store_true', help='Disable automatic binding alias')
 
@@ -229,7 +229,7 @@ def main():
     playlist_parser = lib_sub.add_parser('playlist', help='Manage playlists')
     playlist_sub = playlist_parser.add_subparsers(dest='playlist_action', required=True)
 
-    playlist_list_parser = playlist_sub.add_parser('list', help='Show all songs in a playlist. Show names of all playlists in library if no playlists are given')
+    playlist_list_parser = playlist_sub.add_parser('list', help='Show all songs in a playlist. Show names of all playlists in library if no playlists are provided')
     playlist_list_parser.add_argument('playlist', type=str, nargs='?', default=None, help='Name of playlist to list')
     playlist_list_parser.add_argument('-a', '--show-aliases', action='store_true', help='Show aliases of songs')
     playlist_list_parser.add_argument('-p', '--show-playlists', action='store_true', help='Show playlists each song is in')

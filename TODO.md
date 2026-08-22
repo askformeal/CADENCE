@@ -19,7 +19,7 @@
   - [ ] Batch management
     - [X] lib.info
     - [X] lib.search (multi-keyword, and/or option)
-    - [ ] lib.add
+    - [X] lib.add (batch)
     - [ ] lib.del
     - [ ] lib.alias.bind (multi-alias)
     - [ ] lib.alias.unbind

@@ -95,8 +95,8 @@ ACTION_KEYS = {
         'or': (bool, False)
     },
     'lib.add': {
-        'path': (str, True),
-        'alias': (str, False),
+        'paths': (IterType(str), True),
+        'aliases': (IterType(str), False),
         'skip_meta': (bool, False),
         'skip_alias': (bool, False)
     },

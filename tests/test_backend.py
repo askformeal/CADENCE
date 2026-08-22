@@ -64,7 +64,7 @@ def test_list_after_open_raw_path(backend, audio_file):
 
 
 def test_list_after_open_lib_song(backend, audio_file):
-    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.add', paths=[audio_file])
     _request(backend, 'open', song=audio_file)
     response = _request(backend, 'list')
     assert response['code'] == 0
@@ -246,22 +246,72 @@ def test_open_alias_priority_over_path(backend, audio_file, tmp_path):
 
 
 def test_lib_add(backend, audio_file):
-    response = _request(backend, 'lib.add', path=audio_file)
+    response = _request(backend, 'lib.add', paths=[audio_file])
     assert response['code'] == 0
     assert backend.database.song_exists(1)
 
 
 def test_lib_add_duplicate(backend, audio_file):
-    _request(backend, 'lib.add', path=audio_file)
-    response = _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.add', paths=[audio_file])
+    response = _request(backend, 'lib.add', paths=[audio_file])
     assert response['code'] == 1
-    assert 'already exists' in response['msg']
+    assert 'already exists' in response['failed'][0]['msg']
 
 
 def test_lib_add_missing_file(backend):
-    response = _request(backend, 'lib.add', path=r'C:\does\not\exist.flac')
+    response = _request(backend, 'lib.add', paths=[r'C:\does\not\exist.flac'])
     assert response['code'] == 1
-    assert 'valid and existing path' in response['msg']
+    assert 'valid and existing path' in response['failed'][0]['msg']
+
+
+def test_lib_add_batch_multiple(backend, tmp_path):
+    _make_wav(tmp_path / 'a.wav')
+    _make_wav(tmp_path / 'b.wav')
+    response = _request(backend, 'lib.add', paths=[str(tmp_path / 'a.wav'), str(tmp_path / 'b.wav')])
+    assert response['code'] == 0
+    assert '2/2' in response['msg']
+    assert backend.database.song_exists(1)
+    assert backend.database.song_exists(2)
+
+
+def test_lib_add_batch_partial_failure(backend, tmp_path):
+    _make_wav(tmp_path / 'a.wav')
+    response = _request(backend, 'lib.add', paths=[str(tmp_path / 'a.wav'), r'C:\does\not\exist.flac'])
+    assert response['code'] == 0
+    assert '1/2' in response['msg']
+    assert len(response['failed']) == 1
+    assert 'valid and existing path' in response['failed'][0]['msg']
+
+
+def test_lib_add_batch_all_failed(backend):
+    response = _request(backend, 'lib.add', paths=[r'C:\does\not\exist1.flac', r'C:\does\not\exist2.flac'])
+    assert response['code'] == 1
+    assert '0/2' in response['msg']
+    assert len(response['failed']) == 2
+
+
+def test_lib_add_batch_empty_paths(backend):
+    response = _request(backend, 'lib.add', paths=[])
+    assert response['code'] == 1
+    assert 'empty list of paths' in response['msg']
+
+
+def test_lib_add_batch_alias_mismatch(backend, tmp_path):
+    _make_wav(tmp_path / 'a.wav')
+    _make_wav(tmp_path / 'b.wav')
+    response = _request(backend, 'lib.add', paths=[str(tmp_path / 'a.wav'), str(tmp_path / 'b.wav')], aliases=['only_one'])
+    assert response['code'] == 1
+    assert 'not the same' in response['msg']
+
+
+def test_lib_add_batch_with_aliases(backend, tmp_path):
+    _make_wav(tmp_path / 'a.wav')
+    _make_wav(tmp_path / 'b.wav')
+    response = _request(backend, 'lib.add', paths=[str(tmp_path / 'a.wav'), str(tmp_path / 'b.wav')], aliases=['alpha', 'beta'])
+    assert response['code'] == 0
+    assert '2/2' in response['msg']
+    assert backend.database.get_song_via_alias('alpha') == 1
+    assert backend.database.get_song_via_alias('beta') == 2
 
 
 def test_lib_list_empty(backend):
@@ -271,7 +321,7 @@ def test_lib_list_empty(backend):
 
 
 def test_lib_list_after_add(backend, audio_file):
-    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.add', paths=[audio_file])
     response = _request(backend, 'lib.list', show_aliases=False)
     assert response['code'] == 0
     assert len(response['attachment']) == 1
@@ -280,7 +330,7 @@ def test_lib_list_after_add(backend, audio_file):
 
 
 def test_lib_list_with_show_aliases(backend, audio_file):
-    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.add', paths=[audio_file])
     _request(backend, 'lib.alias.bind', song=audio_file, alias='favorite')
     response = _request(backend, 'lib.list', show_aliases=True)
     assert response['code'] == 0
@@ -288,7 +338,7 @@ def test_lib_list_with_show_aliases(backend, audio_file):
 
 
 def test_lib_list_show_aliases_empty(backend, audio_file):
-    _request(backend, 'lib.add', path=audio_file, skip_alias=True)
+    _request(backend, 'lib.add', paths=[audio_file], skip_alias=True)
     response = _request(backend, 'lib.list', show_aliases=True)
     assert response['code'] == 0
     assert response['attachment'][0]['aliases'] == []
@@ -296,7 +346,7 @@ def test_lib_list_show_aliases_empty(backend, audio_file):
 
 def test_lib_list_with_show_playlists(backend, audio_file):
     database = backend.database
-    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.add', paths=[audio_file])
     song_id = database.get_all_song_info()[0]['id']
     playlist_id, _ = database.create_playlist('workout')
     database.add_song_to_playlist(playlist_id, song_id)
@@ -306,21 +356,21 @@ def test_lib_list_with_show_playlists(backend, audio_file):
 
 
 def test_lib_list_show_playlists_empty(backend, audio_file):
-    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.add', paths=[audio_file])
     response = _request(backend, 'lib.list', show_playlists=True)
     assert response['code'] == 0
     assert response['attachment'][0]['playlists'] == []
 
 
 def test_lib_list_without_show_playlists(backend, audio_file):
-    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.add', paths=[audio_file])
     response = _request(backend, 'lib.list')
     assert response['code'] == 0
     assert 'playlists' not in response['attachment'][0]
 
 
 def test_lib_del_by_path(backend, audio_file):
-    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.add', paths=[audio_file])
     response = _request(backend, 'lib.del', song=audio_file)
     assert response['code'] == 0
     assert backend.database.song_exists(1) is False
@@ -343,14 +393,14 @@ def test_lib_del_not_in_library(backend):
 
 def test_lib_del_when_nothing_open(backend, audio_file):
     """Deleting a lib song while nothing is open must not crash (regression: Path(None))."""
-    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.add', paths=[audio_file])
     response = _request(backend, 'lib.del', song=audio_file)
     assert response['code'] == 0
 
 
 def test_lib_del_current_song_resets_state(backend, audio_file):
     """Deleting the currently-open lib song must flip in_library back to False."""
-    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.add', paths=[audio_file])
     _request(backend, 'open', song=audio_file)
     assert backend.current_song_in_lib is True
 
@@ -369,14 +419,14 @@ def test_lib_del_cascades_alias(backend, audio_file):
 
 
 def test_lib_alias_bind(backend, audio_file):
-    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.add', paths=[audio_file])
     response = _request(backend, 'lib.alias.bind', song=audio_file, alias='favorite')
     assert response['code'] == 0
     assert backend.database.get_song_via_alias('favorite') == 1
 
 
 def test_lib_alias_bind_duplicate(backend, audio_file):
-    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.add', paths=[audio_file])
     _request(backend, 'lib.alias.bind', song=audio_file, alias='favorite')
     response = _request(backend, 'lib.alias.bind', song=audio_file, alias='favorite')
     assert response['code'] == 1
@@ -390,7 +440,7 @@ def test_lib_alias_bind_missing_song(backend):
 
 
 def test_lib_alias_list(backend, audio_file):
-    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.add', paths=[audio_file])
     _request(backend, 'lib.alias.bind', song=audio_file, alias='favorite')
     _request(backend, 'lib.alias.bind', song=audio_file, alias='workout')
     response = _request(backend, 'lib.alias.list', song=audio_file)
@@ -405,7 +455,7 @@ def test_lib_alias_list_missing_song(backend):
 
 
 def test_lib_alias_del(backend, audio_file):
-    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.add', paths=[audio_file])
     _request(backend, 'lib.alias.bind', song=audio_file, alias='favorite')
     response = _request(backend, 'lib.alias.unbind', alias='favorite')
     assert response['code'] == 0
@@ -414,7 +464,7 @@ def test_lib_alias_del(backend, audio_file):
 
 def test_lib_alias_del_keeps_song(backend, audio_file):
     """Deleting an alias must not delete the song it was bound to."""
-    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.add', paths=[audio_file])
     _request(backend, 'lib.alias.bind', song=audio_file, alias='favorite')
     _request(backend, 'lib.alias.unbind', alias='favorite')
     assert backend.database.get_song_via_path(audio_file) == 1
@@ -555,7 +605,7 @@ def test_search_missing_keyword(backend):
 
 
 def test_search_no_results(backend, audio_file):
-    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.add', paths=[audio_file])
     response = _request(backend, 'lib.search', keyword=['nonexistent'])
     assert response['code'] == 0
     assert response['attachment'] == []
@@ -563,7 +613,7 @@ def test_search_no_results(backend, audio_file):
 
 def test_search_by_name(backend, audio_file):
     database = backend.database
-    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.add', paths=[audio_file])
     song_id = database.get_all_song_info()[0]['id']
     database.set_song_meta(song_id, 'name', 'My Awesome Song')
     response = _request(backend, 'lib.search', keyword=['awesome'])
@@ -573,7 +623,7 @@ def test_search_by_name(backend, audio_file):
 
 
 def test_search_by_alias(backend, audio_file):
-    _request(backend, 'lib.add', path=audio_file, alias='MyAlias')
+    _request(backend, 'lib.add', paths=[audio_file], aliases=['MyAlias'])
     response = _request(backend, 'lib.search', keyword=['alias'])
     assert response['code'] == 0
     assert len(response['attachment']) == 1
@@ -581,7 +631,7 @@ def test_search_by_alias(backend, audio_file):
 
 def test_search_case_insensitive(backend, audio_file):
     database = backend.database
-    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.add', paths=[audio_file])
     song_id = database.get_all_song_info()[0]['id']
     database.set_song_meta(song_id, 'artist', 'Metallica')
     response = _request(backend, 'lib.search', keyword=['METALLICA'])
@@ -591,7 +641,7 @@ def test_search_case_insensitive(backend, audio_file):
 
 def test_search_partial_match(backend, audio_file):
     database = backend.database
-    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.add', paths=[audio_file])
     song_id = database.get_all_song_info()[0]['id']
     database.set_song_meta(song_id, 'name', 'Hello World')
     response = _request(backend, 'lib.search', keyword=['wor'])
@@ -601,7 +651,7 @@ def test_search_partial_match(backend, audio_file):
 
 def test_search_multi_keyword_and(backend, audio_file):
     database = backend.database
-    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.add', paths=[audio_file])
     song_id = database.get_all_song_info()[0]['id']
     database.set_song_meta(song_id, 'name', 'My Awesome Song')
     database.set_song_meta(song_id, 'artist', 'Metallica')
@@ -619,7 +669,7 @@ def test_search_multi_keyword_and(backend, audio_file):
 
 def test_search_multi_keyword_or(backend, audio_file):
     database = backend.database
-    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.add', paths=[audio_file])
     song_id = database.get_all_song_info()[0]['id']
     database.set_song_meta(song_id, 'name', 'My Awesome Song')
 
@@ -764,7 +814,7 @@ def test_scan_success(backend, tmp_path):
 def test_scan_partial_failure(backend, tmp_path):
     _make_wav(tmp_path / 'test_a.wav')
     _make_wav(tmp_path / 'test_b.wav')
-    _request(backend, 'lib.add', path=str(tmp_path / 'test_a.wav'))
+    _request(backend, 'lib.add', paths=[str(tmp_path / 'test_a.wav')])
     response = _request(backend, 'lib.scan', dir=str(tmp_path))
     assert response['code'] == 0
     assert '1/2' in response['msg']
@@ -779,7 +829,7 @@ def test_scan_recurse(backend, tmp_path):
     _make_wav(sub / 'test_c.wav')
     response = _request(backend, 'lib.scan', dir=str(tmp_path))
     assert response['code'] == 0
-    assert '0/0' in response['msg']
+    assert 'No supported audio file found' in response['msg']
 
     response = _request(backend, 'lib.scan', dir=str(tmp_path), recurse=True)
     assert response['code'] == 0
@@ -896,7 +946,7 @@ def test_lib_info_with_playlists(backend, audio_file):
 
 
 def test_lib_prune_dry_run_empty(backend, audio_file):
-    _request(backend, 'lib.add', path=audio_file)
+    _request(backend, 'lib.add', paths=[audio_file])
     response = _request(backend, 'lib.prune', dry_run=True)
     assert response['code'] == 0
     assert response['attachment'] == []
@@ -1053,7 +1103,7 @@ def test_invalid_key_type(backend):
 
 
 def test_optional_key_none_accepted(backend, audio_file):
-    response = _request(backend, 'lib.add', path=audio_file, alias=None)
+    response = _request(backend, 'lib.add', paths=[audio_file])
     assert response['code'] == 0
 
 
@@ -1097,7 +1147,7 @@ def test_lib_meta_set_no_metadata_given(backend, audio_file):
     backend.database.add_song(audio_file)
     response = _request(backend, 'lib.meta.set', song=audio_file)
     assert response['code'] == 1
-    assert 'no metadata was given' in response['msg']
+    assert 'no metadata was provided' in response['msg']
 
 
 def test_lib_meta_set_song_not_in_library(backend):

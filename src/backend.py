@@ -452,10 +452,31 @@ class Backend:
                 response = gen_response.Success(f'{len(results)} result(s) found in library', results)
 
             elif action == 'lib.add':
-                alias = request.get('alias', None)
+                paths = request['paths']
+                aliases = request.get('aliases', None)
+                if aliases is None:
+                    aliases = []
                 set_meta = not request.get('skip_meta', False)
                 bind_alias = not request.get('skip_alias', False)
-                response = self._add_song(request['path'], set_meta, bind_alias, alias)
+                if len(paths) == 0:
+                    response = gen_response.Failed('received empty list of paths')
+                elif len(paths) != len(aliases) and len(aliases) > 0:
+                    response = gen_response.Failed('can not add song(s) because the provided number of paths and aliases are not the same')
+                else:
+                    if len(aliases) == 0:
+                        aliases = [None] * len(paths)
+                    failed = []
+                    for path, alias in zip(paths, aliases):
+                        add_response = self._add_song(path, set_meta, bind_alias, alias)
+                        logger.debug(f'add: {add_response}')
+                        if not add_response.ok():
+                            failed.append(add_response)
+                    
+                    msg = f'successfully added [{len(paths)-len(failed)}/{len(paths)}] songs to library'
+                    if len(failed) < len(paths):
+                        response = gen_response.Success(msg, failed=failed)
+                    else:
+                        response = gen_response.Failed(msg, failed=failed)
 
             elif action == 'lib.del':
                 song = request['song']
@@ -517,33 +538,37 @@ class Backend:
                             paths = self._recurse_scan(directory)
                         else:
                             paths = self._scan(directory)
-                        if dry_run:
-                            response = gen_response.Success(f'{len(paths)} supported audio files found under {directory}', paths)
+
+                        if len(paths) == 0:
+                            response = gen_response.Success(f'No supported audio file found under {directory}', attachment=[])
                         else:
-                            ids = []
-                            for path in paths:
-                                song_id, add_response = self._add_song(path, set_meta, bind_alias, return_id=True)
-                                if not add_response.ok():
-                                    failed_responses.append(add_response)
-                                else:
-                                    ids.append(song_id)
-
-                            msg = f'successfully added [{len(ids)}/{len(paths)}] file(s) to library'
-                            if len(ids) > 0 or len(paths) == 0:
-                                response = gen_response.Success(msg, failed=failed_responses)
+                            if dry_run:
+                                response = gen_response.Success(f'{len(paths)} supported audio files found under {directory}', paths)
                             else:
-                                response = gen_response.Failed(msg, failed=failed_responses)
+                                ids = []
+                                for path in paths:
+                                    song_id, add_response = self._add_song(path, set_meta, bind_alias, return_id=True)
+                                    if not add_response.ok():
+                                        failed_responses.append(add_response)
+                                    else:
+                                        ids.append(song_id)
 
-                            if playlist is not None:
-                                playlist_id = self.database.get_playlist_via_name(playlist)
-                                if playlist_id is SENTINELS.PLAYLIST_NOT_FOUND:
-                                    playlist_msg = f'can not add songs to playlist \"{playlist}\" because it does not exist'
+                                msg = f'successfully added [{len(ids)}/{len(paths)}] file(s) to library'
+                                if len(ids) > 0:
+                                    response = gen_response.Success(msg, failed=failed_responses)
                                 else:
-                                    for song_id in ids:
-                                        self.database.add_song_to_playlist(playlist_id, song_id) # all songs are freshly added, no chance of ignored
+                                    response = gen_response.Failed(msg, failed=failed_responses)
 
-                                    playlist_msg = f'added {len(ids)} song(s) to playlist {playlist}'
-                                response += gen_response.Success(playlist_msg)
+                                if playlist is not None:
+                                    playlist_id = self.database.get_playlist_via_name(playlist)
+                                    if playlist_id is SENTINELS.PLAYLIST_NOT_FOUND:
+                                        playlist_msg = f'can not add songs to playlist \"{playlist}\" because it does not exist'
+                                    else:
+                                        for song_id in ids:
+                                            self.database.add_song_to_playlist(playlist_id, song_id) # all songs are freshly added, no chance of ignored
+
+                                        playlist_msg = f'added {len(ids)} song(s) to playlist {playlist}'
+                                    response += gen_response.Success(playlist_msg)
 
                     else:
                         response = gen_response.Failed(f'\"{directory}\" is not a valid directory')
@@ -576,7 +601,7 @@ class Backend:
                         response = gen_response.Success('metadata set')
 
                     else:
-                        response = gen_response.Failed(f'can not set metadata because no metadata was given')
+                        response = gen_response.Failed(f'can not set metadata because no metadata was provided')
 
             elif action == 'lib.alias.list':
                 song = request['song']
