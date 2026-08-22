@@ -26,12 +26,15 @@
     - [ ] lib.playlist.add (multi-song)
     - [ ] lib.playlist.kick (multi-song)
   - [ ] Manage by library ID
-  - [ ] Regex matching (not now)
-  - [ ] Interactive management (not now)
 - [X] Request validation with element types (IterType for list/tuple keys)
+- [ ] PID file
+- [ ] `lib.meta.read-file` command to set metadata by file
 - [ ] Bluetooth frontend
 - [ ] Tray icon frontend
 - [ ] Configure system
 - [ ] TUI frontend
 - [ ] HTTP frontend
+- [ ] Advanced library management
+  - [ ] Regex matching (not now)
+  - [ ] Interactive management (not now)
 - [ ] Auto play song depend on the user's mood

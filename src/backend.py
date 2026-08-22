@@ -112,22 +112,25 @@ class Backend:
 
     def _flush_buffer(self):
         while self.running:
-            request, connection = self.dispatch_buffer.get()
-            if request is SENTINELS.EXIT_FLUSHING:
-                break
             try:
-                response = self.dispatch(request)
-            except Exception as e:
-                logger.exception(f'Failed to dispatch request:')
-                response = gen_response.Failed(f'a CADENCE backend error occurred: \"{e}\"')
+                request, connection = self.dispatch_buffer.get()
+                if request is SENTINELS.EXIT_FLUSHING:
+                    break
+                try:
+                    response = self.dispatch(request)
+                except Exception as e:
+                    logger.exception(f'Exception raised when dispatching request')
+                    response = gen_response.Failed(f'a CADENCE backend error occurred during dispatching of request: \"{e}\"')
 
-            if self.dev:
-                response.msg = f'[DEV] {response.msg}'
-            
-            if connection is not None:
-                logger.info(f'Send response: {response}')
-                send_json(connection, response)
-                connection.close()
+                if self.dev:
+                    response.msg = f'[DEV] {response.msg}'
+                
+                if connection is not None:
+                    logger.info(f'Send response: {response}')
+                    send_json(connection, response)
+                    connection.close()
+            except Exception as e:
+                logger.exception(f'Exception raised when handling request')
 
     def dispatch(self, request):
         logger.debug(f'Dispatch request: {request}')
@@ -459,7 +462,7 @@ class Backend:
                 set_meta = not request.get('skip_meta', False)
                 bind_alias = not request.get('skip_alias', False)
                 if len(paths) == 0:
-                    response = gen_response.Failed('received empty list of paths')
+                    response = gen_response.EmptyList('paths')
                 elif len(paths) != len(aliases) and len(aliases) > 0:
                     response = gen_response.Failed('can not add song(s) because the provided number of paths and aliases are not the same')
                 else:
@@ -472,7 +475,7 @@ class Backend:
                         if not add_response.ok():
                             failed.append(add_response)
                     
-                    msg = f'successfully added [{len(paths)-len(failed)}/{len(paths)}] songs to library'
+                    msg = f'added [{len(paths)-len(failed)}/{len(paths)}] songs to library'
                     if len(failed) < len(paths):
                         response = gen_response.Success(msg, failed=failed)
                     else:
@@ -482,7 +485,7 @@ class Backend:
                 songs = request['songs']
 
                 if len(songs) == 0:
-                    response = gen_response.Failed('received empty list of songs')
+                    response = gen_response.EmptyList('songs')
                 else:
                     failed = []
 
@@ -500,7 +503,7 @@ class Backend:
 
                             self.database.delete_song(id)
 
-                    msg = f'successfully removed [{len(songs)-len(failed)}/{len(songs)}] songs from library'
+                    msg = f'removed [{len(songs)-len(failed)}/{len(songs)}] songs from library'
                     if len(failed) < len(songs):
                         response = gen_response.Success(msg, failed=failed)
                     else:
@@ -566,7 +569,7 @@ class Backend:
                                     else:
                                         ids.append(song_id)
 
-                                msg = f'successfully added [{len(ids)}/{len(paths)}] file(s) to library'
+                                msg = f'added [{len(ids)}/{len(paths)}] file(s) to library'
                                 if len(ids) > 0:
                                     response = gen_response.Success(msg, failed=failed_responses)
                                 else:
@@ -629,26 +632,53 @@ class Backend:
 
             elif action == 'lib.alias.bind':
                 song = request['song']
-                id = self._get_song(song, cwd)
-
-                if id is SENTINELS.MISSING_CWD:
-                    response = self._missing_key('lib.alias.bind', 'cwd')
-                elif id is not SENTINELS.NOT_IN_LIB:
-                    result = self.database.bind_alias(id, request['alias'])
-                    response = {
-                        SENTINELS.ALIAS_EXISTS: gen_response.Failed(f'can not bind alias \"{request['alias']}\" because it is already bound to another song in library'),
-                        SENTINELS.SUCCESS: gen_response.Success(f"bound alias \"{request['alias']}\" to song \"{song}\""),
-                        SENTINELS.SONG_NOT_FOUND: gen_response.SongNotExist(f'bind alias to {song}') # not really necessary, but Monica insists
-                    }[result]
+                aliases = request['aliases']
+                if len(aliases) == 0:
+                    response = gen_response.EmptyList('aliases')
                 else:
-                    response = gen_response.SongNotExist(f'bind alias to {song}')
+                    id = self._get_song(song, cwd)
+
+                    if id is SENTINELS.MISSING_CWD:
+                        response = self._missing_key('lib.alias.bind', 'cwd')
+                    elif id is SENTINELS.NOT_IN_LIB:
+                        response = gen_response.SongNotExist(f'bind alias to {song}')
+                    else:
+                        failed = []
+                        for alias in aliases:
+                            result = self.database.bind_alias(id, alias)
+                            bind_response = {
+                                SENTINELS.SUCCESS: gen_response.Success(f"bound alias \"{alias}\" to song \"{song}\""),
+                                SENTINELS.ALIAS_EXISTS: gen_response.Failed(f'can not bind alias \"{alias}\" because it is already bound to another song in library'),
+                                SENTINELS.SONG_NOT_FOUND: gen_response.SongNotExist(f'bind alias to \"{song}\"') # not really necessary, but Monica insists
+                            }[result]
+                            if not bind_response.ok():
+                                failed.append(bind_response)
+
+                        msg = f'bound [{len(aliases)-len(failed)}/{len(aliases)}] aliases to {song}'
+                        if len(failed) < len(aliases):
+                            response = gen_response.Success(msg, failed=failed)
+                        else:
+                            response = gen_response.Failed(msg, failed=failed)
 
             elif action == 'lib.alias.unbind':
-                result = self.database.unbind_alias(request['alias'])
-                if result is not SENTINELS.ALIAS_NOT_FOUND:
-                    response = gen_response.Success(f"unbound alias \"{request["alias"]}\"")
+                aliases = request['aliases']
+
+                if len(aliases) == 0:
+                    response = gen_response.EmptyList('aliases')
                 else:
-                    response = gen_response.Failed(f'can not unbind {request["alias"]} because it does not exist in library')
+                    failed = []
+
+                    for alias in aliases:
+                        result = self.database.unbind_alias(alias)
+                        if result is SENTINELS.ALIAS_NOT_FOUND:
+                            failed.append(gen_response.Failed(f'can not unbind {alias} because it does not exist in library'))
+
+                    msg = f'unbound [{len(aliases)-len(failed)}/{len(aliases)}] aliases'
+
+                    if len(failed) < len(aliases):
+                        response = gen_response.Success(msg, failed=failed)
+                    else:
+                        response = gen_response.Failed(msg, failed=failed)
 
             elif action == 'lib.playlist.list':
                 response = gen_response.Success('obtained list of playlist in library')
@@ -754,7 +784,7 @@ class Backend:
                             for element in value:
                                 if not isinstance(element, element_type):
                                     return gen_response.InvalidElementType(action, key, READABLE_TYPE_NAMES[element_type], type(element).__name__)
-                        else:
+                        elif not (value is None and not is_required):
                             return gen_response.InvalidKeyType(action, key, READABLE_TYPE_NAMES[IterType], type(value).__name__)
                         
                     elif not isinstance(value, key_type) and not (value is None and not is_required): # None type acceptable for non-required keys even if not stated in ACTION_KEYS

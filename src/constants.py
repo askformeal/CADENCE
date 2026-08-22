@@ -126,10 +126,10 @@ ACTION_KEYS = {
     },
     'lib.alias.bind': {
         'song': (str, True),
-        'alias': (str, True)
+        'aliases': (IterType(str), True)
     },
     'lib.alias.unbind': {
-        'alias': (str, True)
+        'aliases': (IterType(str), True)
     },
     'lib.playlist.list': {
         'playlist': (str, False),

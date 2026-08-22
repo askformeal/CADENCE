@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## [0.21.0] - 2026-08-22
+
+> **⚠️ Breaking Changes**
+> - `lib.alias.bind` request key renamed: `alias` → `aliases` — now takes a list/tuple of strings (`IterType(str)`); the CLI takes multiple alias values after the song.
+> - `lib.alias.unbind` request key renamed: `alias` → `aliases` — same shape; the CLI takes multiple aliases to unbind.
+
+### Added
+
+- `lib alias bind <song> <alias>...` — bind multiple aliases to one song in a single request; per-alias failures go to the `failed` list, message shows `bound [ok/total] aliases to <song>`
+- `lib alias unbind <alias>...` — unbind multiple aliases in one request; missing aliases go to the `failed` list, message shows `unbound [ok/total] aliases`
+- New `EmptyList` response class for "received empty list of X" failures (`lib.add`/`lib.del`/`lib.alias.bind`/`lib.alias.unbind` all use it)
+- Request validation: optional `IterType` keys now accept an explicit `None` value (previously only the non-iterable branch did, so the CLI's `aliases=None` default failed `lib.add` validation)
+
+### Fixed
+
+- **Backend hang on any failed response** — `send_json` serialized the top-level `Response` with `dict()`, but `Response` objects nested inside the `failed` list were never converted, so `json.dumps` raised `TypeError: Object of type X is not JSON serializable`; that exception escaped `send_json` (only socket errors were caught) and killed the `_flush_buffer` consumer thread, leaving every later request stuck at "Received request". Now `json.dumps(..., default=...)` recursively converts nested `Response` objects, and the whole `_flush_buffer` handling loop is wrapped in `try/except` so no send error can ever kill the consumer thread again.
+- `EmptyList` constructor was misspelled `__int__` (an `int()` hook, not an initializer), so `EmptyList('paths')` silently produced a response whose message was just `'paths'` — renamed to `__init__`
+- Batch message wording: `successfully added`/`successfully removed` → `added`/`removed` (a failed response no longer claims success)
+
 ## [0.20.0] - 2026-08-22
 
 > **⚠️ Breaking Changes**

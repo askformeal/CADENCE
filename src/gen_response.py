@@ -95,6 +95,10 @@ class InvalidElementType(Failed):
     def __init__(self, action, key, element_type, received_type, attachment=None, failed=None):
         super().__init__(f'every element of the value of the key \"{key}\" of \"{action}\" action must be a {element_type} value but one with value of type \"{received_type}\" was received instead', attachment, failed)
 
+class EmptyList(Failed):
+    def __init__(self, item, attachment=None, failed=None):
+        super().__init__(f'received empty list of {item}', attachment, failed)
+
 class PercentageTooLow(Failed):
     def __init__(self, value, attachment=None, failed=None):
         super().__init__(f'{value} is lower than 0 and hence not a valid percentage number', attachment, failed)

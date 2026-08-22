@@ -8,12 +8,18 @@ from src.gen_response import Response
 
 logger = setup_logger(__name__, SOCKET_LOG_PATH)
 
+def _json_response_default(value):
+    if isinstance(value, Response):
+        return dict(value)
+    else:
+        raise TypeError(f'Object of type {type(value).__name__} is not JSON serializable')
+
 def send_json(connection, data, expect_reset=False):
     if isinstance(data, Response):
         data = dict(data)
         
     try:
-        data_bytes = json.dumps(data, ensure_ascii=False).encode(CONNECTION_ENCODING)
+        data_bytes = json.dumps(data, ensure_ascii=False, default=_json_response_default).encode(CONNECTION_ENCODING)
         length = len(data_bytes)
         connection.sendall(length.to_bytes(HEADER_LEN, byteorder='big'))
         connection.sendall(data_bytes)

@@ -219,12 +219,12 @@ def main():
     alias_list_parser = alias_sub.add_parser('list', help='Show all bound aliases of a song in library')
     alias_list_parser.add_argument('song', type=str, help='Song to list aliases')
 
-    alias_bind_parser = alias_sub.add_parser('bind', help='Bind an alias to a song in library')
+    alias_bind_parser = alias_sub.add_parser('bind', help='Bind aliases to a song in library')
     alias_bind_parser.add_argument('song', type=str, help='Song to bind aliases to')
-    alias_bind_parser.add_argument('alias', type=str, help='alias to bind to song')
+    alias_bind_parser.add_argument('aliases', type=str, nargs='+', help='aliases to bind to song')
 
-    alias_del_parser = alias_sub.add_parser('unbind', help='Unbind an alias from a song in library')
-    alias_del_parser.add_argument('alias', type=str, help='Alias to delete')
+    alias_unbind_parser = alias_sub.add_parser('unbind', help='Unbind aliases from their songs in library')
+    alias_unbind_parser.add_argument('aliases', type=str, nargs='+', help='Aliases to unbind')
 
     playlist_parser = lib_sub.add_parser('playlist', help='Manage playlists')
     playlist_sub = playlist_parser.add_subparsers(dest='playlist_action', required=True)
@@ -412,7 +412,7 @@ def main():
             print('[Failed]: CADENCE backend is exiting')
 
         if len(failed) > 0:
-            lines = ['There are failed actions:\n']
+            lines = [f'There are failed actions ({len(failed)}):\n']
             lines += list(map(lambda x: f'  {x['msg']}', failed))
             print(box('\n'.join(lines)))
 

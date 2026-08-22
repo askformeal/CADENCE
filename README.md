@@ -83,7 +83,7 @@ python -m src
 | `cadence lib prune`         | Delete all songs whose file no longer exists (`-d` dry run)  |
 | `cadence lib reset`         | Reset library and delete all data (confirmation)   |
 | `cadence lib meta set`      | Set metadata of a song (use `""` to clear)         |
-| `cadence lib alias ...`     | List/bind/unbind aliases                           |
+| `cadence lib alias ...`     | List/bind/unbind aliases (`bind <song> <alias>...`, `unbind <alias>...`) |
 | `cadence lib playlist ...`  | List/create/add/kick/delete playlists (`lib playlist list` supports `-a`/`-p`/`-t`) |
 
 `open` accepts a song alias, a library song name, a playlist name, or a file path.

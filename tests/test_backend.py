@@ -331,7 +331,7 @@ def test_lib_list_after_add(backend, audio_file):
 
 def test_lib_list_with_show_aliases(backend, audio_file):
     _request(backend, 'lib.add', paths=[audio_file])
-    _request(backend, 'lib.alias.bind', song=audio_file, alias='favorite')
+    _request(backend, 'lib.alias.bind', song=audio_file, aliases=['favorite'])
     response = _request(backend, 'lib.list', show_aliases=True)
     assert response['code'] == 0
     assert response['attachment'][0]['aliases'] == ['test_audio', 'favorite']
@@ -455,29 +455,29 @@ def test_lib_del_batch_empty(backend):
 
 def test_lib_alias_bind(backend, audio_file):
     _request(backend, 'lib.add', paths=[audio_file])
-    response = _request(backend, 'lib.alias.bind', song=audio_file, alias='favorite')
+    response = _request(backend, 'lib.alias.bind', song=audio_file, aliases=['favorite'])
     assert response['code'] == 0
     assert backend.database.get_song_via_alias('favorite') == 1
 
 
 def test_lib_alias_bind_duplicate(backend, audio_file):
     _request(backend, 'lib.add', paths=[audio_file])
-    _request(backend, 'lib.alias.bind', song=audio_file, alias='favorite')
-    response = _request(backend, 'lib.alias.bind', song=audio_file, alias='favorite')
+    _request(backend, 'lib.alias.bind', song=audio_file, aliases=['favorite'])
+    response = _request(backend, 'lib.alias.bind', song=audio_file, aliases=['favorite'])
     assert response['code'] == 1
-    assert 'already' in response['msg']
+    assert 'already' in response['failed'][0]['msg']
 
 
 def test_lib_alias_bind_missing_song(backend):
-    response = _request(backend, 'lib.alias.bind', song='ghost_song', alias='favorite')
+    response = _request(backend, 'lib.alias.bind', song='ghost_song', aliases=['favorite'])
     assert response['code'] == 1
     assert 'does not exist' in response['msg']
 
 
 def test_lib_alias_list(backend, audio_file):
     _request(backend, 'lib.add', paths=[audio_file])
-    _request(backend, 'lib.alias.bind', song=audio_file, alias='favorite')
-    _request(backend, 'lib.alias.bind', song=audio_file, alias='workout')
+    _request(backend, 'lib.alias.bind', song=audio_file, aliases=['favorite'])
+    _request(backend, 'lib.alias.bind', song=audio_file, aliases=['workout'])
     response = _request(backend, 'lib.alias.list', song=audio_file)
     assert response['code'] == 0
     assert response['attachment'] == ['test_audio', 'favorite', 'workout']
@@ -491,8 +491,8 @@ def test_lib_alias_list_missing_song(backend):
 
 def test_lib_alias_del(backend, audio_file):
     _request(backend, 'lib.add', paths=[audio_file])
-    _request(backend, 'lib.alias.bind', song=audio_file, alias='favorite')
-    response = _request(backend, 'lib.alias.unbind', alias='favorite')
+    _request(backend, 'lib.alias.bind', song=audio_file, aliases=['favorite'])
+    response = _request(backend, 'lib.alias.unbind', aliases=['favorite'])
     assert response['code'] == 0
     assert backend.database.get_song_via_alias('favorite') is SENTINELS.ALIAS_NOT_FOUND
 
@@ -500,15 +500,15 @@ def test_lib_alias_del(backend, audio_file):
 def test_lib_alias_del_keeps_song(backend, audio_file):
     """Deleting an alias must not delete the song it was bound to."""
     _request(backend, 'lib.add', paths=[audio_file])
-    _request(backend, 'lib.alias.bind', song=audio_file, alias='favorite')
-    _request(backend, 'lib.alias.unbind', alias='favorite')
+    _request(backend, 'lib.alias.bind', song=audio_file, aliases=['favorite'])
+    _request(backend, 'lib.alias.unbind', aliases=['favorite'])
     assert backend.database.get_song_via_path(audio_file) == 1
 
 
 def test_lib_alias_del_not_exist(backend):
-    response = _request(backend, 'lib.alias.unbind', alias='ghost_alias')
+    response = _request(backend, 'lib.alias.unbind', aliases=['ghost_alias'])
     assert response['code'] == 1
-    assert 'does not exist' in response['msg']
+    assert 'does not exist' in response['failed'][0]['msg']
 
 
 def _create_playlist_with_song(backend, audio_file, playlist_name):
