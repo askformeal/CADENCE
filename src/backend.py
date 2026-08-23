@@ -1040,16 +1040,21 @@ class Backend:
     def _sort_songs(self, info):
         return sorted(info, key=lambda x: Path(x['path']).name.lower())
     
-    def _get_song(self, alias, cwd): # try to get song id from database
-        id = self.database.get_song_via_alias(alias)
+    def _get_song(self, song, cwd): # try to get song id from database
+        id = self.database.get_song_via_alias(song)
         if id is not SENTINELS.ALIAS_NOT_FOUND:
-            logger.debug(f'Got ID {id} via alias {alias}')
+            logger.debug(f'Got song ID {id} via alias {song}')
             return id
+
+        elif song.isdecimal() and self.database.song_exists(int(song)): # isdecimal rules out floats
+            logger.debug(f'Got song ID {int(song)} via song ID') # sure, why not
+            return int(song)
+
         elif cwd is not None:
-            path = Path(cwd) / alias
+            path = Path(cwd) / song
             id = self.database.get_song_via_path(str(path))
             if id is not SENTINELS.SONG_NOT_FOUND:
-                logger.debug(f'Got ID {id} via path {path}')
+                logger.debug(f'Got song ID {id} via path {path}')
                 return id
             else:
                 return SENTINELS.NOT_IN_LIB

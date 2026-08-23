@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [0.23.0] - 2026-08-23
+
+### Added
+
+- Songs can now be referenced by their library ID: any action that resolves a song (`open`, `lib.del`, `lib.playlist.add`/`lib.playlist.kick`, `lib.alias.list`/`lib.alias.bind`) accepts a numeric string like `123` and resolves it to the song with that ID. Lookup order is alias → song ID → path, so a numeric alias still wins and nonexistent IDs fall through to path lookup.
+
+### Fixed
+
+- The new song-ID branch used `str.isdigit()`, which accepts superscript (`²`) and circled (`①`) digits that `int()` cannot parse — a request like `open ²` crashed into a generic backend error. Switched to `isdecimal()`, whose accepted set matches `int()`.
+
 ## [0.22.0] - 2026-08-23
 
 > **⚠️ Breaking Changes**

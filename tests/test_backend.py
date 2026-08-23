@@ -245,6 +245,54 @@ def test_open_alias_priority_over_path(backend, audio_file, tmp_path):
     assert backend.current_song_info[0]['id'] == song_id
 
 
+def test_open_via_song_id(backend, audio_file):
+    """A numeric string that matches a library song ID resolves to that song."""
+    database = backend.database
+    song_id, _ = database.add_song(audio_file)
+    response = _request(backend, 'open', song=str(song_id))
+    assert response['code'] == 0
+    assert backend.current_song_info[0]['id'] == song_id
+
+
+def test_open_song_id_not_found_falls_back_to_path(backend, audio_file):
+    """A numeric string with no matching song ID falls through to path lookup."""
+    database = backend.database
+    database.add_song(audio_file)
+    response = _request(backend, 'open', song='999')
+    assert response['code'] == 1
+    assert 'valid and existing path' in response['msg']
+
+
+def test_open_superscript_does_not_crash(backend, audio_file):
+    """Superscript/circled digits pass isdigit but not isdecimal; must not crash int()."""
+    database = backend.database
+    database.add_song(audio_file)
+    response = _request(backend, 'open', song='²')
+    assert response['code'] == 1
+    assert 'valid and existing path' in response['msg']
+
+
+def test_open_alias_priority_over_song_id(backend, audio_file, tmp_path):
+    """An alias that looks like a number wins over a song ID."""
+    _make_wav(tmp_path / 'other.wav')
+    database = backend.database
+    first_id, _ = database.add_song(audio_file)
+    second_id, _ = database.add_song(str(tmp_path / 'other.wav'))
+    database.bind_alias(second_id, str(first_id))
+    response = _request(backend, 'open', song=str(first_id))
+    assert response['code'] == 0
+    assert backend.current_song_info[0]['id'] == second_id
+
+
+def test_lib_del_by_id(backend, audio_file):
+    """lib.del resolves numeric strings as song IDs too (shared _get_song)."""
+    database = backend.database
+    song_id, _ = database.add_song(audio_file)
+    response = _request(backend, 'lib.del', songs=[str(song_id)])
+    assert response['code'] == 0
+    assert not database.song_exists(song_id)
+
+
 def test_lib_add(backend, audio_file):
     response = _request(backend, 'lib.add', paths=[audio_file])
     assert response['code'] == 0
