@@ -15,7 +15,7 @@ from src import version
 from src.log import setup_logger
 from src.constants import BACKEND_LOG_PATH
 from src.constants import DATABASE_PATH, DATABASE_DEV_PATH
-from src.constants import HOST, PORT, BACKLOG, ACTION_KEYS, IterType, SERVER_TIMEOUT
+from src.constants import HOST, PORT, BACKLOG, ACTION_KEYS, NON_ACTION_KEYS, IterType, SERVER_TIMEOUT
 from src.constants import MAIN_LOOP_INTERVAL, POS_MEMORIZE_INTERVAL, METADATA, FILE_META
 from src.constants import PLAY_DEAD_TIME
 from src.constants import AUDIO_EXTENSIONS, SOURCES, READABLE_TYPE_NAMES, SEARCH_META
@@ -135,14 +135,15 @@ class Backend:
                 logger.exception(f'Exception raised when handling request')
 
     def dispatch(self, request):
-        logger.debug(f'Dispatch request: {request}')
         response = gen_response.Undefined()
-        verify_response = self._request_verify(request)
-        if not verify_response.ok():
-            response = verify_response
+        process_result = self._process_request(request)
+        if isinstance(process_result, gen_response.Response) and not process_result.ok():
+            response = process_result
         else:
+            request = process_result
+
             action = request['action']
-            cwd = request.get('cwd', None)            
+            cwd = request.get('cwd', None)
             # ----------------------------------------------------------------
 
             if action == 'test_alive':
@@ -301,7 +302,7 @@ class Backend:
                     response += self._replay()
 
             elif action == 'next':
-                on_end = request.get('on_end', False)
+                on_end = request['on_end']
                 if on_end:
                     self._del_current_pos()
 
@@ -373,8 +374,8 @@ class Backend:
 
             elif action == 'lib.info':
                 songs = request['songs']
-                show_aliases = request.get('show_aliases', False)
-                show_playlists = request.get('show_playlists', False)
+                show_aliases = request['show_aliases']
+                show_playlists = request['show_playlists']
 
                 failed = []
                 info = []
@@ -408,10 +409,10 @@ class Backend:
 
             elif action == 'lib.list':
                 info = self.database.get_all_song_info()
-                if request.get('show_aliases', False):
+                if request['show_aliases']:
                     info = self._add_songs_aliases(info)
 
-                if request.get('show_playlists', False):
+                if request['show_playlists']:
                     info = self._add_songs_playlist_names(info)
 
                 response = gen_response.Success('obtained information of all songs in library', self._sort_songs(info))
@@ -419,7 +420,7 @@ class Backend:
             elif action == 'lib.search':
                 keywords = request['keyword']
                 keywords = list(map(lambda k:k.lower(), keywords))
-                is_or = request.get('or', False)
+                is_or = request['or']
 
                 results = []
 
@@ -458,13 +459,11 @@ class Backend:
 
             elif action == 'lib.add':
                 paths = request['paths']
-                aliases = request.get('aliases', None)
-                loose_path = request.get('loose_path', False)
+                aliases = request['aliases']
+                loose_path = request['loose_path']
 
-                if aliases is None:
-                    aliases = []
-                set_meta = not request.get('skip_meta', False)
-                bind_alias = not request.get('skip_alias', False)
+                set_meta = not request['skip_meta']
+                bind_alias = not request['skip_alias']
                 if len(paths) == 0:
                     response = gen_response.EmptyList('paths')
                 elif len(paths) != len(aliases) and len(aliases) > 0:
@@ -508,7 +507,7 @@ class Backend:
                     response = gen_response.BatchAuto('songs removed from library', len(failed), len(songs), failed=failed)
 
             elif action == 'lib.prune':
-                dry_run = request.get('dry_run', False)
+                dry_run = request['dry_run']
                 info = self.database.get_all_song_info()
                 found = []
                 for song in info:
@@ -537,13 +536,13 @@ class Backend:
                         directory = str(Path(cwd) / directory)
                         
                 if not missing_cwd:
-                    playlist = request.get('playlist', None)
+                    playlist = request['playlist']
 
-                    is_recurse = request.get('recurse', False)
-                    dry_run = request.get('dry_run', False)
+                    is_recurse = request['recurse']
+                    dry_run = request['dry_run']
 
-                    set_meta = not request.get('skip_meta', False)
-                    bind_alias = not request.get('skip_alias', False)
+                    set_meta = not request['skip_meta']
+                    bind_alias = not request['skip_alias']
 
                     failed_responses = []
 
@@ -603,7 +602,7 @@ class Backend:
                 else:
                     metadata = {}
                     for label in METADATA:
-                        metadata[label] = request.get(label, None)
+                        metadata[label] = request[label]
 
                     if True in map(lambda x: x is not None, metadata.values()): # not all meta is none
                         for label, value in metadata.items():
@@ -672,7 +671,7 @@ class Backend:
             elif action == 'lib.playlist.list':
                 response = gen_response.Success('obtained list of playlist in library')
 
-                playlist = request.get('playlist', None)
+                playlist = request['playlist']
                 if playlist is not None:
                     info = self._get_playlist_songs(playlist)
                     if info is SENTINELS.PLAYLIST_NOT_FOUND:
@@ -680,10 +679,10 @@ class Backend:
                     elif info is SENTINELS.PLAYLIST_EMPTY:
                         response.attachment = []
                     else:
-                        if request.get('show_aliases', False):
+                        if request['show_aliases']:
                             info = self._add_songs_aliases(info)
 
-                        if request.get('show_playlists', False):
+                        if request['show_playlists']:
                             info = self._add_songs_playlist_names(info)
 
                         response.attachment = info
@@ -767,21 +766,33 @@ class Backend:
 
         return response
 
-    def _request_verify(self, request):
-        action = request.get('action', None)
-        success_response = gen_response.Success('request is valid')
+    def _process_request(self, request) -> dict | gen_response.Response:
+        action = request.get('action', None)        
         if action is None:
             logger.error('Not \"action\" key found in request')
             return gen_response.MissingKey('all', 'action')
         
         else:
             keys = ACTION_KEYS.get(action, {})
+
+            expected_keys = set(keys.keys()) | NON_ACTION_KEYS
+            unexpected_keys = set(request.keys()) - expected_keys
+            if len(unexpected_keys) > 0:
+                logger.warning(f'Unexpected key(s) received: {unexpected_keys}')
+
             for key, info in keys.items():
-                key_type, is_required = info
+                key_type, is_required = info[:2]
                 value = request.get(key, SENTINELS.KEY_NOT_PROVIDED)
                 if value is SENTINELS.KEY_NOT_PROVIDED:
                     if is_required:
-                        return gen_response.MissingKey(action, key)                   
+                        return gen_response.MissingKey(action, key)
+                    else:
+                        try:
+                            default_value = info[2]
+                        except IndexError:
+                            return gen_response.Failed(f'Value of key \"{key}\" was not provided and not default value is available. Please report this error')
+                        else:
+                            request[key] = default_value
                 else:
                     if isinstance(key_type, IterType): # (iter_type, element_type)
                         # verify iterable type
@@ -796,7 +807,7 @@ class Backend:
                     elif not isinstance(value, key_type) and not (value is None and not is_required): # None type acceptable for non-required keys even if not stated in ACTION_KEYS
                         return gen_response.InvalidKeyType(action, key, READABLE_TYPE_NAMES[key_type], type(value).__name__)
 
-            return success_response
+            return request
 
     def _open_song(self, song, cwd=None) -> gen_response.Response:
         info_to_set = None

@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [0.24.1] - 2026-08-23
+
+### Changed
+
+- Request validation refactored: `_request_verify` → `_process_request` — validation now also fills declared default values for absent optional keys, so action handlers read `request[key]` directly instead of `request.get(key, default)`. `ACTION_KEYS` entries are now `(type, is_required, default_value)` triples.
+- Unknown keys (anything not in `ACTION_KEYS` nor `NON_ACTION_KEYS` — `action`/`cwd`/`source`) are logged as warnings instead of being silently ignored.
+- `lib.meta.set` now declares all seven `METADATA` fields (`duration`, `bitrate`, `sample_rate`, `channels` joined the three string fields) with `None` defaults, so setting them over the protocol is type-checked (`int`); the CLI still only exposes `--name`/`--artist`/`--album`.
+
 ## [0.24.0] - 2026-08-23
 
 ### Added

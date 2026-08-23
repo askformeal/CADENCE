@@ -179,7 +179,7 @@ def main():
 
     lib_add_parser = lib_sub.add_parser('add', help='Add songs to library')
     lib_add_parser.add_argument('paths', type=_path, nargs='+', help='Path of songs to add')
-    lib_add_parser.add_argument('-a', '--aliases', type=str, nargs='+', default=None, help='Aliases to bind to the new songs')
+    lib_add_parser.add_argument('-a', '--aliases', type=str, nargs='+', default=[], help='Aliases to bind to the new songs')
     lib_add_parser.add_argument('--skip-meta', action='store_true', help='Disable automatic setting metadata')
     lib_add_parser.add_argument('--skip-alias', action='store_true', help='Disable automatic binding aliases')
     lib_add_parser.add_argument('--loose-path', action='store_true', help='Adding songs without checking the availability of the paths. May cause automatic setting of metadata and binding of aliases to fail')
@@ -411,7 +411,7 @@ def main():
             print('Failed to connect to CADENCE backend. You can try to use the start subcommand to start it')
 
         elif code == 3:
-            print('[Failed]: received an unexpected default response code from CADENCE backend which is not to be used under any circumstances. Please report this BUG')
+            print('[Failed]: received an unexpected default response code from CADENCE backend which is not to be used under any circumstances. Please report this error')
 
         elif code == 4:
             print('[Failed]: CADENCE backend is exiting')

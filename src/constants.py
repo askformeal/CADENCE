@@ -61,7 +61,7 @@ SOURCES = {
     'heartbeat': 'heartbeat test',
 }
 
-# 'key name': (type, is_required)
+# 'key name': (type, is_required, default_value)
 # literal type: (IterType(element_type), is_required). every element needs to match
 ACTION_KEYS = {
     'open': {
@@ -69,6 +69,9 @@ ACTION_KEYS = {
     },
     'switch': {
         'number': (int, True)
+    },
+    'next': {
+        'on_end': (bool, False, False)
     },
     'seek': {
         'time': (str, True)
@@ -82,45 +85,49 @@ ACTION_KEYS = {
     'lib.info':
     {
         'songs': (IterType(str), True),
-        'show_aliases': (bool, False),
-        'show_playlists': (bool, False)
+        'show_aliases': (bool, False, False),
+        'show_playlists': (bool, False, False)
     },
     'lib.list': {
-        'show_aliases': (bool, False),
-        'show_playlists': (bool, False),
-        'show_tech': (bool, False)
+        'show_aliases': (bool, False, False),
+        'show_playlists': (bool, False, False),
+        'show_tech': (bool, False, False)
     },
     'lib.search': {
         'keyword': (IterType(str), True),
-        'or': (bool, False)
+        'or': (bool, False, False)
     },
     'lib.add': {
         'paths': (IterType(str), True),
-        'aliases': (IterType(str), False),
-        'skip_meta': (bool, False),
-        'skip_alias': (bool, False),
-        'loose_path': (bool, False)
+        'aliases': (IterType(str), False, []),
+        'skip_meta': (bool, False, False),
+        'skip_alias': (bool, False, False),
+        'loose_path': (bool, False, False)
     },
     'lib.del': {
         'songs': (IterType(str), True)
     },
     'lib.prune':
     {
-        'dry_run': (bool, False),
+        'dry_run': (bool, False, False),
     },
     'lib.scan': {
         'dir': (str, True),
-        'playlist': (str, False),
-        'recurse': (bool, False),
-        'dry_run': (bool, False),
-        'skip_meta': (bool, False),
-        'skip_alias': (bool, False)
+        'playlist': (str, False, None),
+        'recurse': (bool, False, False),
+        'dry_run': (bool, False, False),
+        'skip_meta': (bool, False, False),
+        'skip_alias': (bool, False, False)
     },
     'lib.meta.set': {
         'song': (str, True),
-        'name': (str, False),
-        'artist': (str, False),
-        'album': (str, False)
+        'name': (str, False, None),
+        'artist': (str, False, None),
+        'album': (str, False, None),
+        'duration': (int, False, None),
+        'bitrate': (int, False, None),
+        'sample_rate': (int, False, None),
+        'channels': (int, False, None),
     },
     'lib.alias.list': {
         'song': (str, True)
@@ -133,10 +140,10 @@ ACTION_KEYS = {
         'aliases': (IterType(str), True)
     },
     'lib.playlist.list': {
-        'playlist': (str, False),
-        'show_aliases': (bool, False),
-        'show_playlists': (bool, False),
-        'show_tech': (bool, False)
+        'playlist': (str, False, None),
+        'show_aliases': (bool, False, False),
+        'show_playlists': (bool, False, False),
+        'show_tech': (bool, False, False)
     },
     'lib.playlist.create': {
         'name': (str, True)
@@ -152,6 +159,12 @@ ACTION_KEYS = {
     'lib.playlist.del': {
         'playlist': (str, True)
     },
+}
+
+NON_ACTION_KEYS = {
+    'action',
+    'cwd',
+    'source'
 }
 
 READABLE_TYPE_NAMES = {
