@@ -263,6 +263,20 @@ def main():
     playlist_del_parser = playlist_sub.add_parser('del', help='Delete a playlist')
     playlist_del_parser.add_argument('playlist', type=str, help='Playlist to delete')
 
+    config_parser = command_sub.add_parser('config', help='Manage configuration')
+    config_sub = config_parser.add_subparsers(dest='config_action', required=True)
+
+    config_show_parser = config_sub.add_parser('show', help='Show value of an option')
+    config_show_parser.add_argument('option', type=str, help='Option to show')
+
+    config_set_parser = config_sub.add_parser('set', help='Set value of an option. You might need to reboot CADENCE backend to make some options take effect')
+    config_set_parser.add_argument('option', type=str, help='Option to set')
+    config_set_parser.add_argument('value', type=str, help='Value to set')
+    config_set_parser.add_argument('--overwrite-corrupt', action='store_true', help='Overwrite corrupted configure file.')
+
+    config_unset_parser = config_sub.add_parser('unset', help='Remove the setting of an option from configure file and fallback to default value')
+    config_unset_parser.add_argument('option', type=str, help='Option to unset')
+
     exit_parser = command_sub.add_parser('exit', help='Exit CADENCE backend')
 
     kill_parser = command_sub.add_parser('kill', help='Kill all CADENCE backend processes. May cause unpredictable error')
@@ -305,6 +319,10 @@ def main():
             args['action'] = f"{args['action']}.{args['lib_action']}"
             del args['lib_action']
 
+        if args.get('config_action', None) is not None:
+            args['action'] = f"{args['action']}.{args['config_action']}"
+            del args['config_action']
+
         if  args['action'] == 'reboot':
             args['action'] = 'exit'
             is_reboot = True      
@@ -339,7 +357,7 @@ def main():
             print('[Failed]: Invalid response received from CADENCE backend')
 
         elif code == 0:
-            print(f'[Succeeded]: {response['msg']}')
+            print(box(f'[Succeeded]: {response['msg']}'))
 
             if action == 'exit' and is_reboot:
                 print('Waiting for backend to fully exit...')
@@ -438,19 +456,24 @@ def main():
                             else:
                                 print('No playlists in library')
 
+                    elif action == 'config.show':
+                        value = attachment.get('value', 'N/A')
+                        source = attachment.get('source', 'N/A')
+                        print(box(f'{args['option']}: {value} | loaded from {source}'))
+
         elif code == 1:
-            print(f'[Failed]: {response['msg']}')
+            print(box(f'[Failed]: {response['msg']}'))
             if is_reboot:
                 print('Failed to exit backend, rebooting aborted')
 
         elif code == 2:
-            print('Failed to connect to CADENCE backend. You can try to use the start subcommand to start it')
+            print(box('Failed to connect to CADENCE backend. You can try to use the start subcommand to start it'))
 
         elif code == 3:
-            print('[Failed]: received an unexpected default response code from CADENCE backend which is not to be used under any circumstances. Please report this error')
+            print(box('[Failed]: received an unexpected default response code from CADENCE backend which is not to be used under any circumstances. Please report this error'))
 
         elif code == 4:
-            print('[Failed]: CADENCE backend is exiting')
+            print(box('[Failed]: CADENCE backend is exiting'))
 
         if len(failed) > 0:
             lines = [f'There are failed actions ({len(failed)}):\n']

@@ -25,6 +25,8 @@ class Sentinels:
         self.OPTION_NOT_FOUND = Sentinel('Option Not Found')
         self.INVALID_OPTION_VALUE = Sentinel('Value of Option is Invalid')
         self.INVALID_CONFIG_FILE = Sentinel('Configure File is Not a Valid TOML File')
+        self.FROM_FILE = Sentinel('Option Loaded from Configure File')
+        self.FROM_DEFAULT = Sentinel('Option Loaded from Default Value')
 
         # Connection
         self.LOST = Sentinel('Connection Lost')

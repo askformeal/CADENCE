@@ -73,6 +73,11 @@ READABLE_TYPE_NAMES = {
 
 # dunno if this's the right name
 CONFIG_SCHEME = {
+    'username': {
+        'type': str,
+        'section': SENTINELS.ROOT_SECTION,
+        'default': 'John/Jane Doe'
+    },
     'port': { # each option name must be unique
         'type': int, # will be called to convert the value. raise ValueError if invalid
         'section': 'network',
@@ -211,6 +216,17 @@ ACTION_KEYS = {
     'lib.playlist.del': {
         'playlist': (str, True)
     },
+    'config.show': {
+        'option': (str, True)
+    },
+    'config.set': {
+        'option': (str, True),
+        'value': (str, True),
+        'overwrite_corrupt': (bool, False, False)
+    },
+    'config.unset': {
+        'option': (str, True)
+    },
 }
 
 NON_ACTION_KEYS = {
@@ -229,6 +245,7 @@ ATTACHMENT_REQUIRED_ACTIONS = [
     'lib.scan',
     'lib.alias.list',
     'lib.playlist.list',
+    'config.show',
 ]
 
 METADATA = ['name', 'artist', 'album', 'duration', 'bitrate', 'sample_rate', 'channels']

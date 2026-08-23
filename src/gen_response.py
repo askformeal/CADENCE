@@ -142,6 +142,10 @@ class PosTooLate(Failed):
     def __init__(self, action, attachment=None, failed=None):
         super().__init__(f'can not {action} because the position to jump to is later than the end of the song', attachment, failed)
 
+class OptionNotExist(Failed):
+    def __init__(self, action, attachment=None, failed=None):
+        super().__init__(f'can not {action} because the option does not exist', attachment, failed)
+
 def merge(*responses: Response, joiner='|', attachment=None, failed=None):
     messages = []
     codes = []

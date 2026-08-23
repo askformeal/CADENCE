@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [0.27.0] - 2026-08-23
+
+### Added
+
+- `cadence config show <option>` — show a config option's value and where it came from (`default value` or `configure file`)
+- `cadence config set <option> <value> [--overwrite-corrupt]` — write a config option to the TOML config file; invalid values are rejected with the option's expected type; `--overwrite-corrupt` replaces a corrupted config file
+- `cadence config unset <option>` — remove an option from the config file and fall back to its default value
+- Config options are defined in `CONFIG_SCHEME` (name → type/section/default); currently `port` (network), `default_volume` and `default_shuffle` (playback). **Wiring note:** the backend/CLI still read the hardcoded constants — `config set` writes the file but does not change runtime behavior until the constants are linked to `CONFIG` (next step).
+- CLI response messages are now rendered inside the `box()` frame (success, failure, connect/exit codes).
+
 ## [0.26.1] - 2026-08-23
 
 ### Added

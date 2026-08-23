@@ -19,6 +19,7 @@ from src.constants import HOST, PORT, BACKLOG, ACTION_KEYS, NON_ACTION_KEYS, Ite
 from src.constants import MAIN_LOOP_INTERVAL, POS_MEMORIZE_INTERVAL, METADATA, FILE_META
 from src.constants import PLAY_DEAD_TIME
 from src.constants import AUDIO_EXTENSIONS, SOURCES, READABLE_TYPE_NAMES, SEARCH_META
+from src.config import CONFIG
 from src.sentinels import SENTINELS
 from src.connection import recv_json, send_json
 from src import gen_response
@@ -68,6 +69,7 @@ class Backend:
             self.running = False
         else:
             self.player = Player(self.buffer_request)
+            self.notifies.append(f'Welcome to CADENCE, {CONFIG.username}')
             logger.debug(f'{__name__} initiated')
 
     def run(self):
@@ -790,6 +792,45 @@ class Backend:
                     response = gen_response.Success(f"deleted playlist \"{request['playlist']}\"")
                 else:
                     response = gen_response.PlaylistNotExist(f"delete playlist \"{request['playlist']}\"")
+
+            elif action == 'config.show':
+                option = request['option']
+                value, source = CONFIG.get_option(option)
+
+                if value is SENTINELS.UNKNOWN_OPTION:
+                    response = gen_response.OptionNotExist(f'get value of {option}')
+                else:
+                    source = {
+                        SENTINELS.FROM_DEFAULT: 'default value',
+                        SENTINELS.FROM_FILE: 'configure file'
+                    }[source]
+                    response = gen_response.Success(f'Got value of {option}', {'value': value, 'source': source})
+
+            elif action == 'config.set':
+                option = request['option']
+                value = request['value']
+                overwrite_corrupt = request['overwrite_corrupt']
+
+                result = CONFIG.set_option(option, value, overwrite_corrupt=overwrite_corrupt)
+                response = {
+                    SENTINELS.SUCCESS: gen_response.Success(f'Set value of {option} to \"{value}\"'),
+                    SENTINELS.UNKNOWN_OPTION: gen_response.OptionNotExist(f'set value of {option}'),
+                    SENTINELS.INVALID_CONFIG_FILE: gen_response.Failed(f'can not set value of option because configure file is corrupted. You can try again with the --overwrite-corrupt option to overwrite it'),
+                    SENTINELS.INVALID_OPTION_VALUE: gen_response.Failed(f'can not set value of option because the provided value is not valid'),
+                    SENTINELS.FILE_IO_FAILED: gen_response.Failed(f'can not set value of option because failed to write into configure file')
+                }[result]
+
+            elif action == 'config.unset':
+                option = request['option']
+
+                result = CONFIG.unset_option(option)
+                response = {
+                    SENTINELS.SUCCESS: gen_response.Success(f'Unset value of {option}'),
+                    SENTINELS.UNKNOWN_OPTION: gen_response.OptionNotExist(f'unset value of {option}'),
+                    SENTINELS.INVALID_CONFIG_FILE: gen_response.Failed(f'can not unset value of option because configure file is corrupted'),
+                    SENTINELS.OPTION_NOT_FOUND: gen_response.Failed(f'can not unset value of option because it is not set in configure file'),
+                    SENTINELS.FILE_IO_FAILED: gen_response.Failed(f'can not unset value of option because failed to write into configure file')
+                }[result]
 
             elif action == 'exit':
                 self.exit()

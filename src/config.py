@@ -49,7 +49,7 @@ class Config:
     def get_option(self, name):
         if name not in CONFIG_SCHEME.keys():
             logger.warning(f'Tried to get an unknown option \"{name}\". A Sentinel object will be returned and will most likely cause an error')
-            return SENTINELS.UNKNOWN_OPTION
+            return SENTINELS.UNKNOWN_OPTION, None
         
         else:
             file_config = self.load_file()
@@ -61,6 +61,7 @@ class Config:
             default = CONFIG_SCHEME[name]['default']
 
             value = default
+            source = SENTINELS.FROM_DEFAULT
 
             if section is SENTINELS.ROOT_SECTION:
                 parent = file_config
@@ -77,13 +78,14 @@ class Config:
                                    f"but a value of type \"{type(value).__name__}\" was read from file instead. Default value of {default} will be used")
                 else:
                     value = file_value
+                    source = SENTINELS.FROM_FILE
 
-            return value
+            return value, source
 
     def set_option(self, name, value, overwrite_corrupt=False): 
         # overwrite_corrupt: overwrite invalid config file
         if name not in CONFIG_SCHEME.keys():
-            logger.warning(f'Tried to set an unknown option \"{name}\". Setting will cancelled which will most likely cause an error')
+            logger.debug(f'Tried to set an unknown option \"{name}\". Setting will be cancelled')
             return SENTINELS.UNKNOWN_OPTION
 
         else:
@@ -115,8 +117,36 @@ class Config:
 
                 return self.set_file(file_config)
 
+    def unset_option(self, name):
+        if name not in CONFIG_SCHEME.keys():
+            logger.debug(f'Tried to unset an unknown option \"{name}\". Unsetting will be cancelled')
+            return SENTINELS.UNKNOWN_OPTION
+        else:
+            file_config = self.load_file()
+            if file_config is SENTINELS.INVALID_CONFIG_FILE:
+                return SENTINELS.INVALID_CONFIG_FILE
+
+            elif file_config is SENTINELS.FILE_IO_FAILED:
+                return SENTINELS.FILE_IO_FAILED
+            
+            else:
+                section = CONFIG_SCHEME[name]['section']
+                
+                if section is SENTINELS.ROOT_SECTION:
+                    if file_config.get(name, None) is None:
+                        return SENTINELS.OPTION_NOT_FOUND
+                    else:
+                        del file_config[name]
+                        return self.set_file(file_config)
+                else:
+                    if file_config.get(section, {}).get(name, None) is None:
+                        return SENTINELS.OPTION_NOT_FOUND
+                    else:
+                        del file_config[section][name]
+                        return self.set_file(file_config)
+
     def __getattr__(self, name):
-        return self.get_option(name)
+        return self.get_option(name)[0]
     
     def __setattr__(self, name, value):
         if name in CONFIG_SCHEME.keys():
