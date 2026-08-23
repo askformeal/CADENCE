@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## [0.22.0] - 2026-08-23
+
+> **⚠️ Breaking Changes**
+> - `lib.playlist.add` request key renamed: `song` → `songs` — now takes a list/tuple of strings (`IterType(str)`). The CLI argument order changed too: `lib playlist add <playlist> <song>...` (playlist first, then one or more songs).
+> - `lib.playlist.kick` request key renamed: `song` → `songs` — same shape; the CLI is now `lib playlist kick <playlist> <song>...`.
+
+### Added
+
+- `lib playlist add <playlist> <song>...` — add multiple songs to a playlist in one request; per-song failures (song not in library, already in playlist) go to the `failed` list, message shows `songs added to playlist [ok/total]`
+- `lib playlist kick <playlist> <song>...` — remove multiple songs from a playlist in one request; per-song failures go to the `failed` list, message shows `songs removed from playlist [ok/total]`
+- New `BatchAuto` response class: builds the batch message with the success count (`[ok/total]`), picks the response code automatically (partial success = 0, all failed = 1) and forwards the `failed` list — now used by `lib.add`/`lib.del`/`lib.alias.bind`/`lib.alias.unbind`/`lib.playlist.add`/`lib.playlist.kick`
+
+### Fixed
+
+- `lib.playlist.kick` crashed with `UnboundLocalError` when the playlist did not exist (`song` was referenced outside the batch loop); now returns the normal `PlaylistNotExist` response
+- Batch messages displayed the failure count (`[failed/total]`) instead of the success count — `BatchAuto` now reports `[ok/total]` like the pre-batch messages did
+- Batch responses dropped their per-song failure details because the `failed=failed` argument was not forwarded at the call sites — all six batch actions now pass it through
+
 ## [0.21.0] - 2026-08-22
 
 > **⚠️ Breaking Changes**

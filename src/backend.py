@@ -475,11 +475,7 @@ class Backend:
                         if not add_response.ok():
                             failed.append(add_response)
                     
-                    msg = f'added [{len(paths)-len(failed)}/{len(paths)}] songs to library'
-                    if len(failed) < len(paths):
-                        response = gen_response.Success(msg, failed=failed)
-                    else:
-                        response = gen_response.Failed(msg, failed=failed)
+                    response = gen_response.BatchAuto('songs added to library', len(failed), len(paths), failed=failed)
 
             elif action == 'lib.del':
                 songs = request['songs']
@@ -503,11 +499,7 @@ class Backend:
 
                             self.database.delete_song(id)
 
-                    msg = f'removed [{len(songs)-len(failed)}/{len(songs)}] songs from library'
-                    if len(failed) < len(songs):
-                        response = gen_response.Success(msg, failed=failed)
-                    else:
-                        response = gen_response.Failed(msg, failed=failed)
+                    response = gen_response.BatchAuto('songs removed from library', len(failed), len(songs), failed=failed)
 
             elif action == 'lib.prune':
                 dry_run = request.get('dry_run', False)
@@ -654,11 +646,7 @@ class Backend:
                             if not bind_response.ok():
                                 failed.append(bind_response)
 
-                        msg = f'bound [{len(aliases)-len(failed)}/{len(aliases)}] aliases to {song}'
-                        if len(failed) < len(aliases):
-                            response = gen_response.Success(msg, failed=failed)
-                        else:
-                            response = gen_response.Failed(msg, failed=failed)
+                        response = gen_response.BatchAuto('aliases bound to song', len(failed), len(aliases), failed=failed)
 
             elif action == 'lib.alias.unbind':
                 aliases = request['aliases']
@@ -673,12 +661,7 @@ class Backend:
                         if result is SENTINELS.ALIAS_NOT_FOUND:
                             failed.append(gen_response.Failed(f'can not unbind {alias} because it does not exist in library'))
 
-                    msg = f'unbound [{len(aliases)-len(failed)}/{len(aliases)}] aliases'
-
-                    if len(failed) < len(aliases):
-                        response = gen_response.Success(msg, failed=failed)
-                    else:
-                        response = gen_response.Failed(msg, failed=failed)
+                    response = gen_response.BatchAuto('aliases unbound', len(failed), len(aliases), failed=failed)
 
             elif action == 'lib.playlist.list':
                 response = gen_response.Success('obtained list of playlist in library')
@@ -711,38 +694,55 @@ class Backend:
                     response = gen_response.Failed(f'can not create \"{name}\" because a playlist of the same name already exists in library')
 
             elif action == 'lib.playlist.add':
-                playlist = self.database.get_playlist_via_name(request['playlist'])
-                if playlist is not SENTINELS.PLAYLIST_NOT_FOUND:
-                    song = self._get_song(request['song'], cwd)
-                    if song is SENTINELS.MISSING_CWD:
-                        response = gen_response.MissingKey('lib.playlist.add', 'cwd')
-                    elif song is SENTINELS.NOT_IN_LIB:
-                        response = gen_response.SongNotExist(f'add song \"{request['song']}\" to playlist \"{request['playlist']}\"')
-                    else:
-                        ignored = self.database.add_song_to_playlist(playlist, song)
-                        if not ignored:
-                            response = gen_response.Success(f"added song \"{request['song']}\" to playlist \"{request['playlist']}\"")
-                        else:
-                            response = gen_response.Failed(f'can not add song \"{request['song']}\" to playlist \"{request['playlist']}\" because it is already in the playlist')
+                playlist = request['playlist']
+                songs = request['songs']
+
+                if len(songs) == 0:
+                    response = gen_response.EmptyList('songs')
                 else:
-                    response = gen_response.PlaylistNotExist(f'add song to playlist \"{request['playlist']}\"')
+                    playlist_id = self.database.get_playlist_via_name(playlist)
+
+                    if playlist_id is SENTINELS.PLAYLIST_NOT_FOUND:
+                        response = gen_response.PlaylistNotExist(f'add song to playlist \"{request['playlist']}\"')
+                    else:
+                        failed = []
+                        for song in songs:
+                            song_id = self._get_song(song, cwd)
+                            if song_id is SENTINELS.MISSING_CWD:
+                                failed.append(gen_response.MissingKey('lib.playlist.add', 'cwd'))
+                            elif song_id is SENTINELS.NOT_IN_LIB:
+                                failed.append(gen_response.SongNotExist(f'add song \"{song}\" to playlist \"{playlist}\"'))
+                            else:
+                                ignored = self.database.add_song_to_playlist(playlist_id, song_id)
+                                if ignored:
+                                    failed.append(gen_response.Failed(f'can not add song \"{song}\" to playlist \"{playlist}\" because it is already in the playlist'))
+
+                        response = gen_response.BatchAuto('songs added to playlist', len(failed), len(songs), failed=failed)                                            
 
             elif action == 'lib.playlist.kick':
-                playlist_id = self.database.get_playlist_via_name(request['playlist'])
-                if playlist_id is not SENTINELS.PLAYLIST_NOT_FOUND:
-                    song_id = self._get_song(request['song'], cwd)
-                    if song_id is SENTINELS.MISSING_CWD:
-                        response = gen_response.MissingKey('lib.playlist.kick', 'cwd')
-                    elif song_id is SENTINELS.NOT_IN_LIB:
-                        response = gen_response.SongNotExist(f'remove song \"{request['song']}\" from playlist \"{request['playlist']}\"')
+                playlist = request['playlist']
+                songs = request['songs']
+
+                if len(songs) == 0:
+                    response = gen_response.EmptyList('songs')
+                else:                    
+                    playlist_id = self.database.get_playlist_via_name(playlist)
+                    if playlist_id is not SENTINELS.PLAYLIST_NOT_FOUND:
+                        failed = []
+                        for song in songs:
+                            song_id = self._get_song(song, cwd)
+                            if song_id is SENTINELS.MISSING_CWD:
+                                failed.append(gen_response.MissingKey('lib.playlist.kick', 'cwd'))
+                            elif song_id is SENTINELS.NOT_IN_LIB:
+                                failed.append(gen_response.SongNotExist(f'remove song \"{song}\" from playlist \"{playlist}\"'))
+                            else:
+                                result = self.database.del_song_from_playlist(playlist_id, song_id)
+                                if result is SENTINELS.PLAYLIST_SONG_NOT_FOUND:
+                                    failed.append(gen_response.Failed(f"can not remove song \"{song}\" from playlist \"{playlist}\" because the song is not in the playlist"))
+
+                        response = gen_response.BatchAuto('songs removed from playlist', len(failed), len(songs), failed=failed)
                     else:
-                        result = self.database.del_song_from_playlist(playlist_id, song_id)
-                        if result is SENTINELS.PLAYLIST_SONG_NOT_FOUND:
-                            response = gen_response.Failed(f"can not remove song \"{request['song']}\" from playlist \"{request['playlist']}\" because the song is not in the playlist")
-                        else:
-                            response = gen_response.Success(f"removed song \"{request['song']}\" from playlist \"{request['playlist']}\"")
-                else:
-                    response = gen_response.PlaylistNotExist(f"remove song {request['song']} from playlist {request['playlist']}")
+                        response = gen_response.PlaylistNotExist(f"remove song(s) from playlist {playlist}")
 
             elif action == 'lib.playlist.del':
                 playlist_id = self.database.get_playlist_via_name(request['playlist'])

@@ -21,10 +21,10 @@
     - [X] lib.search (multi-keyword, and/or option)
     - [X] lib.add (batch)
     - [X] lib.del (batch)
-    - [ ] lib.alias.bind (multi-alias)
-    - [ ] lib.alias.unbind
-    - [ ] lib.playlist.add (multi-song)
-    - [ ] lib.playlist.kick (multi-song)
+    - [X] lib.alias.bind (multi-alias)
+    - [X] lib.alias.unbind
+    - [X] lib.playlist.add (multi-song)
+    - [X] lib.playlist.kick (multi-song)
   - [ ] Manage by library ID
 - [X] Request validation with element types (IterType for list/tuple keys)
 - [ ] PID file

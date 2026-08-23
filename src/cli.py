@@ -238,16 +238,16 @@ def main():
     playlist_create_parser = playlist_sub.add_parser('create', help='Create a new playlist')
     playlist_create_parser.add_argument('name', type=str, help='Name of playlist to create')
 
-    playlist_add_parser = playlist_sub.add_parser('add', help='Add a song in library to a playlist')
-    playlist_add_parser.add_argument('song', help='Song to add to playlist')
-    playlist_add_parser.add_argument('playlist', help='Playlist to add song to')
+    playlist_add_parser = playlist_sub.add_parser('add', help='Add songs in library to a playlist')
+    playlist_add_parser.add_argument('playlist', type=str, help='Playlist to add song to')
+    playlist_add_parser.add_argument('songs', type=str, nargs='+', help='Songs to add to playlist')
 
-    playlist_kick_parser = playlist_sub.add_parser('kick', help='Remove a song from a playlist')
-    playlist_kick_parser.add_argument('song', help='Song to remove from playlist')
-    playlist_kick_parser.add_argument('playlist', help='Playlist to remove song from')
+    playlist_kick_parser = playlist_sub.add_parser('kick', help='Remove songs from a playlist')
+    playlist_kick_parser.add_argument('playlist', type=str, help='Playlist to remove song from')
+    playlist_kick_parser.add_argument('songs', type=str, nargs='+', help='Songs to remove from playlist')
 
     playlist_del_parser = playlist_sub.add_parser('del', help='Delete a playlist')
-    playlist_del_parser.add_argument('playlist', help='Playlist to delete')
+    playlist_del_parser.add_argument('playlist', type=str, help='Playlist to delete')
 
     exit_parser = command_sub.add_parser('exit')
 

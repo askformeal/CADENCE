@@ -141,12 +141,12 @@ ACTION_KEYS = {
         'name': (str, True)
     },
     'lib.playlist.add': {
-        'song': (str, True),
-        'playlist': (str, True)
+        'playlist': (str, True),
+        'songs': (IterType(str), True)
     },
     'lib.playlist.kick': {
-        'song': (str, True),
         'playlist': (str, True),
+        'songs': (IterType(str), True)
     },
     'lib.playlist.del': {
         'playlist': (str, True)

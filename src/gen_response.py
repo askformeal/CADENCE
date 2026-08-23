@@ -59,6 +59,15 @@ class Failed(Response):
     def __init__(self, msg=None, attachment=None, failed=None):
         super().__init__(msg, 1, attachment, failed)
 
+class BatchAuto(Response):
+    def __init__(self, action, failed_num, total_num, attachment=None, failed=None):
+        if failed_num < total_num:
+            code = 0
+        else:
+            code = 1
+
+        super().__init__(f'{action} [{total_num-failed_num}/{total_num}]', code, attachment, failed)
+
 class Dying(Response):
     def __init__(self):
         super().__init__('backend is dying', code=4)
