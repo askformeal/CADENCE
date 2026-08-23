@@ -4,3 +4,4 @@ readchar
 mutagen
 pynput
 wcwidth
+psutil

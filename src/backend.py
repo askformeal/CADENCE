@@ -24,12 +24,16 @@ from src.connection import recv_json, send_json
 from src import gen_response
 from src.database import Database
 from src.player import Player
+from src.pid import add_pid, remove_pid
 from src.utils import format_time, parse_time, verify_path_format
 
 logger = setup_logger(__name__, BACKEND_LOG_PATH)
 
 class Backend:
     def __init__(self):
+        self.pid = str(os.getpid())
+        add_pid(self.pid)
+
         self.start_time = time()
         self.dev = {'0': False, '1': True}.get(os.environ.get('CADENCE_DEV', '0'), False)
         self.continue_last = {'0': False, '1': True}.get(os.environ.get('CADENCE_CONTINUE', '0'), False)
@@ -66,7 +70,7 @@ class Backend:
 
     def run(self):
         if self.running:
-            logger.info(f'Command-line Audio Decoding Engine with Navigation and Continuous Execution {version} started')
+            logger.info(f'Command-line Audio Decoding Engine with Navigation and Continuous Execution {version} started, PID: {self.pid}')
 
             Thread(target=self._listen, daemon=True).start()
             Thread(target=self._memorize_pos, daemon=True).start()
@@ -88,10 +92,12 @@ class Backend:
             self.database.on_exit()
             self.player.on_exit()
             logging.shutdown()
-            sys.exit(self.exit_code)
 
         else:
-            sys.exit(1)
+            self.exit_code = 1
+
+        remove_pid(self.pid)
+        sys.exit(self.exit_code)
 
     def buffer_request(self, request, connection=None, address=None):            
         if self.dying:

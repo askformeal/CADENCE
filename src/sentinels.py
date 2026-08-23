@@ -20,7 +20,6 @@ class Sentinels:
 
         # Connection
         self.LOST = Sentinel('Connection Lost')
-        
 
         # Backend
         self.KEY_NOT_PROVIDED = Sentinel('Key not Provided in Request')
@@ -64,6 +63,14 @@ class Sentinels:
         self.BACKEND_STARTED = Sentinel('Backend Started')
         self.FAILED_START_BACKEND = Sentinel('Failed to Start Backend')
 
+        # Process
+
+        self.PERMISSION_INSUFFICIENT = Sentinel('Permission Insufficient')
+        self.INVALID_PID = Sentinel('Invalid PID')
+        self.PROCESS_NOT_FOUND = Sentinel('Process Not Found')
+        self.GRACE_KILL = Sentinel('Process is Gracefully Terminated')
+        self.FORCE_KILL = Sentinel('Process is Forcefully Killed')
+        
         # Misc
         self.INVALID_TIME = Sentinel('Invalid Time, Can Not be Parsed')
 

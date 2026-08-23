@@ -7,7 +7,7 @@ from time import sleep
 from src import version
 from src.sentinels import SENTINELS
 from src.client import send_request, test_alive
-from src.starter import start
+from src.process import start, kill
 from src.constants import RESTART_NUM, RESTART_POLL_INTERVAL, ATTACHMENT_REQUIRED_ACTIONS
 from src.utils import format_time, box
 
@@ -250,13 +250,29 @@ def main():
     playlist_del_parser = playlist_sub.add_parser('del', help='Delete a playlist')
     playlist_del_parser.add_argument('playlist', type=str, help='Playlist to delete')
 
-    exit_parser = command_sub.add_parser('exit')
+    exit_parser = command_sub.add_parser('exit', help='Exit CADENCE backend')
+
+    kill_parser = command_sub.add_parser('kill', help='Kill all CADENCE backend processes. May cause unpredictable error')
 
     args = vars(parser.parse_args())
 
 
     if args['action'] == 'start':
         _start_backend(CADENCE_DEV=int(args['dev']), CADENCE_CONTINUE=int(args['continue']))
+
+    elif args['action'] == 'kill':
+        print(f'Killing CADENCE backend processes...')
+        result = kill()
+        for pid, process_result in result:
+            msg = {
+                SENTINELS.PERMISSION_INSUFFICIENT: 'Access Denied',
+                SENTINELS.INVALID_PID: 'PID Invalid',
+                SENTINELS.PROCESS_NOT_FOUND: 'Process Not Exist',
+                SENTINELS.GRACE_KILL: 'Gracefully Terminated',
+                SENTINELS.FORCE_KILL: 'Forcefully Killed'
+            }[process_result]
+
+            print(f' PID {pid}: {msg}')
 
     else:
         if args.get('meta_action', None) is not None:

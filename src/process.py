@@ -3,9 +3,13 @@ import sys
 import os
 from time import sleep
 from pathlib import Path
+
+import psutil
+
 from src.client import test_alive
-from src.constants import STARTER_RETRY, STARTER_CHECK_INTERVAL
+from src.constants import STARTER_RETRY, STARTER_CHECK_INTERVAL, TERMINATE_TIMEOUT
 from src.sentinels import SENTINELS
+from src.pid import get_pid, remove_pid
 
 def start(**kwargs):
     if test_alive():
@@ -47,3 +51,33 @@ def _spawn(module, **env_args):
                             stdout=subprocess.DEVNULL,
                             stderr=subprocess.DEVNULL,
                             )
+
+def kill():
+    pids = get_pid()
+    result = []
+
+    for pid in pids:
+        try:
+            pid = int(pid)
+        except ValueError:
+            result.append((pid, SENTINELS.INVALID_PID))
+        else:
+            try:
+                process = psutil.Process(pid)
+            except psutil.NoSuchProcess:
+                result.append((pid, SENTINELS.PROCESS_NOT_FOUND))
+            except psutil.AccessDenied:
+                result.append((pid, SENTINELS.PERMISSION_INSUFFICIENT))
+            else:
+                process.terminate()
+                try:
+                    process.wait(timeout=TERMINATE_TIMEOUT)
+                except psutil.TimeoutExpired:
+                    process.kill()
+                    remove_pid(pid)
+                    result.append((pid, SENTINELS.FORCE_KILL))
+                else:
+                    remove_pid(pid)
+                    result.append((pid, SENTINELS.GRACE_KILL))
+
+    return result

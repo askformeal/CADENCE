@@ -29,6 +29,7 @@ def database(tmp_path):
 def backend(tmp_path, monkeypatch):
     """Full backend with temp DB; player state must be cleaned up after."""
     monkeypatch.setattr('src.backend.DATABASE_PATH', tmp_path / 'test.db')
+    monkeypatch.setattr('src.pid.PID_PATH', tmp_path / 'PID.json')
     from src.backend import Backend
 
     b = Backend()

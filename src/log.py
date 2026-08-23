@@ -1,6 +1,6 @@
 import logging
 
-from src.constants import FILE_LOG_LEVEL, CONSOLE_LOG_LEVEL, LOG_ENCODING
+from src.constants import FILE_LOG_LEVEL, CONSOLE_LOG_LEVEL, ENCODING
 
 class FlushFileHandler(logging.FileHandler):
     def __init__(self, filename, mode = "a", encoding = None, delay = False, errors = None):
@@ -19,7 +19,7 @@ def setup_logger(name, path) -> logging.Logger:
         console.setLevel(CONSOLE_LOG_LEVEL)
         console.setFormatter(format)
 
-        file = FlushFileHandler(path, encoding=LOG_ENCODING)
+        file = FlushFileHandler(path, encoding=ENCODING)
         file.setLevel(FILE_LOG_LEVEL)
         file.setFormatter(format)
 

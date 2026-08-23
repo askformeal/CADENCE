@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## [0.25.0] - 2026-08-23
+
+### Added
+
+- PID file (`PID.json` in the data directory): the backend records its own PID on startup and removes it on clean exit. The hotkey process is not recorded — killing the backend makes it self-terminate via the existing heartbeat mechanism.
+- `cadence kill` — force-kill all recorded backend PIDs via psutil (`terminate()` then `kill()` after `TERMINATE_TIMEOUT`), bypassing the socket protocol entirely. Per-PID results are printed (`Gracefully Terminated` / `Forcefully Killed` / `Process Not Exist` / `PID Invalid` / `Access Denied`). `cadence exit` stays a clean socket-based shutdown.
+- `psutil` runtime dependency (new) for cross-platform process management.
+- Backend startup log now includes its PID.
+
+### Changed
+
+- `src/starter.py` merged into `src/process.py` (`start`/`_spawn` moved over); `start` behavior is unchanged.
+- `LOG_ENCODING` constant renamed to `ENCODING` (also used by the PID file I/O).
+
+### Fixed
+
+- Tests no longer pollute the real PID file: the backend fixture now monkeypatches `PID_PATH` into the temp dir alongside `DATABASE_PATH` (every test-created `Backend()` used to append the pytest process PID to the user's `PID.json`).
+
 ## [0.24.1] - 2026-08-23
 
 ### Changed

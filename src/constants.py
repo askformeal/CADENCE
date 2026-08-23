@@ -9,12 +9,17 @@ class IterType:
     def __init__(self, element_type):
         self.element_type = element_type
 
+ENCODING = 'utf-8'
+
 dirs = PlatformDirs('cadence', ensure_exists=True)
+
+PID_PATH = Path(dirs.user_data_dir) / 'PID.json'
 
 LOG_DIR = Path(dirs.user_log_dir)
 BACKEND_LOG_PATH = LOG_DIR / 'cadence.log'
 SOCKET_LOG_PATH = LOG_DIR / 'cadence-socket.log'
 HOTKEY_LOG_PATH = LOG_DIR / 'cadence-hotkey.log'
+PID_LOG_PATH = LOG_DIR / 'cadence-pid.log'
 
 DATABASE_DIR = Path(dirs.user_data_dir)
 DATABASE_PATH = DATABASE_DIR / 'cadence.db'
@@ -22,7 +27,8 @@ DATABASE_DEV_PATH = DATABASE_DIR / 'cadence-dev.db'
 
 FILE_LOG_LEVEL = logging.DEBUG
 CONSOLE_LOG_LEVEL = logging.INFO
-LOG_ENCODING = 'utf-8'
+
+TERMINATE_TIMEOUT = 3
 
 MAIN_LOOP_INTERVAL = 0.05
 
