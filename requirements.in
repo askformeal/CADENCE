@@ -5,3 +5,4 @@ mutagen
 pynput
 wcwidth
 psutil
+tomli-w

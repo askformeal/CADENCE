@@ -3,6 +3,7 @@ from pathlib import Path
 import logging
 
 from src.sentinels import SENTINELS
+from src.converter import CONVERTER
 
 class IterType:
     # can be list or tuple
@@ -13,17 +14,20 @@ ENCODING = 'utf-8'
 
 dirs = PlatformDirs('cadence', ensure_exists=True)
 
-PID_PATH = Path(dirs.user_data_dir) / 'PID.json'
+DATA_DIR = Path(dirs.user_data_dir)
+
+PID_PATH = DATA_DIR / 'PID.json'
+CONFIG_PATH = DATA_DIR / 'config.toml'
 
 LOG_DIR = Path(dirs.user_log_dir)
 BACKEND_LOG_PATH = LOG_DIR / 'cadence.log'
 SOCKET_LOG_PATH = LOG_DIR / 'cadence-socket.log'
 HOTKEY_LOG_PATH = LOG_DIR / 'cadence-hotkey.log'
+CONFIG_LOG_PATH = LOG_DIR / 'cadence-config.log'
 PID_LOG_PATH = LOG_DIR / 'cadence-pid.log'
 
-DATABASE_DIR = Path(dirs.user_data_dir)
-DATABASE_PATH = DATABASE_DIR / 'cadence.db'
-DATABASE_DEV_PATH = DATABASE_DIR / 'cadence-dev.db'
+DATABASE_PATH = DATA_DIR / 'cadence.db'
+DATABASE_DEV_PATH = DATA_DIR / 'cadence-dev.db'
 
 FILE_LOG_LEVEL = logging.DEBUG
 CONSOLE_LOG_LEVEL = logging.INFO
@@ -56,6 +60,35 @@ MAX_JSON_SIZE = 10 * 1024 * 1024
 PLAYER_TIMEOUT = 1
 PLAYER_POLL_INTERVAL = 0.05
 POS_MEMORIZE_INTERVAL = 5
+
+READABLE_TYPE_NAMES = {
+    str: 'string',
+    int: 'integer',
+    bool: 'boolean',
+    IterType: 'list or tuple',
+    CONVERTER.boolean: 'boolean'
+}
+
+# Config
+
+# dunno if this's the right name
+CONFIG_SCHEME = {
+    'port': { # each option name must be unique
+        'type': int, # will be called to convert the value. raise ValueError if invalid
+        'section': 'network',
+        'default': 17891 # default value will not go through type converter
+    },
+    'default_volume': {
+        'type': int,
+        'section': 'playback',
+        'default': 100
+    },
+    'default_shuffle': {
+        'type': CONVERTER.boolean,
+        'section': 'playback',
+        'default': False
+    }
+}
 
 SOURCES = {
     SENTINELS.SOURCE_NOT_PROVIDED: '[source not provided]',
@@ -184,13 +217,6 @@ NON_ACTION_KEYS = {
     'action',
     'cwd',
     'source'
-}
-
-READABLE_TYPE_NAMES = {
-    str: 'string',
-    int: 'integer',
-    bool: 'boolean',
-    IterType: 'list or tuple'
 }
 
 ATTACHMENT_REQUIRED_ACTIONS = [

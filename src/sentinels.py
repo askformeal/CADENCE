@@ -18,6 +18,14 @@ class Sentinels:
     def __init__(self):
         self.SUCCESS = Sentinel('Action Successfully Done') # when you don't have anything to return on success but something to return on failure
 
+        # Config
+
+        self.CONFIG_WRITE_FAILED = Sentinel('Failed to Write Into Configure File')
+        self.UNKNOWN_OPTION = Sentinel('Tried to Get/Set an Unknown Option')
+        self.OPTION_NOT_FOUND = Sentinel('Option Not Found')
+        self.INVALID_OPTION_VALUE = Sentinel('Value of Option is Invalid')
+        self.INVALID_CONFIG_FILE = Sentinel('Configure File is Not a Valid TOML File')
+
         # Connection
         self.LOST = Sentinel('Connection Lost')
 
@@ -73,6 +81,7 @@ class Sentinels:
         
         # Misc
         self.INVALID_TIME = Sentinel('Invalid Time, Can Not be Parsed')
-
+        self.ROOT_SECTION = Sentinel('This Config Option is in the Root Section')
+        self.FILE_IO_FAILED = Sentinel('Failed to Write/Read File')
 
 SENTINELS = Sentinels()

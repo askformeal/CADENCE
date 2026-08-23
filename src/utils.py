@@ -85,3 +85,12 @@ def verify_path_format(raw: str):
                 return True
     else:
         return True
+
+def count_dict(obj):
+    if not isinstance(obj, dict):
+        return 1
+    else:
+        total = 0
+        for value in obj.values():
+            total += count_dict(value)
+        return total

@@ -20,6 +20,8 @@ class Response:
         else:
             self.failed = failed
 
+        self.notifies = []
+
     def __repr__(self):
         return str(dict(self))
 

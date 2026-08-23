@@ -20,5 +20,7 @@ readchar==4.2.2
     # via -r requirements.in
 six==1.17.0
     # via pynput
+tomli-w==1.2.0
+    # via -r requirements.in
 wcwidth==0.8.2
     # via -r requirements.in

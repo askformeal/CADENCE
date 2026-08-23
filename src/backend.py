@@ -59,6 +59,8 @@ class Backend:
         self.current_playlist = None
         
         self.dispatch_buffer = queue.Queue() # single way
+        self.notifies = []
+
         try:
             self.database = Database(database_path)
         except RuntimeError as e:
@@ -128,6 +130,11 @@ class Backend:
                     logger.exception(f'Exception raised when dispatching request')
                     response = gen_response.Failed(f'a CADENCE backend error occurred during dispatching of request: \"{e}\"')
 
+                if connection is not None and request.get('action', None) != 'test_alive':
+                    response.notifies = self.notifies.copy()
+                    self.notifies = []
+                    logger.info(f'Notifies cleared: {response.notifies}')
+
                 if self.dev:
                     response.msg = f'[DEV] {response.msg}'
 
@@ -153,7 +160,10 @@ class Backend:
             # ----------------------------------------------------------------
 
             if action == 'test_alive':
-                return gen_response.Success('CADENCE backend is running')
+                response = gen_response.Success('CADENCE backend is running')
+
+            elif action == 'get_notifies':
+                response = gen_response.Success('Notifies got')
 
             elif action == 'status':
                 player_status = {

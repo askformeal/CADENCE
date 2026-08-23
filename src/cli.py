@@ -271,7 +271,8 @@ def main():
 
 
     if args['action'] == 'start':
-        _start_backend(CADENCE_DEV=int(args['dev']), CADENCE_CONTINUE=int(args['continue']))
+        notifies = _start_backend(CADENCE_DEV=int(args['dev']), CADENCE_CONTINUE=int(args['continue']))[1]
+        _show_notifies(notifies)
 
     elif args['action'] == 'kill':
         print(f'Killing CADENCE backend processes...')
@@ -306,10 +307,7 @@ def main():
 
         if  args['action'] == 'reboot':
             args['action'] = 'exit'
-            is_reboot = True
-        args['source'] = 'cli'
-        args['cwd'] = str(Path.cwd())
-        
+            is_reboot = True      
 
         if args['action'] == 'lib.reset':
             answer = ''
@@ -322,13 +320,20 @@ def main():
                 return
             del args['yes']
 
-        response = send_request(**args)
+# -------------------------------------- Pre-response --------------------------------------
+
+        response = send_request(**_wrap_request(args))
+
+# -------------------------------------- Post-response --------------------------------------
 
         action = args['action']
         code =  response.get('code', None)
         msg = response.get('msg', None)
         attachment = response.get('attachment', None)
         failed = response.get('failed', [])
+        notifies = response.get('notifies', [])
+
+        _show_notifies(notifies)
 
         if code is None or msg is None:
             print('[Failed]: Invalid response received from CADENCE backend')
@@ -347,7 +352,9 @@ def main():
                     return 1
                     
                 print('Starting backend...')
-                _start_backend(CADENCE_DEV=int(args['dev']), CADENCE_CONTINUE=int(args['continue']))
+                notifies = _start_backend(CADENCE_DEV=int(args['dev']), CADENCE_CONTINUE=int(args['continue']))[1]
+
+                _show_notifies(notifies)
 
             elif action == 'lib.add' and isinstance(attachment, list):
                 for add_response in attachment:
@@ -453,15 +460,33 @@ def main():
         print()
         return code
 
+def _wrap_request(args):
+    args['source'] = 'cli'
+    args['cwd'] = str(Path.cwd())
+    return args
+
 def _start_backend(**kwargs):
     result = start(**kwargs)
+    notifies = []
     if result is SENTINELS.BACKEND_STARTED:
         print(f'CADENCE backend is now up and running')
+        notifies = send_request(**_wrap_request({'action':'get_notifies'})).get('notifies', [])
     elif result is SENTINELS.BACKEND_ALREADY_RUNNING:
         print(f'CADENCE backend is already running')
     elif result is SENTINELS.FAILED_START_BACKEND:
         print(f'Failed to start CADENCE backend')
-    return result    
+    return result, notifies
+
+def _show_notifies(notifies=None):
+    if notifies is None:
+        notifies = []
+
+    if len(notifies) > 0:
+        lines = [
+            f'Notifies from CADENCE backend ({len(notifies)}):'
+        ]
+        lines += list(map(lambda x: f'  {x}', notifies))
+        print(box('\n'.join(lines)))
 
 def _show_song_info(info, empty_msg='No information to be shown', show_aliases=False, show_playlists=False, show_num=False, show_tech=False):
     if not isinstance(info, (list, tuple)):

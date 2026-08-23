@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [0.26.1] - 2026-08-23
+
+### Added
+
+- Config system core (not yet wired into the backend/CLI): `src/config.py` — TOML config file at the data dir, `CONFIG_SCHEME`-driven typed get/set with defaults, sentinel errors for corrupt files / unknown options / invalid values, dot-access via `__getattr__`/`__setattr__`; `src/converter.py` for boolean conversion. `tomli-w` added as a dependency for writing TOML.
+- Notifies mechanism (pre-wired, no producers yet): the backend collects notify strings and attaches them to the next non-heartbeat response (`response.notifies`); `get_notifies` action lets the CLI pull queued notifies after start/reboot, shown in a box. Heartbeat and internal requests do not consume notifies.
+
 ## [0.26.0] - 2026-08-23
 
 ### Added

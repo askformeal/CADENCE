@@ -98,6 +98,8 @@ six==1.17.0
     # via
     #   -r requirements.txt
     #   pynput
+tomli-w==1.2.0
+    # via -r requirements.txt
 tomlkit==0.15.1
     # via bump-my-version
 truststore==0.10.4
