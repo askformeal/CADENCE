@@ -46,6 +46,7 @@ python -m src
 | `cadence reboot`          | Restart the backend                  |
 | `cadence reboot -c`       | Restart and resume last session      |
 | `cadence exit`            | Stop the backend                     |
+| `cadence kill`            | Force-kill backend processes (last resort) |
 | `cadence status`          | Show current playback status         |
 
 ### Playback
@@ -76,17 +77,29 @@ python -m src
 | Command                     | Description                                        |
 | --------------------------- | -------------------------------------------------- |
 | `cadence lib list`          | Show all songs in library (`-a` aliases, `-p` playlists, `-t` tech metadata) |
+| `cadence lib info <song>...`| Show detailed info of songs (`-a` aliases, `-p` playlists, `-t` tech) |
 | `cadence lib search <kw>...`| Search songs by name/artist/album/alias (`-o` any-keyword match) |
-| `cadence lib add <path>...`| Add new songs to library (`-a/--aliases` to bind aliases) |
-| `cadence lib del <song>...`| Delete songs from library (path or alias)          |
+| `cadence lib add <path>...`| Add new songs to library (`-a/--aliases` to bind aliases, `--loose-path` to allow missing paths) |
+| `cadence lib del <song>...`| Delete songs from library (path, alias or ID)          |
 | `cadence lib scan <dir>`    | Scan a directory for audio files and add them (`-d` dry run) |
 | `cadence lib prune`         | Delete all songs whose file no longer exists (`-d` dry run)  |
 | `cadence lib reset`         | Reset library and delete all data (confirmation)   |
 | `cadence lib meta set`      | Set metadata of a song (use `""` to clear)         |
+| `cadence lib meta read-file`| Set metadata of a song from its file tags (`--all` for every field) |
 | `cadence lib alias ...`     | List/bind/unbind aliases (`bind <song> <alias>...`, `unbind <alias>...`) |
 | `cadence lib playlist ...`  | List/create/add/kick/delete playlists (`lib playlist list` supports `-a`/`-p`/`-t`) |
 
 `open` accepts a song alias, a library song name, a playlist name, or a file path.
+
+### Configuration
+
+| Command                        | Description                                            |
+| ------------------------------ | ------------------------------------------------------ |
+| `cadence config show <option>` | Show an option's value and its source (default/file)   |
+| `cadence config set <option> <value>` | Write an option to the config file (`--overwrite-corrupt` to replace a corrupted file) |
+| `cadence config unset <option>` | Remove an option from the config file (falls back to default) |
+
+Config file: `%LOCALAPPDATA%\cadence\cadence\config.toml` (Windows). Options: `port` (network), `default_volume`, `default_shuffle` (playback).
 
 ## Architecture
 
