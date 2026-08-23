@@ -96,6 +96,10 @@ class MissingKey(Failed):
     def __init__(self, action, key, attachment=None, failed=None):
         super().__init__(f'{action} action(s) requires key \"{key}\" but it is not received', attachment, failed)
 
+class MissingCWD(Failed):
+    def __init__(self, action, attachment=None, failed=None):
+        super().__init__(f'{action} action requires a missing key of \"cwd\" because one or more paths provided are not absolute paths', attachment, failed)
+
 class InvalidKeyType(Failed):
     def __init__(self, action, key, key_type, received_type, attachment=None, failed=None):
         super().__init__(f'the value of key \"{key}\" of \"{action}\" action must be a {key_type} value but a value of type \"{received_type}\" was received instead', attachment, failed)

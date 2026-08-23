@@ -177,11 +177,12 @@ def main():
     lib_search_parser.add_argument('keyword', type=str, nargs='+', help='Keyword to search')
     lib_search_parser.add_argument('-o', '--or', action='store_true', help='Get all results that match any one the keywords')
 
-    lib_add_parser = lib_sub.add_parser('add', help='Add a new song to library')
+    lib_add_parser = lib_sub.add_parser('add', help='Add songs to library')
     lib_add_parser.add_argument('paths', type=_path, nargs='+', help='Path of songs to add')
     lib_add_parser.add_argument('-a', '--aliases', type=str, nargs='+', default=None, help='Aliases to bind to the new songs')
     lib_add_parser.add_argument('--skip-meta', action='store_true', help='Disable automatic setting metadata')
-    lib_add_parser.add_argument('--skip-alias', action='store_true', help='Disable automatic binding alias')
+    lib_add_parser.add_argument('--skip-alias', action='store_true', help='Disable automatic binding aliases')
+    lib_add_parser.add_argument('--loose-path', action='store_true', help='Adding songs without checking the availability of the paths. May cause automatic setting of metadata and binding of aliases to fail')
 
     lib_del_parser = lib_sub.add_parser('del', help='Delete songs from library')
     lib_del_parser.add_argument('songs', type=str, nargs='+', help='Songs to delete')
@@ -319,7 +320,11 @@ def main():
                 print('Starting backend...')
                 _start_backend(CADENCE_DEV=int(args['dev']), CADENCE_CONTINUE=int(args['continue']))
 
-            if action in ATTACHMENT_REQUIRED_ACTIONS:
+            elif action == 'lib.add' and isinstance(attachment, list):
+                for add_response in attachment:
+                    print(add_response['msg'])
+
+            elif action in ATTACHMENT_REQUIRED_ACTIONS:
                 if attachment is None and not (action == 'lib.scan' and not args['dry_run']):
                     print(f'[Failed]: action {action} was expecting an attachment but none was received from CADENCE backend')
                 else:

@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [0.24.0] - 2026-08-23
+
+### Added
+
+- `lib add --loose-path` — allow adding songs whose path is not an existing file: any path that is format-valid is accepted, including directories and not-yet-existing files (useful for pre-registering songs before files arrive; `lib prune` later cleans up records whose files never show up). Format validation via the new `verify_path_format()` — rejects empty/NUL strings, and on Windows rejects illegal characters (`< > : " | ? *` outside the drive letter) and reserved device names (`CON`, `NUL`, `COM1`, …). Paths must still be format-valid; `lib.add` without the flag keeps rejecting missing files.
+- `_add_song` now resolves relative paths against `cwd` (previously a relative path was checked against the daemon's own working directory, which could judge wrongly)
+- `lib add` success responses are returned in the `attachment` (per-song add/meta/alias details) so the CLI can print them
+- New `MissingCWD` response class: a cwd-missing error now says `requires a missing key of "cwd" because one or more paths provided are not absolute paths` instead of the generic missing-key message (used by `open`, `lib.info`, `lib.del`, `lib.scan`, `lib.meta.set`, `lib.alias.*`, `lib.add`)
+
+### Fixed
+
+- `_get_meta_from_file` crashed with `mutagen.MutagenError` when the path did not exist or was a directory (mutagen wraps the underlying `OSError`); it now catches `(OSError, mutagen.MutagenError)` and returns empty metadata, which `--loose-path` relies on
+
 ## [0.23.0] - 2026-08-23
 
 ### Added

@@ -344,6 +344,34 @@ def test_lib_add_batch_empty_paths(backend):
     assert 'empty list of paths' in response['msg']
 
 
+def test_lib_add_loose_path_nonexistent(backend, tmp_path):
+    ghost = str(tmp_path / 'ghost.flac')
+    response = _request(backend, 'lib.add', paths=[ghost], loose_path=True)
+    assert response['code'] == 0
+    assert '1/1' in response['msg']
+    assert backend.database.song_exists(1)
+
+
+def test_lib_add_loose_path_directory(backend, tmp_path):
+    response = _request(backend, 'lib.add', paths=[str(tmp_path)], loose_path=True)
+    assert response['code'] == 0
+    assert '1/1' in response['msg']
+    assert backend.database.song_exists(1)
+
+
+def test_lib_add_loose_path_rejects_illegal_format(backend):
+    response = _request(backend, 'lib.add', paths=[r'C:\a<b>.flac'], loose_path=True)
+    assert response['code'] == 1
+    assert len(response['failed']) == 1
+
+
+def test_lib_add_strict_still_rejects_missing(backend, tmp_path):
+    ghost = str(tmp_path / 'ghost.flac')
+    response = _request(backend, 'lib.add', paths=[ghost])
+    assert response['code'] == 1
+    assert len(response['failed']) == 1
+
+
 def test_lib_add_batch_alias_mismatch(backend, tmp_path):
     _make_wav(tmp_path / 'a.wav')
     _make_wav(tmp_path / 'b.wav')

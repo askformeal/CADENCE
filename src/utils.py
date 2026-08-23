@@ -1,8 +1,13 @@
 # divide into separate files (time_utils.py, etc) if things got messy
+import os
+from pathlib import Path
+import re
 from typing import Literal
 from wcwidth import wcswidth
 
+from src.constants import WINDOWS_ILLEGAL, WINDOWS_RESERVED
 from src.sentinels import SENTINELS
+
 
 def format_time(raw_time, unit: Literal['ms', 'sec']='ms'):
     if raw_time is None:
@@ -60,3 +65,23 @@ def box(text: str):
     result += f"\\{'_' * (max_len + 4)}/\n"
 
     return result
+
+def verify_path_format(raw: str):
+    if len(raw.strip()) == 0 or '\x00' in raw:
+        return False
+    elif os.name == 'nt':
+        if re.match(r'^[a-zA-Z]:', raw):
+            body = raw[2:]
+        else:
+            body = raw
+
+        if re.search(WINDOWS_ILLEGAL, body) is not None:
+            return False
+        else:
+            filename = Path(body).name.split('.')[0].upper()
+            if filename in WINDOWS_RESERVED:
+                return False
+            else:
+                return True
+    else:
+        return True

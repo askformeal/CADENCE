@@ -24,7 +24,7 @@ from src.connection import recv_json, send_json
 from src import gen_response
 from src.database import Database
 from src.player import Player
-from src.utils import format_time, parse_time
+from src.utils import format_time, parse_time, verify_path_format
 
 logger = setup_logger(__name__, BACKEND_LOG_PATH)
 
@@ -124,11 +124,13 @@ class Backend:
 
                 if self.dev:
                     response.msg = f'[DEV] {response.msg}'
+
+                logger.info(f'Response: {response}')
                 
                 if connection is not None:
-                    logger.info(f'Send response: {response}')
                     send_json(connection, response)
                     connection.close()
+                    logger.info(f'Response sent through socket, connection closed')
             except Exception as e:
                 logger.exception(f'Exception raised when handling request')
 
@@ -380,7 +382,7 @@ class Backend:
                 for song in songs:
                     song_id = self._get_song(song, cwd)
                     if song_id is SENTINELS.MISSING_CWD:
-                        failed.append(self._missing_key('lib.info', 'cwd'))
+                        failed.append(gen_response.MissingCWD('lib.info'))
                     elif song_id is SENTINELS.NOT_IN_LIB:
                         failed.append(gen_response.SongNotExist(f'get information of song \"{song}\"'))
                     else:
@@ -457,6 +459,8 @@ class Backend:
             elif action == 'lib.add':
                 paths = request['paths']
                 aliases = request.get('aliases', None)
+                loose_path = request.get('loose_path', False)
+
                 if aliases is None:
                     aliases = []
                 set_meta = not request.get('skip_meta', False)
@@ -469,13 +473,15 @@ class Backend:
                     if len(aliases) == 0:
                         aliases = [None] * len(paths)
                     failed = []
+                    succeed = [] # otherwise all the info about auto meta and alias will be lost
                     for path, alias in zip(paths, aliases):
-                        add_response = self._add_song(path, set_meta, bind_alias, alias)
-                        logger.debug(f'add: {add_response}')
-                        if not add_response.ok():
+                        add_response = self._add_song(path, set_meta, bind_alias, alias, cwd=cwd, loose_path=loose_path)
+                        if add_response.ok():
+                            succeed.append(add_response)
+                        else:
                             failed.append(add_response)
                     
-                    response = gen_response.BatchAuto('songs added to library', len(failed), len(paths), failed=failed)
+                    response = gen_response.BatchAuto('songs added to library', len(failed), len(paths), attachment=succeed, failed=failed)
 
             elif action == 'lib.del':
                 songs = request['songs']
@@ -488,7 +494,7 @@ class Backend:
                     for song in songs:
                         id = self._get_song(song, cwd)
                         if id is SENTINELS.MISSING_CWD:
-                            failed.append(self._missing_key('lib.del', 'cwd'))
+                            failed.append(gen_response.MissingCWD('lib.del'))
                         elif id is SENTINELS.NOT_IN_LIB:
                             failed.append(gen_response.SongNotExist(f'delete {song}'))
                         else:
@@ -525,7 +531,7 @@ class Backend:
                 directory = request['dir']
                 if not Path(directory).is_absolute():
                     if cwd is None:
-                        response = self._missing_key('lib.scan', 'cwd')
+                        response = gen_response.MissingCWD('lib.scan')
                         missing_cwd = True
                     else:
                         directory = str(Path(cwd) / directory)
@@ -591,7 +597,7 @@ class Backend:
             elif action == 'lib.meta.set':
                 song_id = self._get_song(request['song'], cwd)
                 if song_id is SENTINELS.MISSING_CWD:
-                    response = self._missing_key('lib.meta.set', 'cwd')
+                    response = gen_response.MissingCWD('lib.meta.set')
                 elif song_id is SENTINELS.NOT_IN_LIB:
                     response = gen_response.SongNotExist(f"set metadata of \"{request['song']}\"")
                 else:
@@ -615,7 +621,7 @@ class Backend:
                 song = request['song']
                 id = self._get_song(song, cwd)
                 if id is SENTINELS.MISSING_CWD:
-                    response = self._missing_key('lib.alias.list', 'cwd')
+                    response = gen_response.MissingCWD('lib.alias.list')
                 elif id is not SENTINELS.NOT_IN_LIB:
                     aliases = self.database.get_song_aliases(id)
                     response = gen_response.Success('obtained all aliases in library', aliases)
@@ -631,7 +637,7 @@ class Backend:
                     id = self._get_song(song, cwd)
 
                     if id is SENTINELS.MISSING_CWD:
-                        response = self._missing_key('lib.alias.bind', 'cwd')
+                        response = gen_response.MissingCWD('lib.alias.bind')
                     elif id is SENTINELS.NOT_IN_LIB:
                         response = gen_response.SongNotExist(f'bind alias to {song}')
                     else:
@@ -775,7 +781,7 @@ class Backend:
                 value = request.get(key, SENTINELS.KEY_NOT_PROVIDED)
                 if value is SENTINELS.KEY_NOT_PROVIDED:
                     if is_required:
-                        return self._missing_key(action, key)                   
+                        return gen_response.MissingKey(action, key)                   
                 else:
                     if isinstance(key_type, IterType): # (iter_type, element_type)
                         # verify iterable type
@@ -799,7 +805,7 @@ class Backend:
         
         id = self._get_song(song, cwd)
         if id is SENTINELS.MISSING_CWD:
-            response = self._missing_key('open', 'cwd')
+            response = gen_response.MissingCWD('open')
         elif id is not SENTINELS.NOT_IN_LIB:
             # open single song by path / alias
             info_to_set = (self.database.get_song_info(id),)
@@ -1004,10 +1010,6 @@ class Backend:
             SENTINELS.INVALID_PLAYER_STATE: gen_response.NotPlayingPaused('jump to beginning')
         }[result]
 
-    def _missing_key(self, action, key) -> gen_response.Response:
-        logger.error(f'Missed key for action \"{action}\": \"{key}\"')
-        return gen_response.MissingKey(action, key)
-
     def _set_current_song(self, info, in_lib=True):
         if not isinstance(info, list):
             info = [info]
@@ -1086,9 +1088,16 @@ class Backend:
             info[i]['playlists'] = list(map(lambda pl: pl['name'], playlists_info))
         return info
 
-    def _add_song(self, path, set_meta=True, bind_alias=True, alias=None, return_id=False) -> tuple[int, gen_response.Response] | gen_response.Response:
+    def _add_song(self, path, set_meta=True, bind_alias=True, alias=None, cwd=None, loose_path=False, return_id=False) -> tuple[int, gen_response.Response] | gen_response.Response:
         song_id = None
-        if Path(path).is_file():
+        if not Path(path).is_absolute():
+            if cwd is None:
+                response = gen_response.MissingCWD(f'add-path-to-library')
+                path = None
+            else:
+                path = str(Path(cwd) / path)
+
+        if path is not None and (Path(path).is_file() or (loose_path and verify_path_format(path))):
             add_response = None
             alias_response = None
             meta_response = None
@@ -1165,27 +1174,32 @@ class Backend:
             logger.warning('backend:del_current_pos is triggered before any song is loaded')
 
     def _get_meta_from_file(self, path):
-        file = mutagen.File(path, easy=True)
-        tags = {}
-        if file is not None:
-            for file_tag, meta in FILE_META.items():
-                tags[meta] = file.get(file_tag, [None])[0]
-                if tags[meta] == '':
-                    tags[meta] = None
-
-            tags['duration'] = getattr(file.info, 'length', None)
-            tags['bitrate'] = getattr(file.info, 'bitrate', None)
-            tags['sample_rate'] = getattr(file.info, 'sample_rate', None)
-            tags['channels'] = getattr(file.info, 'channels', None)
-
-            if tags['duration'] is not None:
-                tags['duration'] = int(tags['duration'] * 1000)
-
-            logger.debug(f'Extracted metadata from {path}: {tags}')
-            return tags
-        else:
-            logger.debug(f'Failed to extract metadata from {path} because there is no metadata in the file')
+        try:
+            file = mutagen.File(path, easy=True)
+        except (OSError, mutagen.MutagenError):
+            logger.debug(f'Failed to extract metadata from {path} because it is not accessible')
             return {}
+        else:
+            tags = {}
+            if file is not None:
+                for file_tag, meta in FILE_META.items():
+                    tags[meta] = file.get(file_tag, [None])[0]
+                    if tags[meta] == '':
+                        tags[meta] = None
+
+                tags['duration'] = getattr(file.info, 'length', None)
+                tags['bitrate'] = getattr(file.info, 'bitrate', None)
+                tags['sample_rate'] = getattr(file.info, 'sample_rate', None)
+                tags['channels'] = getattr(file.info, 'channels', None)
+
+                if tags['duration'] is not None:
+                    tags['duration'] = int(tags['duration'] * 1000)
+
+                logger.debug(f'Extracted metadata from {path}: {tags}')
+                return tags
+            else:
+                logger.debug(f'Failed to extract metadata from {path} because there is no metadata in the file')
+                return {}
 
     def _scan(self, directory):
         paths = []

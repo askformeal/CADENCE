@@ -98,7 +98,8 @@ ACTION_KEYS = {
         'paths': (IterType(str), True),
         'aliases': (IterType(str), False),
         'skip_meta': (bool, False),
-        'skip_alias': (bool, False)
+        'skip_alias': (bool, False),
+        'loose_path': (bool, False)
     },
     'lib.del': {
         'songs': (IterType(str), True)
@@ -190,3 +191,8 @@ AUDIO_EXTENSIONS = {
     '.ra', '.rm', '.amr', '.3gp', '.caf',
     '.mid', '.midi', '.spx',
 }
+
+WINDOWS_ILLEGAL = r'[<>:"|?*]'
+WINDOWS_RESERVED = {'CON', 'PRN', 'AUX', 'NUL',
+                    'COM1','COM2','COM3','COM4','COM5','COM6','COM7','COM8','COM9',
+                    'LPT1','LPT2','LPT3','LPT4','LPT5','LPT6','LPT7','LPT8','LPT9'}

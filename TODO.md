@@ -15,8 +15,8 @@
 - [X] Bitrate and other tech metadata
 - [X] Start and continue last song
 - [X] Memorize number in playlist
-- [ ] More user-friendly library management
-  - [ ] Batch management
+- [X] More user-friendly library management
+  - [X] Batch management
     - [X] lib.info
     - [X] lib.search (multi-keyword, and/or option)
     - [X] lib.add (batch)
