@@ -28,7 +28,7 @@
   - [X] Manage by library ID (numeric strings resolve as song IDs in _get_song: open, lib.del, lib.playlist.add/kick, lib.alias.*)
 - [X] Request validation with element types (IterType for list/tuple keys)
 - [X] PID file
-- [ ] `lib.meta.read-file` command to set metadata by file
+- [X] `lib.meta.read-file` command to set metadata by file
 - [ ] Bluetooth frontend
 - [ ] Tray icon frontend
 - [ ] Configure system

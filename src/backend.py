@@ -622,6 +622,24 @@ class Backend:
                     else:
                         response = gen_response.Failed(f'can not set metadata because no metadata was provided')
 
+            elif action == 'lib.meta.read-file':
+                song = request['song']
+                song_id = self._get_song(song, cwd)
+                set_all = request['all']
+                if song_id is SENTINELS.MISSING_CWD:
+                    response = gen_response.MissingCWD('lib.meta.read-file')
+                elif song_id is SENTINELS.NOT_IN_LIB:
+                    response = gen_response.SongNotExist(f"set metadata of \"{song}\"")
+                else:
+                    count = 0
+                    path = self.database.get_song_info(song_id)[0]['path']
+                    file_meta = self._get_meta_from_file(path)
+                    for label, value in file_meta.items():
+                        if value not in ('', None) and (request[label] or set_all):
+                            self.database.set_song_meta(song_id, label, value)
+                            count += 1
+                    response = gen_response.Success(f'{count} metadata set')
+
             elif action == 'lib.alias.list':
                 song = request['song']
                 id = self._get_song(song, cwd)

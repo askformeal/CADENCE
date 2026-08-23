@@ -19,12 +19,8 @@ class SongOutput:
         self.extract_from_dict(info)
 
     def extract_from_dict(self, info):      
-        self.path = info.get('path', '?')
 
         self.name = info.get('name', '?')
-        if self.name is None:
-            if self.path != '?' and self.path is not None:
-                self.name = Path(self.path).stem
 
         self.artist = info.get('artist', '?')
         self.album = info.get('album', '?')
@@ -35,6 +31,8 @@ class SongOutput:
             self.bitrate = f'{self.bitrate/1000:.10g}'
         self.sample_rate = info.get('sample_rate', '?')
         self.channels = info.get('channels', '?')
+
+        self.path = info.get('path', '?')
 
         self.in_lib = {True: 'Yes', False: 'No', '?': '?'}[info.get('in_library', '?')]
         self.lib_id = info.get('id', '?')
@@ -82,6 +80,14 @@ class SongOutput:
         self.run_time = format_time(info.get('run_time', -1), 'sec')
     
         self.dev = info.get('dev', False)
+
+        if self.name is None:
+            if self.path != '?' and self.path is not None:
+                self.display_name = Path(self.path).stem
+            else:
+                self.display_name = None
+        else:
+            self.display_name = self.name
 
         for key, value in vars(self).items():
             if value is None:
@@ -213,6 +219,13 @@ def main():
     meta_set_parser.add_argument('--name', type=str, default=None, help='Name of the song')
     meta_set_parser.add_argument('--artist', type=str, default=None, help='Artist of the song')
     meta_set_parser.add_argument('--album', type=str, default=None, help='Album of the song')
+
+    meta_read_file_parser = meta_sub.add_parser('read-file', help='Set the value of metadata of a song in library with values read from file')
+    meta_read_file_parser.add_argument('song', type=str, help='Song to set metadata')
+    meta_read_file_parser.add_argument('--name', action='store_true', help='Set name of the song')
+    meta_read_file_parser.add_argument('--artist', action='store_true', help='Set artist of the song')
+    meta_read_file_parser.add_argument('--album', action='store_true', help='Set album of the song')
+    meta_read_file_parser.add_argument('--all', action='store_true', help='Set all available metadata')
 
     alias_parser = lib_sub.add_parser('alias', help='Manage aliases of songs in library')
     alias_sub = alias_parser.add_subparsers(dest='alias_action', required=True)
@@ -458,12 +471,13 @@ def _show_song_info(info, empty_msg='No information to be shown', show_aliases=F
             output = SongOutput(song)
 
             if show_num:
-                lines = [f'{i+1}. {output.name}']
+                lines = [f'{i+1}. {output.display_name}']
             else:
-                lines = [f'{output.name}']
+                lines = [f'{output.display_name}']
 
             lines += [
-                f'\nArtist: {output.artist}',
+                f'\nName: {output.name}',
+                f'Artist: {output.artist}',
                 f'Album: {output.album}',
                 f'\nDuration: {output.duration}',
             ]

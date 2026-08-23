@@ -135,6 +135,19 @@ ACTION_KEYS = {
         'sample_rate': (int, False, None),
         'channels': (int, False, None),
     },
+
+    'lib.meta.read-file': {
+        'song': (str, True),
+        'name': (bool, False, False),
+        'artist': (bool, False, False),
+        'album': (bool, False, False),
+        'duration': (bool, False, False),
+        'bitrate': (bool, False, False),
+        'sample_rate': (bool, False, False),
+        'channels': (bool, False, False),
+        'all': (bool, False, False),
+    },
+
     'lib.alias.list': {
         'song': (str, True)
     },

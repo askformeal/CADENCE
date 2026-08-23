@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [0.26.0] - 2026-08-23
+
+### Added
+
+- `lib meta read-file <song> [--name] [--artist] [--album] [--all]` — set a song's metadata in the library by reading it back from the audio file. Flags select which fields to write; `--all` writes every field that has a non-empty value in the file. Works on any library song (path, alias or ID); the file is read from the song's recorded path.
+
+### Changed
+
+- `SongOutput` display refactor: list rows now show a `display_name` (the stored name, falling back to the filename stem when the name is missing), and a dedicated `Name:` row was added so the raw stored value is visible even when the fallback is shown.
+
 ## [0.25.0] - 2026-08-23
 
 ### Added
