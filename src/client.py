@@ -3,8 +3,8 @@ from time import sleep
 
 from src.log import setup_logger
 from src.constants import SOCKET_LOG_PATH
-from src.constants import HOST, PORT, TIMEOUT
 from src.constants import DEATH_CONFIRM_INTERVAL, DEATH_CONFIRM_NUMBER
+from src.config import CONFIG
 from src.connection import send_json, recv_json
 
 logger = setup_logger(__name__, SOCKET_LOG_PATH)
@@ -12,8 +12,8 @@ logger = setup_logger(__name__, SOCKET_LOG_PATH)
 def send_request(expect_reset=False, **kwargs):
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(TIMEOUT)
-        sock.connect((HOST, PORT))
+        sock.settimeout(CONFIG.ipc_timeout)
+        sock.connect((CONFIG.host, CONFIG.port))
         if send_json(sock, kwargs, expect_reset=expect_reset):
             response = recv_json(sock, expect_reset=expect_reset)
             if response is not None:

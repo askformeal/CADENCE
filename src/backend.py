@@ -15,8 +15,8 @@ from src import version
 from src.log import setup_logger
 from src.constants import BACKEND_LOG_PATH
 from src.constants import DATABASE_PATH, DATABASE_DEV_PATH
-from src.constants import HOST, PORT, BACKLOG, ACTION_KEYS, NON_ACTION_KEYS, IterType, SERVER_TIMEOUT
-from src.constants import MAIN_LOOP_INTERVAL, POS_MEMORIZE_INTERVAL, METADATA, FILE_META
+from src.constants import BACKLOG, ACTION_KEYS, NON_ACTION_KEYS, IterType, SERVER_TIMEOUT
+from src.constants import MAIN_LOOP_INTERVAL, METADATA, FILE_META
 from src.constants import PLAY_DEAD_TIME
 from src.constants import AUDIO_EXTENSIONS, SOURCES, READABLE_TYPE_NAMES, SEARCH_META
 from src.config import CONFIG
@@ -51,7 +51,7 @@ class Backend:
 
         self.loop = False
 
-        self.shuffle = False
+        self.shuffle = CONFIG.default_shuffle
         self.shuffle_order = []
 
         self.current_song_info = None
@@ -1314,18 +1314,20 @@ class Backend:
                 path = self.current_song_info[self.current_song_num]['path']
                 pos = self.player.get_progress()['time']
                 self.database.set_pos(path, pos, log=False)
-            sleep(POS_MEMORIZE_INTERVAL)
+            sleep(CONFIG.pos_memorize_interval)
 
     def _listen(self):
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.settimeout(SERVER_TIMEOUT)
+        host = CONFIG.host
+        port = CONFIG.port
         try:
-            server.bind((HOST, PORT))
+            server.bind((host, port))
         except OSError as e:
-            self.exit(True, f'Failed to bind to {HOST}:{PORT}: {e}')
+            self.exit(True, f'Failed to bind to {port}:{host}: {e}')
         else:
             server.listen(BACKLOG)
-            logger.info(f'started listening on {HOST}:{PORT}')
+            logger.info(f'started listening on {host}:{port}')
             while self.running:
                 try:
                     connection, address = server.accept()

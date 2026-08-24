@@ -20,7 +20,7 @@ Key: `code`
 - 0 OK. The main goal of the action successfully completed, though some additional goal (for example, auto set metadata of `lib add`) might have failed. In that case, the failed sub-goal should be visible in message.
 - 1 Failed. Backend can not conduct this action. More information should be available in message.
 - 2 Failed to connect to CADENCE backend. This response was not sent by backend but by client.py
-- 3 Default code, should not be used under any circumstances. Receiving this code means response.py:Response._response was accidentally called outside the class.
+- 3 Default code, should not be used under any circumstances. Receiving this code means gen_response.py:Response._response was accidentally called outside the class.
 - 4 Exiting. Daemon-like frontend should exit immediately after receiving this code.
 
 ### Message
@@ -40,7 +40,48 @@ A list or dictionary of information requested by the frontend.
 
 Key: `failed`
 
-A list of messages of failed sub-actions during a batch action such as `lib scan`.
+A list of messages of failed sub-actions during a batch action such as `lib.scan`.
+
+## Actions
+
+### config
+
+Read and modify the configuration file. These actions operate on the options defined in `constants.py:CONFIG_SCHEME`, stored in `config.toml`.
+
+#### Options
+
+| Option | Type | Section | Default | Description |
+|---|---|---|---|---|
+| `username` | string | (root) | `J. Doe` | Name shown in the welcome message |
+| `port` | port (int > 0) | network | `17891` | Port of frontend-backend communication |
+| `host` | string | network | `127.0.0.1` | Host of frontend-backend communication |
+| `ipc_timeout` | positive float | network | `10` | Timeout of frontend-backend communication (seconds) |
+| `default_volume` | percentage (0~100) | playback | `100` | Volume on start |
+| `default_shuffle` | boolean | playback | `false` | Shuffle mode on start |
+| `pos_memorize_interval` | positive float | playback | `5` | Interval of memorized position updates (seconds) |
+| `player_timeout` | positive float | playback | `1` | Timeout of backend waiting for a player action (seconds) |
+
+The default value does not go through the type converter; values from the file are validated against the option type and fall back to the default if invalid.
+
+Effective timing differs per option. `host` and `port` are read when the backend binds its socket; `default_volume`, `default_shuffle` and `username` are read at backend construction — changes to these need a backend restart. `ipc_timeout` is read on every connection, `player_timeout` on every player action, and `pos_memorize_interval` on every loop iteration — changes take effect without restart.
+
+#### config.show
+
+Request keys: `option` (string, required).
+
+Success response attachment: `{"value": <converted value>, "source": "default value" | "configure file"}`. Unknown option is a failure.
+
+#### config.set
+
+Request keys: `option` (string, required), `value` (string, required), `overwrite_corrupt` (boolean, optional, default false).
+
+Writes the option to the config file. Invalid values (wrong type or out of range) are rejected. `overwrite_corrupt` replaces a corrupted config file instead of failing.
+
+#### config.unset
+
+Request keys: `option` (string, required).
+
+Removes the option from the config file so it falls back to its default value.
 
 ## The REAL Response codes
 

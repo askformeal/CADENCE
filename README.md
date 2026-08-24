@@ -99,7 +99,7 @@ python -m src
 | `cadence config set <option> <value>` | Write an option to the config file (`--overwrite-corrupt` to replace a corrupted file) |
 | `cadence config unset <option>` | Remove an option from the config file (falls back to default) |
 
-Config file: `%LOCALAPPDATA%\cadence\cadence\config.toml` (Windows). Options: `port` (network), `default_volume`, `default_shuffle` (playback).
+Config file: `%LOCALAPPDATA%\cadence\cadence\config.toml` (Windows). Full option list and semantics: [docs/protocol.md](docs/protocol.md).
 
 ## Architecture
 

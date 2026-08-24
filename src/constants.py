@@ -12,6 +12,8 @@ class IterType:
 
 ENCODING = 'utf-8'
 
+# Paths
+
 dirs = PlatformDirs('cadence', ensure_exists=True)
 
 DATA_DIR = Path(dirs.user_data_dir)
@@ -32,6 +34,8 @@ DATABASE_DEV_PATH = DATA_DIR / 'cadence-dev.db'
 FILE_LOG_LEVEL = logging.DEBUG
 CONSOLE_LOG_LEVEL = logging.INFO
 
+# Time
+
 TERMINATE_TIMEOUT = 3
 
 MAIN_LOOP_INTERVAL = 0.05
@@ -40,10 +44,6 @@ HEARTBEAT_POLL_INTERVAL = 3
 DEATH_CONFIRM_INTERVAL = 0.3
 DEATH_CONFIRM_NUMBER = 10
 PLAY_DEAD_TIME = 5
-
-HOST = '127.0.0.1'
-PORT = 17891
-TIMEOUT = 10
 
 STARTER_CHECK_INTERVAL = 0.5
 STARTER_RETRY = 5
@@ -57,41 +57,75 @@ HEADER_LEN = 4
 CONNECTION_ENCODING = 'utf-8'
 MAX_JSON_SIZE = 10 * 1024 * 1024
 
-PLAYER_TIMEOUT = 1
 PLAYER_POLL_INTERVAL = 0.05
-POS_MEMORIZE_INTERVAL = 5
+
+MIN_TIMEOUT = 0.01
 
 READABLE_TYPE_NAMES = {
     str: 'string',
     int: 'integer',
     bool: 'boolean',
     IterType: 'list or tuple',
-    CONVERTER.boolean: 'boolean'
+    CONVERTER.boolean: 'boolean',
+    CONVERTER.port: 'network port',
+    CONVERTER.pos_float: 'positive float',
+    CONVERTER.percentage: 'percentage number'
 }
 
 # Config
 
-# dunno if this's the right name
+# dunno if scheme is the right name
+# each option name must be unique
+# "type" will be called to convert the value. raise ValueError if invalid
+# default value will not go through type converter. make sure they are valid
 CONFIG_SCHEME = {
     'username': {
         'type': str,
         'section': SENTINELS.ROOT_SECTION,
-        'default': 'John/Jane Doe'
+        'default': 'J. Doe',
+        'description': 'Name to show in the welcome message'
     },
-    'port': { # each option name must be unique
-        'type': int, # will be called to convert the value. raise ValueError if invalid
+    'port': { 
+        'type': CONVERTER.port,
         'section': 'network',
-        'default': 17891 # default value will not go through type converter
+        'default': 17891, 
+        'description': 'Port of frontend-backend communication'
+    },
+    'host': {
+        'type': str,
+        'section': 'network',
+        'default': '127.0.0.1',
+        'description': 'Host of frontend-backend communication'
+    },
+    'ipc_timeout': {
+        'type': CONVERTER.pos_float,
+        'section': 'network',
+        'default': 10,
+        'description': 'Timeout of frontend-backend communication (seconds). May cause error if not enough higher than player timeout'
     },
     'default_volume': {
-        'type': int,
+        'type': CONVERTER.percentage,
         'section': 'playback',
-        'default': 100
+        'default': 100,
+        'description': 'Volume on start (0~100)'
     },
     'default_shuffle': {
         'type': CONVERTER.boolean,
         'section': 'playback',
-        'default': False
+        'default': False,
+        'description': 'Shuffle mode on start'
+    },
+    'pos_memorize_interval': {
+        'type': CONVERTER.pos_float,
+        'section': 'playback',
+        'default': 5,
+        'description': 'Interval between update of the memorized position of the currently played song (seconds)'
+    },
+    'player_timeout': {
+        'type': CONVERTER.pos_float,
+        'section': 'playback',
+        'default': 1,
+        'description': 'Timeout of backend waiting for a player action to be completed. May cause error if not enough lower than IPC timeout'
     }
 }
 

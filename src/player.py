@@ -2,7 +2,8 @@ import vlc
 from time import sleep
 from src.log import setup_logger
 from src.constants import BACKEND_LOG_PATH
-from src.constants import PLAYER_TIMEOUT, PLAYER_POLL_INTERVAL
+from src.constants import PLAYER_POLL_INTERVAL
+from src.config import CONFIG
 from src.sentinels import SENTINELS
 
 logger = setup_logger(__name__, BACKEND_LOG_PATH)
@@ -13,7 +14,7 @@ class Player():
         self.player = self.instance.media_player_new()
         self.medias = []
         self.number = 0
-        self.volume = 100
+        self.volume = CONFIG.default_volume
         self.mute = False
         self._attach_events()
         logger.debug(f'{__name__} initiated')
@@ -26,7 +27,7 @@ class Player():
         self.buffer({'action':'next', 'on_end': True, 'source': 'player'})
 
     def _wait_state(self, target_states):
-        for i in range(int(PLAYER_TIMEOUT/PLAYER_POLL_INTERVAL)):
+        for i in range(int(CONFIG.player_timeout/PLAYER_POLL_INTERVAL)):
             state = self.player.get_state()
             if state in target_states:
                 return state
