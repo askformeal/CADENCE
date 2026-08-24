@@ -29,8 +29,8 @@
 - [X] Request validation with element types (IterType for list/tuple keys)
 - [X] PID file
 - [X] `lib.meta.read-file` command to set metadata by file
-- [ ] Configure system
-- [ ] Verify request is dict
+- [X] Configure system
+- [X] Verify request is dict
 - [ ] Bluetooth frontend
 - [ ] Tray icon frontend
 - [ ] TUI frontend

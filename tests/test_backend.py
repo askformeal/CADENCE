@@ -38,6 +38,12 @@ def test_missing_action_key(backend):
     assert 'action' in response['msg']
 
 
+def test_request_not_dict(backend):
+    response = backend.dispatch(['not', 'a', 'dict'])
+    assert response['code'] == 1
+    assert 'not a dictionary' in response['msg']
+
+
 def test_missing_required_key(backend):
     response = _request(backend, 'open')
     assert response['code'] == 1
