@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cadence"
-version = "0.27.0"
+version = "0.28.0"
 description = "Command-line Audio Decoding Engine with Navigation and Continuous Execution"
 readme = "README.md"
 license = "MIT"
@@ -24,7 +24,7 @@ cadence = "src.cli:main"
 include = ["src*"]
 
 [tool.bumpversion]
-current_version = "0.27.0"
+current_version = "0.28.0"
 [[tool.bumpversion.files]]
 filename = "src/__init__.py"
 search = "version = '{current_version}'"
