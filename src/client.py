@@ -11,6 +11,7 @@ logger = setup_logger(__name__, SOCKET_LOG_PATH)
 
 def send_request(expect_reset=False, **kwargs):
     try:
+        kwargs['token'] = CONFIG.frontend_token
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(CONFIG.ipc_timeout)
         sock.connect((CONFIG.frontend_host, CONFIG.frontend_port))

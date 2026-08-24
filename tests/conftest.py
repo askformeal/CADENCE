@@ -3,6 +3,16 @@ import wave
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def isolated_config(tmp_path, monkeypatch):
+    """Point CONFIG at a temp file so tests never read or write the real config.toml.
+
+    Patches src.config.CONFIG_PATH (config.py binds it from constants at import time),
+    so patching src.constants.CONFIG_PATH would NOT work.
+    """
+    monkeypatch.setattr('src.config.CONFIG_PATH', tmp_path / 'config.toml')
+
+
 @pytest.fixture
 def audio_file(tmp_path):
     """Generate a short silent WAV file so tests don't depend on real audio."""

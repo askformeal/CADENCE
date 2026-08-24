@@ -820,47 +820,52 @@ class Backend:
         return response
 
     def _process_request(self, request) -> dict | gen_response.Response:
-        action = request.get('action', None)        
-        if action is None:
-            logger.error('Not \"action\" key found in request')
-            return gen_response.MissingKey('all', 'action')
-        
+        token = request.get('token', '')
+        backend_token = CONFIG.backend_token
+        if backend_token != '' and token != backend_token:
+            return gen_response.AuthFailed()
         else:
-            keys = ACTION_KEYS.get(action, {})
+            action = request.get('action', None)
+            if action is None:
+                logger.error('Not \"action\" key found in request')
+                return gen_response.MissingKey('all', 'action')
+            
+            else:
+                keys = ACTION_KEYS.get(action, {})
 
-            expected_keys = set(keys.keys()) | NON_ACTION_KEYS
-            unexpected_keys = set(request.keys()) - expected_keys
-            if len(unexpected_keys) > 0:
-                logger.warning(f'Unexpected key(s) received: {unexpected_keys}')
+                expected_keys = set(keys.keys()) | NON_ACTION_KEYS
+                unexpected_keys = set(request.keys()) - expected_keys
+                if len(unexpected_keys) > 0:
+                    logger.warning(f'Unexpected key(s) received: {unexpected_keys}')
 
-            for key, info in keys.items():
-                key_type, is_required = info[:2]
-                value = request.get(key, SENTINELS.KEY_NOT_PROVIDED)
-                if value is SENTINELS.KEY_NOT_PROVIDED:
-                    if is_required:
-                        return gen_response.MissingKey(action, key)
-                    else:
-                        try:
-                            default_value = info[2]
-                        except IndexError:
-                            return gen_response.Failed(f'Value of key \"{key}\" was not provided and not default value is available. Please report this error')
+                for key, info in keys.items():
+                    key_type, is_required = info[:2]
+                    value = request.get(key, SENTINELS.KEY_NOT_PROVIDED)
+                    if value is SENTINELS.KEY_NOT_PROVIDED:
+                        if is_required:
+                            return gen_response.MissingKey(action, key)
                         else:
-                            request[key] = default_value
-                else:
-                    if isinstance(key_type, IterType): # (iter_type, element_type)
-                        # verify iterable type
-                        element_type = key_type.element_type
-                        if isinstance(value, (list, tuple)):
-                            for element in value:
-                                if not isinstance(element, element_type):
-                                    return gen_response.InvalidElementType(action, key, READABLE_TYPE_NAMES[element_type], type(element).__name__)
-                        elif not (value is None and not is_required):
-                            return gen_response.InvalidKeyType(action, key, READABLE_TYPE_NAMES[IterType], type(value).__name__)
-                        
-                    elif not isinstance(value, key_type) and not (value is None and not is_required): # None type acceptable for non-required keys even if not stated in ACTION_KEYS
-                        return gen_response.InvalidKeyType(action, key, READABLE_TYPE_NAMES[key_type], type(value).__name__)
+                            try:
+                                default_value = info[2]
+                            except IndexError:
+                                return gen_response.Failed(f'Value of key \"{key}\" was not provided and not default value is available. Please report this error')
+                            else:
+                                request[key] = default_value
+                    else:
+                        if isinstance(key_type, IterType): # (iter_type, element_type)
+                            # verify iterable type
+                            element_type = key_type.element_type
+                            if isinstance(value, (list, tuple)):
+                                for element in value:
+                                    if not isinstance(element, element_type):
+                                        return gen_response.InvalidElementType(action, key, READABLE_TYPE_NAMES[element_type], type(element).__name__)
+                            elif not (value is None and not is_required):
+                                return gen_response.InvalidKeyType(action, key, READABLE_TYPE_NAMES[IterType], type(value).__name__)
+                            
+                        elif not isinstance(value, key_type) and not (value is None and not is_required): # None type acceptable for non-required keys even if not stated in ACTION_KEYS
+                            return gen_response.InvalidKeyType(action, key, READABLE_TYPE_NAMES[key_type], type(value).__name__)
 
-            return request
+                return request
 
     def _open_song(self, song, cwd=None) -> gen_response.Response:
         info_to_set = None

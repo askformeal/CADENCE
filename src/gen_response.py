@@ -78,6 +78,10 @@ class Undefined(Response):
     def __init__(self):
         super().__init__('undefined response', code=3)
 
+class AuthFailed(Response):
+    def __init__(self):
+        super().__init__('authorization failed', code=5)
+
 class UnknownAction(Failed):
     def __init__(self, action, attachment=None, failed=None):
         super().__init__(f'unknown action received: \"{action}\"', attachment, failed)

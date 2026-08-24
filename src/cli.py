@@ -496,6 +496,12 @@ def main():
         elif code == 4:
             print(box('[Failed]: CADENCE backend is exiting'))
 
+        elif code == 5:
+            print(box('[Failed]: Token rejected, authorization failed'))
+
+        else:
+            print(box(f'[Failed]: Unknown response code \"{code}\"'))
+
         if len(failed) > 0:
             lines = [f'There are failed actions ({len(failed)}):\n']
             lines += list(map(lambda x: f'  {x['msg']}', failed))

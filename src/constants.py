@@ -85,6 +85,18 @@ CONFIG_SCHEME = {
         'default': 'J. Doe',
         'description': 'Name to show in the welcome message'
     },
+    'backend_token': {
+        'type': str,
+        'section': 'network',
+        'default': '',
+        'description': 'Token for backend to verify requests with. Empty means authentication is disabled'
+    },
+    'frontend_token': {
+        'type': str,
+        'section': 'network',
+        'default': '',
+        'description': 'Token for frontend to send with'
+    },
     'backend_port': { 
         'type': CONVERTER.port,
         'section': 'network',
@@ -278,7 +290,8 @@ ACTION_KEYS = {
 NON_ACTION_KEYS = {
     'action',
     'cwd',
-    'source'
+    'source',
+    'token'
 }
 
 ATTACHMENT_REQUIRED_ACTIONS = [

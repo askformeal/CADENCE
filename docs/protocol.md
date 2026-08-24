@@ -9,6 +9,7 @@ All communications between frontend and backend are sent in the format of JSON v
 - `action` The action to be conducted by the backend
 - `source` The frontend that send this request. See complete list at constants.py:SOURCES
 - `cwd` The current working directory of frontend. The missing of this key may cause error of a relative path is sent to back
+- `token` Required when the backend has a non-empty `backend_token`. Frontends read it from `frontend_token`. See the `config` section below.
 - Other keys depending on the action. A list of keys for each action can be seen at constants.py:ACTION_KEYS
 
 ## Response
@@ -22,6 +23,7 @@ Key: `code`
 - 2 Failed to connect to CADENCE backend. This response was not sent by backend but by client.py
 - 3 Default code, should not be used under any circumstances. Receiving this code means gen_response.py:Response._response was accidentally called outside the class.
 - 4 Exiting. Daemon-like frontend should exit immediately after receiving this code.
+- 5 Authorization failed. The request token did not match the backend token. Sent by backend when `backend_token` is set and the request carries no or a wrong token.
 
 ### Message
 
@@ -53,6 +55,8 @@ Read and modify the configuration file. These actions operate on the options def
 | Option | Type | Section | Default | Description |
 |---|---|---|---|---|
 | `username` | string | (root) | `J. Doe` | Name shown in the welcome message |
+| `backend_token` | string | network | `` | Token for backend to verify requests with. Empty means authentication is disabled |
+| `frontend_token` | string | network | `` | Token for frontend to send with |
 | `backend_port` | port (int > 0) | network | `17891` | Port for backend to listen on |
 | `backend_host` | string | network | `127.0.0.1` | Host for backend to listen on |
 | `frontend_port` | port (int > 0) | network | `17891` | Port for frontend to send requests to |
