@@ -20,6 +20,7 @@ from src.constants import MAIN_LOOP_INTERVAL, METADATA, FILE_META
 from src.constants import PLAY_DEAD_TIME
 from src.constants import AUDIO_EXTENSIONS, SOURCES, READABLE_TYPE_NAMES, SEARCH_META
 from src.config import CONFIG
+from src.config_manager import CONFIG_MANAGER
 from src.sentinels import SENTINELS
 from src.connection import recv_json, send_json
 from src import gen_response
@@ -795,42 +796,19 @@ class Backend:
 
             elif action == 'config.show':
                 option = request['option']
-                value, source = CONFIG.get_option(option)
-
-                if value is SENTINELS.UNKNOWN_OPTION:
-                    response = gen_response.OptionNotExist(f'get value of {option}')
-                else:
-                    source = {
-                        SENTINELS.FROM_DEFAULT: 'default value',
-                        SENTINELS.FROM_FILE: 'configure file'
-                    }[source]
-                    response = gen_response.Success(f'Got value of {option}', {'value': value, 'source': source})
+                response = CONFIG_MANAGER.get_option_info(option)
 
             elif action == 'config.set':
                 option = request['option']
                 value = request['value']
                 overwrite_corrupt = request['overwrite_corrupt']
 
-                result = CONFIG.set_option(option, value, overwrite_corrupt=overwrite_corrupt)
-                response = {
-                    SENTINELS.SUCCESS: gen_response.Success(f'Set value of {option} to \"{value}\"'),
-                    SENTINELS.UNKNOWN_OPTION: gen_response.OptionNotExist(f'set value of {option}'),
-                    SENTINELS.INVALID_CONFIG_FILE: gen_response.Failed(f'can not set value of option because configure file is corrupted. You can try again with the --overwrite-corrupt option to overwrite it'),
-                    SENTINELS.INVALID_OPTION_VALUE: gen_response.Failed(f'can not set value of option because the provided value is not valid'),
-                    SENTINELS.FILE_IO_FAILED: gen_response.Failed(f'can not set value of option because failed to write into configure file')
-                }[result]
+                response = CONFIG_MANAGER.set_option_value(option, value, overwrite_corrupt=overwrite_corrupt)
 
             elif action == 'config.unset':
                 option = request['option']
 
-                result = CONFIG.unset_option(option)
-                response = {
-                    SENTINELS.SUCCESS: gen_response.Success(f'Unset value of {option}'),
-                    SENTINELS.UNKNOWN_OPTION: gen_response.OptionNotExist(f'unset value of {option}'),
-                    SENTINELS.INVALID_CONFIG_FILE: gen_response.Failed(f'can not unset value of option because configure file is corrupted'),
-                    SENTINELS.OPTION_NOT_FOUND: gen_response.Failed(f'can not unset value of option because it is not set in configure file'),
-                    SENTINELS.FILE_IO_FAILED: gen_response.Failed(f'can not unset value of option because failed to write into configure file')
-                }[result]
+                response = CONFIG_MANAGER.unset_option(option)
 
             elif action == 'exit':
                 self.exit()
@@ -1319,8 +1297,8 @@ class Backend:
     def _listen(self):
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.settimeout(SERVER_TIMEOUT)
-        host = CONFIG.host
-        port = CONFIG.port
+        host = CONFIG.backend_host
+        port = CONFIG.backend_port
         try:
             server.bind((host, port))
         except OSError as e:

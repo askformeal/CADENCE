@@ -53,8 +53,10 @@ Read and modify the configuration file. These actions operate on the options def
 | Option | Type | Section | Default | Description |
 |---|---|---|---|---|
 | `username` | string | (root) | `J. Doe` | Name shown in the welcome message |
-| `port` | port (int > 0) | network | `17891` | Port of frontend-backend communication |
-| `host` | string | network | `127.0.0.1` | Host of frontend-backend communication |
+| `backend_port` | port (int > 0) | network | `17891` | Port for backend to listen on |
+| `backend_host` | string | network | `127.0.0.1` | Host for backend to listen on |
+| `frontend_port` | port (int > 0) | network | `17891` | Port for frontend to send requests to |
+| `frontend_host` | string | network | `127.0.0.1` | Host for frontend to send requests to |
 | `ipc_timeout` | positive float | network | `10` | Timeout of frontend-backend communication (seconds) |
 | `default_volume` | percentage (0~100) | playback | `100` | Volume on start |
 | `default_shuffle` | boolean | playback | `false` | Shuffle mode on start |
@@ -69,7 +71,7 @@ Effective timing differs per option. `host` and `port` are read when the backend
 
 Request keys: `option` (string, required).
 
-Success response attachment: `{"value": <converted value>, "source": "default value" | "configure file"}`. Unknown option is a failure.
+Success response attachment: `{"value": <converted value>, "source": "default value" | "configure file", "default": <default value>, "description": <option description>}`. Unknown option is a failure.
 
 #### config.set
 

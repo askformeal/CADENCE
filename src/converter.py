@@ -1,4 +1,3 @@
-from src.constants import MIN_TIMEOUT
 
 class Converter:
     def boolean(self, value):
@@ -23,6 +22,7 @@ class Converter:
 
     def pos_float(self, value):
         value = float(value)
+        from src.constants import MIN_TIMEOUT
         if value < MIN_TIMEOUT:
             raise ValueError
         else:

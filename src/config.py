@@ -21,7 +21,7 @@ class Config:
 
         except OSError as e:
             if isinstance(e, FileNotFoundError):
-                logger.info('Configure file not found')
+                logger.debug('Configure file not found')
             else:
                 logger.warning(f'Failed to access configure file: {e}')
             return SENTINELS.FILE_IO_FAILED
@@ -31,7 +31,7 @@ class Config:
             return SENTINELS.INVALID_CONFIG_FILE
 
         else:
-            logger.info(f'{count_dict(file_config)} options found in file')
+            logger.debug(f'{count_dict(file_config)} options found in file')
             return file_config
 
     def set_file(self, file_config):

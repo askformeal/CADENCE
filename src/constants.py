@@ -85,17 +85,29 @@ CONFIG_SCHEME = {
         'default': 'J. Doe',
         'description': 'Name to show in the welcome message'
     },
-    'port': { 
+    'backend_port': { 
         'type': CONVERTER.port,
         'section': 'network',
         'default': 17891, 
-        'description': 'Port of frontend-backend communication'
+        'description': 'Port for backend to listen on'
     },
-    'host': {
+    'backend_host': {
         'type': str,
         'section': 'network',
         'default': '127.0.0.1',
-        'description': 'Host of frontend-backend communication'
+        'description': 'Host for backend to listen on'
+    },
+    'frontend_port': { 
+        'type': CONVERTER.port,
+        'section': 'network',
+        'default': 17891, 
+        'description': 'Port for frontend to send requests to'
+    },
+    'frontend_host': {
+        'type': str,
+        'section': 'network',
+        'default': '127.0.0.1',
+        'description': 'Host for frontend to send requests to'
     },
     'ipc_timeout': {
         'type': CONVERTER.pos_float,

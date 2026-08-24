@@ -9,6 +9,7 @@ from src.sentinels import SENTINELS
 from src.client import send_request, test_alive
 from src.process import start, kill
 from src.constants import RESTART_NUM, RESTART_POLL_INTERVAL, ATTACHMENT_REQUIRED_ACTIONS
+from src.config_manager import CONFIG_MANAGER
 from src.utils import format_time, box
 
 class SongOutput:
@@ -265,16 +266,18 @@ def main():
 
     config_parser = command_sub.add_parser('config', help='Manage configuration')
     config_sub = config_parser.add_subparsers(dest='config_action', required=True)
+    config_parent = argparse.ArgumentParser(add_help=False)
+    config_parent.add_argument('-d', '--direct', action='store_true', help='Bypass CADENCE backend and operate on local configure file directly')
 
-    config_show_parser = config_sub.add_parser('show', help='Show value of an option')
+    config_show_parser = config_sub.add_parser('show', parents=[config_parent], help='Show value of an option')
     config_show_parser.add_argument('option', type=str, help='Option to show')
 
-    config_set_parser = config_sub.add_parser('set', help='Set value of an option. You might need to reboot CADENCE backend to make some options take effect')
+    config_set_parser = config_sub.add_parser('set', parents=[config_parent], help='Set value of an option. You might need to reboot CADENCE backend to make some options take effect')
     config_set_parser.add_argument('option', type=str, help='Option to set')
     config_set_parser.add_argument('value', type=str, help='Value to set')
     config_set_parser.add_argument('--overwrite-corrupt', action='store_true', help='Overwrite corrupted configure file.')
 
-    config_unset_parser = config_sub.add_parser('unset', help='Remove the setting of an option from configure file and fallback to default value')
+    config_unset_parser = config_sub.add_parser('unset', parents=[config_parent], help='Remove the setting of an option from configure file and fallback to default value')
     config_unset_parser.add_argument('option', type=str, help='Option to unset')
 
     exit_parser = command_sub.add_parser('exit', help='Exit CADENCE backend')
@@ -323,7 +326,7 @@ def main():
             args['action'] = f"{args['action']}.{args['config_action']}"
             del args['config_action']
 
-        if  args['action'] == 'reboot':
+        if args['action'] == 'reboot':
             args['action'] = 'exit'
             is_reboot = True      
 
@@ -340,7 +343,16 @@ def main():
 
 # -------------------------------------- Pre-response --------------------------------------
 
-        response = send_request(**_wrap_request(args))
+        if args.get('direct', False):
+            if args['action'] == 'config.show':
+                response = CONFIG_MANAGER.get_option_info(args['option'])
+            elif args['action'] == 'config.set':
+                response = CONFIG_MANAGER.set_option_value(args['option'], args['value'], args['overwrite_corrupt'])
+            elif args['action'] == 'config.unset':
+                response = CONFIG_MANAGER.unset_option(args['option'])
+            response = dict(response)
+        else:
+            response = send_request(**_wrap_request(args))
 
 # -------------------------------------- Post-response --------------------------------------
 
@@ -459,7 +471,16 @@ def main():
                     elif action == 'config.show':
                         value = attachment.get('value', 'N/A')
                         source = attachment.get('source', 'N/A')
-                        print(box(f'{args['option']}: {value} | loaded from {source}'))
+                        default = attachment.get('default', 'N/A')
+                        description = attachment.get('description', 'No Description')
+                        
+                        lines = [
+                            f'Name: {args['option']}',
+                            f'Value: {value} | from: {source}',
+                            f'Default Value: {default}',
+                            f'\n\"{description}\"'
+                            ]
+                        print(box('\n'.join(lines)))
 
         elif code == 1:
             print(box(f'[Failed]: {response['msg']}'))

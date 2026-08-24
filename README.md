@@ -99,7 +99,22 @@ python -m src
 | `cadence config set <option> <value>` | Write an option to the config file (`--overwrite-corrupt` to replace a corrupted file) |
 | `cadence config unset <option>` | Remove an option from the config file (falls back to default) |
 
-Config file: `%LOCALAPPDATA%\cadence\cadence\config.toml` (Windows). Full option list and semantics: [docs/protocol.md](docs/protocol.md).
+`config` commands accept `-d/--direct` to bypass the backend and edit the config file locally (works when the backend is not running).
+
+Config file: `%LOCALAPPDATA%\cadence\cadence\config.toml` (Windows). Options:
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `username` | `J. Doe` | Name shown in the welcome message |
+| `backend_host` / `backend_port` | `127.0.0.1` / `17891` | Address the backend listens on |
+| `frontend_host` / `frontend_port` | `127.0.0.1` / `17891` | Address the frontend sends requests to |
+| `ipc_timeout` | `10` | Timeout of frontend-backend communication (seconds) |
+| `default_volume` | `100` | Volume on start (0~100) |
+| `default_shuffle` | `false` | Shuffle mode on start |
+| `player_timeout` | `1` | Timeout of backend waiting for a player action (seconds) |
+| `pos_memorize_interval` | `5` | Interval of memorized position updates (seconds) |
+
+Values are validated on write; invalid ones are rejected. The default value is used when an option is not set or the stored value is invalid.
 
 ## Architecture
 
