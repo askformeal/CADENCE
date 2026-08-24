@@ -83,7 +83,7 @@ CONFIG_SCHEME = {
         'type': str,
         'section': SENTINELS.ROOT_SECTION,
         'default': 'J. Doe',
-        'description': 'Name to show in the welcome message'
+        'description': 'Username to show in the welcome message'
     },
     'backend_token': {
         'type': str,
@@ -304,7 +304,9 @@ ATTACHMENT_REQUIRED_ACTIONS = [
     'lib.scan',
     'lib.alias.list',
     'lib.playlist.list',
+    'config.list',
     'config.show',
+    'config.path'
 ]
 
 METADATA = ['name', 'artist', 'album', 'duration', 'bitrate', 'sample_rate', 'channels']

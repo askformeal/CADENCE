@@ -95,9 +95,12 @@ python -m src
 
 | Command                        | Description                                            |
 | ------------------------------ | ------------------------------------------------------ |
-| `cadence config show <option>` | Show an option's value and its source (default/file)   |
+| `cadence config list` | Show information of all options |
+| `cadence config show <option>` | Show information of an option |
 | `cadence config set <option> <value>` | Write an option to the config file (`--overwrite-corrupt` to replace a corrupted file) |
 | `cadence config unset <option>` | Remove an option from the config file (falls back to default) |
+| `cadence config open` | Open the config file with the system's default application (creates an empty one if missing) |
+| `cadence config path` | Show the path of the config file |
 
 `config` commands accept `-d/--direct` to bypass the backend and edit the config file locally (works when the backend is not running).
 

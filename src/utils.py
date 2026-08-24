@@ -1,7 +1,10 @@
 # divide into separate files (time_utils.py, etc) if things got messy
 import os
+import shutil
+import subprocess
 from pathlib import Path
 import re
+import sys
 from typing import Literal
 from wcwidth import wcswidth
 
@@ -94,3 +97,21 @@ def count_dict(obj):
         for value in obj.values():
             total += count_dict(value)
         return total
+
+def open_file(path):
+    if Path(path).is_file():
+        if sys.platform == 'win32':
+            os.startfile(path)
+            return SENTINELS.SUCCESS
+        else:
+            if sys.platform == 'darwin':
+                opener = shutil.which('open')
+            else:
+                opener = shutil.which('xdg-open')
+            if opener is None:
+                return SENTINELS.NO_OPENER
+            else:
+                subprocess.run([opener, path])
+                return SENTINELS.SUCCESS
+    else:
+        return SENTINELS.FILE_IO_FAILED

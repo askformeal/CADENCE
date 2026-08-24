@@ -794,6 +794,9 @@ class Backend:
                 else:
                     response = gen_response.PlaylistNotExist(f"delete playlist \"{request['playlist']}\"")
 
+            elif action == 'config.list':
+                response = CONFIG_MANAGER.get_all_option_info()
+
             elif action == 'config.show':
                 option = request['option']
                 response = CONFIG_MANAGER.get_option_info(option)
@@ -809,6 +812,12 @@ class Backend:
                 option = request['option']
 
                 response = CONFIG_MANAGER.unset_option(option)
+
+            elif action == 'config.open':
+                response = CONFIG_MANAGER.open_config_file()
+
+            elif action == 'config.path':
+                response = CONFIG_MANAGER.get_path()
 
             elif action == 'exit':
                 self.exit()

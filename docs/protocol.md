@@ -71,11 +71,17 @@ The default value does not go through the type converter; values from the file a
 
 Effective timing differs per option. `host` and `port` are read when the backend binds its socket; `default_volume`, `default_shuffle` and `username` are read at backend construction — changes to these need a backend restart. `ipc_timeout` is read on every connection, `player_timeout` on every player action, and `pos_memorize_interval` on every loop iteration — changes take effect without restart.
 
+#### config.list
+
+Request keys: none.
+
+Success response attachment: a list of option info dicts (one per option in `CONFIG_SCHEME`), each shaped like `config.show`'s attachment.
+
 #### config.show
 
 Request keys: `option` (string, required).
 
-Success response attachment: `{"value": <converted value>, "source": "default value" | "configure file", "default": <default value>, "description": <option description>}`. Unknown option is a failure.
+Success response attachment: `{"name": <option name>, "value": <converted value>, "source": "default value" | "configure file", "default": <default value>, "description": <option description>}`. Unknown option is a failure.
 
 #### config.set
 
@@ -88,6 +94,18 @@ Writes the option to the config file. Invalid values (wrong type or out of range
 Request keys: `option` (string, required).
 
 Removes the option from the config file so it falls back to its default value.
+
+#### config.open
+
+Request keys: none.
+
+Opens the config file with the system's default application. If the file does not exist, an empty one is created first, then opened. Failure responses: no opener available on this platform, or failed to create the file.
+
+#### config.path
+
+Request keys: none.
+
+Success response attachment: the path of the config file (string).
 
 ## The REAL Response codes
 

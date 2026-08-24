@@ -269,7 +269,9 @@ def main():
     config_parent = argparse.ArgumentParser(add_help=False)
     config_parent.add_argument('-d', '--direct', action='store_true', help='Bypass CADENCE backend and operate on local configure file directly')
 
-    config_show_parser = config_sub.add_parser('show', parents=[config_parent], help='Show value of an option')
+    config_list_parser = config_sub.add_parser('list', parents=[config_parent], help='Show information all options')
+
+    config_show_parser = config_sub.add_parser('show', parents=[config_parent], help='Show information of an option')
     config_show_parser.add_argument('option', type=str, help='Option to show')
 
     config_set_parser = config_sub.add_parser('set', parents=[config_parent], help='Set value of an option. You might need to reboot CADENCE backend to make some options take effect')
@@ -279,6 +281,10 @@ def main():
 
     config_unset_parser = config_sub.add_parser('unset', parents=[config_parent], help='Remove the setting of an option from configure file and fallback to default value')
     config_unset_parser.add_argument('option', type=str, help='Option to unset')
+
+    config_open_parser = config_sub.add_parser('open', parents=[config_parent], help='Open configure file with system\'s default application')
+
+    config_path_parser = config_sub.add_parser('path', parents=[config_parent], help='Show path of configure file')
 
     exit_parser = command_sub.add_parser('exit', help='Exit CADENCE backend')
 
@@ -344,12 +350,18 @@ def main():
 # -------------------------------------- Pre-response --------------------------------------
 
         if args.get('direct', False):
-            if args['action'] == 'config.show':
+            if args['action'] == 'config.list':
+                response = CONFIG_MANAGER.get_all_option_info()
+            elif args['action'] == 'config.show':
                 response = CONFIG_MANAGER.get_option_info(args['option'])
             elif args['action'] == 'config.set':
                 response = CONFIG_MANAGER.set_option_value(args['option'], args['value'], args['overwrite_corrupt'])
             elif args['action'] == 'config.unset':
                 response = CONFIG_MANAGER.unset_option(args['option'])
+            elif args['action'] == 'config.open':
+                response = CONFIG_MANAGER.open_config_file()
+            elif args['action'] == 'config.path':
+                response = CONFIG_MANAGER.get_path()
             response = dict(response)
         else:
             response = send_request(**_wrap_request(args))
@@ -467,20 +479,15 @@ def main():
                                     print(f'  {playlist['name']}')
                             else:
                                 print('No playlists in library')
+                    elif action == 'config.list':
+                        for option_info in attachment:
+                            _show_option_info(option_info)
 
                     elif action == 'config.show':
-                        value = attachment.get('value', 'N/A')
-                        source = attachment.get('source', 'N/A')
-                        default = attachment.get('default', 'N/A')
-                        description = attachment.get('description', 'No Description')
-                        
-                        lines = [
-                            f'Name: {args['option']}',
-                            f'Value: {value} | from: {source}',
-                            f'Default Value: {default}',
-                            f'\n\"{description}\"'
-                            ]
-                        print(box('\n'.join(lines)))
+                        _show_option_info(attachment)
+
+                    elif action == 'config.path':
+                        print(box(attachment))
 
         elif code == 1:
             print(box(f'[Failed]: {response['msg']}'))
@@ -537,6 +544,21 @@ def _show_notifies(notifies=None):
         ]
         lines += list(map(lambda x: f'  {x}', notifies))
         print(box('\n'.join(lines)))
+
+def _show_option_info(info):
+    name = info.get('name', 'N/A')
+    value = info.get('value', 'N/A')
+    source = info.get('source', 'N/A')
+    default = info.get('default', 'N/A')
+    description = info.get('description', 'No Description')
+    
+    lines = [
+        f'Name: {name}',
+        f'Value: {value} | from: {source}',
+        f'Default Value: {default}',
+        f'\n\"{description}\"'
+        ]
+    print(box('\n'.join(lines)))
 
 def _show_song_info(info, empty_msg='No information to be shown', show_aliases=False, show_playlists=False, show_num=False, show_tech=False):
     if not isinstance(info, (list, tuple)):
