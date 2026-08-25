@@ -61,6 +61,15 @@ PLAYER_POLL_INTERVAL = 0.05
 
 MIN_TIMEOUT = 0.01
 
+HOTKEY_COOL_DOWN = 0.5
+
+MEDIA_KEY_TO_ACTION = {
+    0xb0: 'next',
+    0xb1: 'prev',
+    0xb2: 'stop',
+    0xb3: 'toggle',
+}
+
 READABLE_TYPE_NAMES = {
     str: 'string',
     int: 'integer',
@@ -126,6 +135,12 @@ CONFIG_SCHEME = {
         'section': 'network',
         'default': 10,
         'description': 'Timeout of frontend-backend communication (seconds). May cause error if not enough higher than player timeout'
+    },
+    'hotkey': {
+        'type': CONVERTER.boolean,
+        'section': 'service',
+        'default': True,
+        'description': 'Whether to start hotkey service on start backend'
     },
     'default_volume': {
         'type': CONVERTER.percentage,

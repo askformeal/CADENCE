@@ -1,11 +1,11 @@
-from time import sleep
+import time
 from threading import Thread
 
 from pynput import keyboard
 
 from src.log import setup_logger
 from src.constants import HOTKEY_LOG_PATH
-from src.constants import HEARTBEAT_POLL_INTERVAL
+from src.constants import HEARTBEAT_POLL_INTERVAL, HOTKEY_COOL_DOWN, MEDIA_KEY_TO_ACTION
 from src.client import test_heartbeat, confirm_dead, send_request
 
 logger = setup_logger(__name__, HOTKEY_LOG_PATH)
@@ -13,13 +13,14 @@ logger = setup_logger(__name__, HOTKEY_LOG_PATH)
 class Hotkey:
     def __init__(self):
         self.running = True
+        self.cool_down = {}
         logger.debug('Hotkey frontend initialized')
 
     def run(self):
         Thread(target=self._listen, daemon=True).start()
         try:
             while self.running:
-                sleep(HEARTBEAT_POLL_INTERVAL)
+                time.sleep(HEARTBEAT_POLL_INTERVAL)
                 code = test_heartbeat()
                 self._handle_code(code)
                 
@@ -32,25 +33,32 @@ class Hotkey:
         elif code != 0:
             self.exit()
 
-    def _on_release(self, key):
-        action = None
-        if key == keyboard.Key.media_next:
-            action = 'next'
-        elif key == keyboard.Key.media_previous:
-            action = 'prev'
-        elif key == keyboard.Key.media_stop:
-            action = 'stop'
-        elif key == keyboard.Key.media_play_pause:
-            action = 'toggle'
+    def _get_vk(self, key):
+        return getattr(getattr(key, 'value', key), 'vk', None)
 
-        if action is not None:
-            logger.info(f'action triggered: {action}')
-            response = send_request(action=action, source='hotkey')
-            self._handle_code(response['code'])
+    def _on_press(self, key):
+        try:
+            vk = self._get_vk(key)
+            if vk in MEDIA_KEY_TO_ACTION.keys():
+                last_press_time = self.cool_down.get(vk, 0)
+
+                if (time.time() - last_press_time) > HOTKEY_COOL_DOWN:
+                    self.cool_down[vk] = time.time()
+                    action = MEDIA_KEY_TO_ACTION[vk]
+                    logger.info(f'action triggered: {action}')
+                    response = send_request(action=action, source='hotkey')
+                    self._handle_code(response['code'])
+        except Exception as e:
+            logger.exception('An error occurred during handling a key press')
+
+    def _on_release(self, key):
+        vk = self._get_vk(key)
+        if vk in MEDIA_KEY_TO_ACTION.keys():
+            self.cool_down[vk] = 0
 
     def _listen(self):
         logger.info('Started to listen hotkeys') # yep. It's definitely listening
-        with keyboard.Listener(on_release=self._on_release) as listener:
+        with keyboard.Listener(on_press=self._on_press, on_release=self._on_release) as listener:
             listener.join()
 
     def exit(self, force=False): # I might need it. What did I say.

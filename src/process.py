@@ -8,6 +8,7 @@ import psutil
 
 from src.client import test_alive
 from src.constants import STARTER_RETRY, STARTER_CHECK_INTERVAL, TERMINATE_TIMEOUT
+from src.config import CONFIG
 from src.sentinels import SENTINELS
 from src.pid import get_pid, remove_pid
 
@@ -16,7 +17,8 @@ def start(**kwargs):
         return SENTINELS.BACKEND_ALREADY_RUNNING
     else:
         _spawn('src.backend', **kwargs)
-        _spawn('src.hotkey')
+        if CONFIG.hotkey:
+            _spawn('src.hotkey')
         for i in range(STARTER_RETRY):
             if test_alive():
                 return SENTINELS.BACKEND_STARTED
