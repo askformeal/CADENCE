@@ -2,7 +2,7 @@ import sqlite3
 import threading
 
 from src.log import setup_logger
-from src.constants import BACKEND_LOG_PATH
+from src.constants import BACKEND_LOG_PATH, SILENT_LOG_LEVEL
 from src.constants import METADATA
 from src.sentinels import SENTINELS
 
@@ -10,6 +10,7 @@ logger = setup_logger(__name__, BACKEND_LOG_PATH)
 
 class Database:
     def __init__(self, database_path):
+        self.old_level = logger.level
         self._lock = threading.Lock()
 
         try:
@@ -23,6 +24,13 @@ class Database:
             self.cursor = self.connection.cursor()
             self._init_database()
             logger.debug(f'{__name__} initiated')
+
+    def silence_on(self):
+        self.old_level = logger.level
+        logger.setLevel(SILENT_LOG_LEVEL)
+
+    def silence_off(self):
+        logger.setLevel(self.old_level)
 
     def _init_database(self):
 

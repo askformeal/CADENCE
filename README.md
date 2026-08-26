@@ -18,7 +18,7 @@ Retrieves collections of mechanically-represented wave data from persistent stor
 - Dev mode — isolated development database
 - Volume and mute control
 - Hotkey frontend (pynput)
-- Tray icon frontend (pystray)
+- Tray icon frontend (pystray): playback controls, song/playlist switching, volume presets, now-playing tooltip and error indicator
 - Socket-based backend/frontend architecture (see [docs/protocol.md](docs/protocol.md))
 
 ## Installation
@@ -120,10 +120,21 @@ Config file: `%LOCALAPPDATA%\cadence\cadence\config.toml` (Windows). Options:
 
 Values are validated on write; invalid ones are rejected. The default value is used when an option is not set or the stored value is invalid.
 
+### Tray icon
+
+The tray icon starts with the backend (unless the `tray` config option is off) and offers:
+
+- Now-playing label and dynamic tooltip (song name + player status)
+- Play/Pause (double-click), Previous/Next, Stop, Dice, Replay
+- Switch submenu — jump to any song in the current playlist
+- Playlists submenu — open any library playlist by name
+- Volume presets (0/25/50/75/100%), Mute, checkable Shuffle/Loop states
+- The icon switches to an error variant for 1.5 s after a failed request
+
 ## Architecture
 
 - **Backend** (`src/backend.py`) — owns the VLC player and the SQLite database, listens on `127.0.0.1:17891` for JSON requests over a socket.
-- **Frontend** (`src/cli.py`) — the `cadence` CLI. Sends action requests to the backend and formats responses.
+- **Frontends** — `src/cli.py` (the `cadence` CLI), `src/hotkey.py` (media key hotkeys), `src/tray.py` (system tray icon). They send action requests to the backend and format responses.
 - **Protocol** — all communication is JSON over a length-prefixed socket connection. See [docs/protocol.md](docs/protocol.md).
 
 ## Data
@@ -142,7 +153,7 @@ Log file location (platform-dependent, managed by platformdirs):
 | Linux    | `$XDG_STATE_HOME/cadence/log/cadence.log`, defaults to `~/.local/state/cadence/log/cadence.log` |
 | macOS    | `~/Library/Logs/cadence/cadence.log`                                                              |
 
-Three log files: `cadence.log` (backend), `cadence-socket.log` (client/connection), `cadence-hotkey.log` (hotkey frontend).
+Log files: `cadence.log` (backend), `cadence-socket.log` (client/connection), `cadence-hotkey.log` (hotkey frontend), `cadence-tray.log` (tray frontend), plus `cadence-config.log` and `cadence-pid.log`.
 
 ## TODO
 

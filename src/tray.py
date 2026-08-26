@@ -1,12 +1,12 @@
 from importlib.resources import files
 from threading import Thread
-from time import sleep
+from time import sleep, time
 
 from pystray import Icon, Menu, MenuItem
 from PIL import Image
 
 from src.log import setup_logger
-from src.constants import ICON_FILENAME, HEARTBEAT_POLL_INTERVAL, TRAY_POLL_INTERVAL
+from src.constants import ICON_FILENAME, ERROR_ICON_FILENAME, HEARTBEAT_POLL_INTERVAL, TRAY_POLL_INTERVAL, TRAY_ERROR_DISPLAY_TIME
 from src.constants import TRAY_LOG_PATH
 from src.client import send_request, test_heartbeat, handle_code
 from src.song_output import SongOutput
@@ -19,9 +19,13 @@ class Label(MenuItem):
 class Tray(Icon):
     def __init__(self):
         self.running = True
-        image = Image.open((files('res') / ICON_FILENAME).open('rb'))
-        super().__init__('cadence', image)
+        self.ok_icon = Image.open((files('res') / ICON_FILENAME).open('rb'))
+        self.error_icon = Image.open((files('res') / ERROR_ICON_FILENAME).open('rb'))
+
+        super().__init__('cadence', self.ok_icon)
         self._last_sig = None
+        self.error_time = 0
+        self.is_error_icon = False
         logger.debug(f'{__name__} initiated')
 
     def _update(self):
@@ -29,7 +33,9 @@ class Tray(Icon):
             try:
                 title = 'CADENCE'
                 
-                playlist_sub_menu = Menu(Label('---'))
+                songs_sub_menu = Menu(Label('---'))
+                playlists_sub_menu = Menu(Label('---'))
+
                 self._mute = None
                 self._shuffle = None
                 self._loop = None
@@ -48,30 +54,53 @@ class Tray(Icon):
                     if status.loop_raw is not None:
                         self._loop = status.loop_raw # fucking lying pystray only accepts nones and callbacks for checked for some reason
 
-                playlist = self._send_tray_request('list', silent=True)
-                if playlist is not None:
-                    if len(playlist) == 0:
-                        playlist_sub_menu = Menu(Label('Empty'))
+                current_songs = self._send_tray_request('list', silent=True)
+                if current_songs is not None:
+                    if len(current_songs) == 0:
+                        songs_sub_menu = Menu(Label('Empty'))
                     else:
                         song_buttons = []
-                        for i, song in enumerate(playlist):
+                        for i, song in enumerate(current_songs):
                             name = SongOutput(song).display_name
                             if name is None:
                                 name = 'N/A'
                             song_buttons.append(MenuItem(f'{i+1}. {name}', lambda *_, n=i+1: self._send_tray_request('switch', number=n)))
-                        playlist_sub_menu = Menu(*song_buttons)                    
-                        
+                        songs_sub_menu = Menu(*song_buttons)
+
+                playlists = self._send_tray_request('lib.playlist.list', silent=True)
+                if playlists is not None:
+                    if len(playlists) == 0:
+                        playlists_sub_menu = Menu(Label('Empty'))
+                    else:
+                        playlist_buttons = []
+                        for playlist in playlists:
+                            name = playlist['name']
+                            playlist_buttons.append(MenuItem(name, lambda *_, x=name: self._send_tray_request('open', song=x)))
+                        playlists_sub_menu = Menu(*playlist_buttons)
 
                 menu = Menu(
+                    Label(title),
                     MenuItem('Play/Pause', lambda *_: self._send_tray_request('toggle'), default=True),
                     MenuItem('Previous Song', lambda *_: self._send_tray_request('prev')),
                     MenuItem('Next Song', lambda *_: self._send_tray_request('next')),
-                    MenuItem('Switch', playlist_sub_menu),
+                    MenuItem('Switch', songs_sub_menu),
+                    MenuItem('Dice', lambda *_: self._send_tray_request('dice')),
                     MenuItem('Stop', lambda *_: self._send_tray_request('stop')),
+                    MenuItem('Replay', lambda *_: self._send_tray_request('replay')),
                     Menu.SEPARATOR,
-                    MenuItem('Mute', lambda *_: self._send_tray_request('mute'), checked=lambda *_: self._mute),
+                    MenuItem('Playlists', playlists_sub_menu),
+                    Menu.SEPARATOR,
                     MenuItem('Shuffle', lambda *_: self._send_tray_request('shuffle'), checked=lambda *_: self._shuffle),
                     MenuItem('Loop', lambda *_: self._send_tray_request('loop'), checked=lambda *_: self._loop),
+                    Menu.SEPARATOR,
+                    MenuItem('Mute', lambda *_: self._send_tray_request('mute'), checked=lambda *_: self._mute),
+                    MenuItem('Volume', Menu(
+                        MenuItem('0%', lambda *_: self._send_tray_request('volume', volume=0)),
+                        MenuItem('25%', lambda *_: self._send_tray_request('volume', volume=25)),
+                        MenuItem('50%', lambda *_: self._send_tray_request('volume', volume=50)),
+                        MenuItem('75%', lambda *_: self._send_tray_request('volume', volume=75)),
+                        MenuItem('100%', lambda *_: self._send_tray_request('volume', volume=100)),
+                    )),
                     Menu.SEPARATOR,
                     MenuItem('Quit Tray', lambda *_: self.exit()),
                     MenuItem('Exit CADENCE', lambda *_: self._send_tray_request('exit')),
@@ -82,6 +111,15 @@ class Tray(Icon):
                 if sig != self._last_sig:
                     self._last_sig = sig
                     self.menu = menu
+
+                if (time() - self.error_time) < TRAY_ERROR_DISPLAY_TIME:
+                    if not self.is_error_icon:
+                        self.icon = self.error_icon
+                        self.is_error_icon = True
+
+                elif self.is_error_icon:
+                    self.icon = self.ok_icon
+                    self.is_error_icon = False
                 
                 sleep(TRAY_POLL_INTERVAL)
             except Exception as e:
@@ -90,6 +128,8 @@ class Tray(Icon):
     def _send_tray_request(self, action, silent=False, **kwargs):
         request = {'action': action, 'source': 'tray', 'notify_support': False, 'silent': silent}
         response = send_request(**request, **kwargs)
+        if response.get('code', None) != 0:
+            self.error_time = time()
         if not silent:
             logger.info(f'Sent request: {request}, response received: {response}')
         handle_code(response.get('code', None), self.exit)

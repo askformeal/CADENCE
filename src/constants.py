@@ -15,6 +15,7 @@ ENCODING = 'utf-8'
 # Paths
 
 ICON_FILENAME = 'icon.ico'
+ERROR_ICON_FILENAME = 'icon_error.ico'
 
 dirs = PlatformDirs('cadence', ensure_exists=True)
 
@@ -67,6 +68,8 @@ PLAYER_POLL_INTERVAL = 0.05
 MIN_TIMEOUT = 0.01
 
 HOTKEY_COOL_DOWN = 0.5
+
+TRAY_ERROR_DISPLAY_TIME = 1.5
 
 MEDIA_KEY_TO_ACTION = {
     0xb0: 'next',

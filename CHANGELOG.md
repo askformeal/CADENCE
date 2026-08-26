@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [0.31.0] - 2026-08-26
+
+### Added
+
+- Tray menu expanded: now-playing label at the top, `Dice` and `Replay` items, `Playlists` submenu (open any library playlist by name), `Volume` presets submenu (0/25/50/75/100%), checkable `Mute`/`Shuffle`/`Loop` states.
+- Error indicator: the tray icon switches to an error variant for 1.5 s (`TRAY_ERROR_DISPLAY_TIME`) after any failed request.
+- Multi-size tray icon set (`res/icon.ico`, 16/24/32/48/64/256 px) plus `res/icon_error.ico`.
+- Database logger participates in the silent-request mechanism (`Database.silence_on`/`silence_off`), so high-frequency polling no longer floods the backend log with per-query lines.
+
+### Changed
+
+- Silent-request log suppression now starts before dispatch, covering the whole request processing window (backend and database loggers).
+
 ## [0.30.0] - 2026-08-26
 
 ### Added

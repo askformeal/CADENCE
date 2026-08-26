@@ -132,19 +132,23 @@ class Backend:
             old_level = logger.level
             try:
                 request, connection = self.dispatch_buffer.get()
+
                 if request is SENTINELS.EXIT_FLUSHING:
                     break
+
+                silent = request.get('silent', False)
+                if silent:
+                    old_level = logger.level
+                    logger.setLevel(SILENT_LOG_LEVEL)
+                    self.database.silence_on()
+
                 try:
                     response = self.dispatch(request)
                 except Exception as e:
                     logger.exception(f'Exception raised when dispatching request')
                     response = gen_response.Failed(f'a CADENCE backend error occurred during dispatching of request: \"{e}\"')
 
-                silent = request.get('silent', False)
 
-                if silent:
-                    old_level = logger.level
-                    logger.setLevel(SILENT_LOG_LEVEL)
 
                 if connection is not None and request.get('notify_support', False):
                     response.notifies = self.notifies.copy()
@@ -166,6 +170,7 @@ class Backend:
             finally:
                 if silent:
                     logger.setLevel(old_level)
+                    self.database.silence_off()
 
     def dispatch(self, request):
         response = gen_response.Undefined()
