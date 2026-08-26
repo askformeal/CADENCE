@@ -18,6 +18,7 @@ Retrieves collections of mechanically-represented wave data from persistent stor
 - Dev mode — isolated development database
 - Volume and mute control
 - Hotkey frontend (pynput)
+- Tray icon frontend (pystray)
 - Socket-based backend/frontend architecture (see [docs/protocol.md](docs/protocol.md))
 
 ## Installation
@@ -146,6 +147,10 @@ Three log files: `cadence.log` (backend), `cadence-socket.log` (client/connectio
 ## TODO
 
 See [TODO.md](TODO.md) for planned features.
+
+## Credits
+
+Icon: [Cadence icons created by Three musketeers - Flaticon](https://www.flaticon.com/free-icons/cadence)
 
 ## License
 

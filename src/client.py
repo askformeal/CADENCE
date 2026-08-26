@@ -40,7 +40,7 @@ def send_request(expect_reset=False, **kwargs):
         }
 
 def test_alive():
-    response = send_request(action='test_alive', source='alive', expect_reset=True)
+    response = send_request(action='test_alive', source='alive', notify_support=False, expect_reset=True)
     return response['code'] != 2
 
 def test_heartbeat():
@@ -53,3 +53,17 @@ def confirm_dead():
         if test_heartbeat() == 0:
             return False # Brain~~~~~~
     return True
+
+def handle_code(code, callback):
+    if code == 4:
+        logger.info('Backend existing')
+        callback()
+    elif code == 5:
+        logger.info('Authorization failed')
+        callback()
+    elif code == 2:
+        if confirm_dead():
+            logger.info('Death confirmed')
+            callback()
+        else:
+            logger.info('Heartbeat resumed')

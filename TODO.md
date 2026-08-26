@@ -31,10 +31,10 @@
 - [X] `lib.meta.read-file` command to set metadata by file
 - [X] Configure system
 - [X] Verify request is dict
-- [ ] Bluetooth frontend
-- [ ] Tray icon frontend
+- [X] Tray icon frontend
 - [ ] TUI frontend
 - [ ] HTTP frontend
+- [ ] Bluetooth frontend
 - [ ] Advanced library management
   - [ ] Regex matching (not now)
   - [ ] Interactive management (not now)

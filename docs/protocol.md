@@ -10,6 +10,8 @@ All communications between frontend and backend are sent in the format of JSON v
 - `source` The frontend that send this request. See complete list at constants.py:SOURCES
 - `cwd` The current working directory of frontend. The missing of this key may cause error of a relative path is sent to back
 - `token` Required when the backend has a non-empty `backend_token`. Frontends read it from `frontend_token`. See the `config` section below.
+- `silent` Optional. When true, the backend skips routine INFO logging for this request and its response. Intended for high-frequency polling (the tray polls `status`/`list` with it); errors are still logged.
+- `notify_support` Optional. When true, the backend attaches any pending notifies to this request's response and clears them. Only frontends that consume notifies should set it (the CLI does; the tray and hotkey explicitly don't).
 - Other keys depending on the action. A list of keys for each action can be seen at constants.py:ACTION_KEYS
 
 ## Response
@@ -62,6 +64,8 @@ Read and modify the configuration file. These actions operate on the options def
 | `frontend_port` | port (int > 0) | network | `17891` | Port for frontend to send requests to |
 | `frontend_host` | string | network | `127.0.0.1` | Host for frontend to send requests to |
 | `ipc_timeout` | positive float | network | `10` | Timeout of frontend-backend communication (seconds) |
+| `hotkey` | boolean | service | `true` | Whether to start the hotkey service on backend start |
+| `tray` | boolean | service | `true` | Whether to start the system tray icon service on backend start |
 | `default_volume` | percentage (0~100) | playback | `100` | Volume on start |
 | `default_shuffle` | boolean | playback | `false` | Shuffle mode on start |
 | `pos_memorize_interval` | positive float | playback | `5` | Interval of memorized position updates (seconds) |

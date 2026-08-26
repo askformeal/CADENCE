@@ -1,5 +1,33 @@
 # CHANGELOG
 
+## [0.29.0] - 2026-08-26
+
+### Added
+
+- System tray icon frontend (`src/tray.py`, pystray): icon in the notification area with playback controls (play/pause as the double-click default, previous/next/stop), a playlist switch submenu (each song numbered, click to switch), and a dynamic tooltip showing the current song and player status. Polls `status`/`list` silently once per second; the menu is only rebuilt when its content changes.
+- `tray` config option (`service` section, default `true`) — whether to start the tray service with the backend, mirroring the `hotkey` option.
+- `silent` request key — when true, the backend skips routine INFO logging for that request and its response. Used by the tray's high-frequency polling; errors are still logged. The key is accepted for all actions (added to `NON_ACTION_KEYS`).
+- `notify_support` request key — only requests carrying it consume and clear queued notifies. The CLI sends it (`_wrap_request`); the tray and hotkey explicitly do not, so polling no longer steals notifies meant for the CLI.
+- `Label` menu-item helper (tray): a disabled, non-clickable text item for submenu placeholders (e.g. `Empty`).
+- `res/` package with the tray icon (`icon.ico`, Flaticon "Three musketeers"); README gained a `## Credits` section with the required attribution.
+
+### Changed
+
+- SongOutput extracted from `cli.py` into `src/song_output.py`, with a `prettify_none` option (tray passes `False` to keep `None` for display logic).
+- Received-request log now masks the `token` value (`*************`).
+- Frontend lifecycle unified in `client.handle_code`: hotkey and tray share the same death-detection logic; an authorization failure (code 5) now stops the frontend instead of retrying forever.
+- `MAIN_LOOP_INTERVAL` renamed to `LOOP_INTERVAL`; added `TRAY_POLL_INTERVAL` (1 s).
+- New `tray` source code in `SOURCES`; new `cadence-tray.log` log file.
+
+## [0.28.0] - 2026-08-24
+
+### Added
+
+- Config options wired into runtime behavior: `backend_host`/`backend_port` (where the backend listens) and `frontend_host`/`frontend_port` (where frontends connect) are split; `ipc_timeout` applies per connection, `player_timeout` per player action, `default_volume`/`default_shuffle`/`username` at backend construction.
+- Token authentication: `backend_token` (empty = disabled, otherwise every request must carry a matching token) and `frontend_token` (what frontends send). Auth failures return code 5 (`AuthFailed`).
+- `config --direct` mode — operate on `config.toml` directly, bypassing the backend (works even when the backend is down or the port is taken).
+- `cadence config list`, `config open`, `config path` commands.
+
 ## [0.27.0] - 2026-08-23
 
 ### Added

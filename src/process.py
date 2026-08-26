@@ -19,6 +19,9 @@ def start(**kwargs):
         _spawn('src.backend', **kwargs)
         if CONFIG.hotkey:
             _spawn('src.hotkey')
+        if CONFIG.tray:
+            _spawn('src.tray')
+            
         for i in range(STARTER_RETRY):
             if test_alive():
                 return SENTINELS.BACKEND_STARTED

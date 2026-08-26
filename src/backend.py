@@ -13,10 +13,10 @@ import mutagen
 
 from src import version
 from src.log import setup_logger
-from src.constants import BACKEND_LOG_PATH
+from src.constants import BACKEND_LOG_PATH, SILENT_LOG_LEVEL
 from src.constants import DATABASE_PATH, DATABASE_DEV_PATH
 from src.constants import BACKLOG, ACTION_KEYS, NON_ACTION_KEYS, IterType, SERVER_TIMEOUT
-from src.constants import MAIN_LOOP_INTERVAL, METADATA, FILE_META
+from src.constants import LOOP_INTERVAL, METADATA, FILE_META
 from src.constants import PLAY_DEAD_TIME
 from src.constants import AUDIO_EXTENSIONS, SOURCES, READABLE_TYPE_NAMES, SEARCH_META
 from src.config import CONFIG
@@ -87,7 +87,7 @@ class Backend:
 
             try:
                 while self.running:
-                    sleep(MAIN_LOOP_INTERVAL)
+                    sleep(LOOP_INTERVAL)
             except KeyboardInterrupt: # I know this suppose to run in background, but it's useful in developing
                 ...
 
@@ -115,14 +115,21 @@ class Backend:
         else:
             source_code = request.get('source', SENTINELS.SOURCE_NOT_PROVIDED)
             source = SOURCES.get(source_code, f'unrecognized source \"{source_code}\"')
-            msg = f'Received request: {request} from {source}'
-            if connection is not None:
-                msg += f' via socket connection from {address}'
-            logger.info(msg)
+
+            if not request.get('silent', False):
+                log_request = request.copy()
+                log_request['token'] = '*************'
+                msg = f'Received request: {log_request} from {source}'
+                if connection is not None:
+                    msg += f' via socket connection from {address}'
+                logger.info(msg)
+
             self.dispatch_buffer.put((request, connection))
 
     def _flush_buffer(self):
         while self.running:
+            silent = False
+            old_level = logger.level
             try:
                 request, connection = self.dispatch_buffer.get()
                 if request is SENTINELS.EXIT_FLUSHING:
@@ -133,7 +140,13 @@ class Backend:
                     logger.exception(f'Exception raised when dispatching request')
                     response = gen_response.Failed(f'a CADENCE backend error occurred during dispatching of request: \"{e}\"')
 
-                if connection is not None and request.get('action', None) != 'test_alive':
+                silent = request.get('silent', False)
+
+                if silent:
+                    old_level = logger.level
+                    logger.setLevel(SILENT_LOG_LEVEL)
+
+                if connection is not None and request.get('notify_support', False):
                     response.notifies = self.notifies.copy()
                     self.notifies = []
                     logger.info(f'Notifies cleared: {response.notifies}')
@@ -149,6 +162,10 @@ class Backend:
                     logger.info(f'Response sent through socket, connection closed')
             except Exception as e:
                 logger.exception(f'Exception raised when handling request')
+
+            finally:
+                if silent:
+                    logger.setLevel(old_level)
 
     def dispatch(self, request):
         response = gen_response.Undefined()

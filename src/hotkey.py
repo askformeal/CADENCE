@@ -6,7 +6,7 @@ from pynput import keyboard
 from src.log import setup_logger
 from src.constants import HOTKEY_LOG_PATH
 from src.constants import HEARTBEAT_POLL_INTERVAL, HOTKEY_COOL_DOWN, MEDIA_KEY_TO_ACTION
-from src.client import test_heartbeat, confirm_dead, send_request
+from src.client import test_heartbeat, send_request, handle_code
 
 logger = setup_logger(__name__, HOTKEY_LOG_PATH)
 
@@ -14,7 +14,7 @@ class Hotkey:
     def __init__(self):
         self.running = True
         self.cool_down = {}
-        logger.debug('Hotkey frontend initialized')
+        logger.debug(f'{__name__} initiated')
 
     def run(self):
         Thread(target=self._listen, daemon=True).start()
@@ -22,16 +22,10 @@ class Hotkey:
             while self.running:
                 time.sleep(HEARTBEAT_POLL_INTERVAL)
                 code = test_heartbeat()
-                self._handle_code(code)
+                handle_code(code, self.exit)
                 
         except KeyboardInterrupt:
             ...
-
-    def _handle_code(self, code):
-        if code == 4:
-            self.exit(force=True)
-        elif code != 0:
-            self.exit()
 
     def _get_vk(self, key):
         return getattr(getattr(key, 'value', key), 'vk', None)
@@ -46,7 +40,7 @@ class Hotkey:
                     self.cool_down[vk] = time.time()
                     action = MEDIA_KEY_TO_ACTION[vk]
                     logger.info(f'action triggered: {action}')
-                    response = send_request(action=action, source='hotkey')
+                    response = send_request(action=action, source='hotkey', notify_support=False)
                     self._handle_code(response['code'])
         except Exception as e:
             logger.exception('An error occurred during handling a key press')
@@ -61,17 +55,9 @@ class Hotkey:
         with keyboard.Listener(on_press=self._on_press, on_release=self._on_release) as listener:
             listener.join()
 
-    def exit(self, force=False): # I might need it. What did I say.
-        if force:
-            self.running = False
-            logger.info('Forcefully exit hotkey frontend')
-        else:
-            logger.info('Backend heartbeat died, confirming...')
-            if confirm_dead():
-                logger.info('Death confirmed. Exit hotkey frontend')
-                self.running = False
-            else:
-                logger.info('Heartbeat resumed')
+    def exit(self): # I might need it. What did I say.
+        logger.info('Exit hotkey frontend')
+        self.running = False
 
 if __name__ == '__main__':
     Hotkey().run()

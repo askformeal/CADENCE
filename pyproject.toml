@@ -21,7 +21,10 @@ dependencies = [
 cadence = "src.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["src*"]
+include = ["src*", "res*"]
+
+[tool.setuptools.package-data]
+res = ["*.ico"]
 
 [tool.bumpversion]
 current_version = "0.28.0"

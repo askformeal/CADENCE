@@ -6,3 +6,5 @@ pynput
 wcwidth
 psutil
 tomli-w
+pystray
+pillow

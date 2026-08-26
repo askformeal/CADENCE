@@ -14,6 +14,8 @@ ENCODING = 'utf-8'
 
 # Paths
 
+ICON_FILENAME = 'icon.ico'
+
 dirs = PlatformDirs('cadence', ensure_exists=True)
 
 DATA_DIR = Path(dirs.user_data_dir)
@@ -25,6 +27,7 @@ LOG_DIR = Path(dirs.user_log_dir)
 BACKEND_LOG_PATH = LOG_DIR / 'cadence.log'
 SOCKET_LOG_PATH = LOG_DIR / 'cadence-socket.log'
 HOTKEY_LOG_PATH = LOG_DIR / 'cadence-hotkey.log'
+TRAY_LOG_PATH = LOG_DIR / 'cadence-tray.log'
 CONFIG_LOG_PATH = LOG_DIR / 'cadence-config.log'
 PID_LOG_PATH = LOG_DIR / 'cadence-pid.log'
 
@@ -33,12 +36,14 @@ DATABASE_DEV_PATH = DATA_DIR / 'cadence-dev.db'
 
 FILE_LOG_LEVEL = logging.DEBUG
 CONSOLE_LOG_LEVEL = logging.INFO
+SILENT_LOG_LEVEL = logging.WARNING
 
 # Time
 
 TERMINATE_TIMEOUT = 3
 
-MAIN_LOOP_INTERVAL = 0.05
+LOOP_INTERVAL = 0.05
+TRAY_POLL_INTERVAL = 1
 
 HEARTBEAT_POLL_INTERVAL = 3
 DEATH_CONFIRM_INTERVAL = 0.3
@@ -142,6 +147,12 @@ CONFIG_SCHEME = {
         'default': True,
         'description': 'Whether to start hotkey service on start backend'
     },
+    'tray': {
+        'type': CONVERTER.boolean,
+        'section': 'service',
+        'default': True,
+        'description': 'Whether to start system tray icon service on start backend'
+    },
     'default_volume': {
         'type': CONVERTER.percentage,
         'section': 'playback',
@@ -174,6 +185,7 @@ SOURCES = {
     'backend': 'backend inter-process communication from backend',
     'player': 'backend inter-process communication from player',
     'hotkey': 'Hotkey control service',
+    'tray': 'Tray icon control service',
     'alive': 'alive test',
     'heartbeat': 'heartbeat test',
 }
@@ -306,7 +318,9 @@ NON_ACTION_KEYS = {
     'action',
     'cwd',
     'source',
-    'token'
+    'token',
+    'silent',
+    'notify_support'
 }
 
 ATTACHMENT_REQUIRED_ACTIONS = [
