@@ -210,6 +210,8 @@ class Backend:
                     'player_status': player_status,
                     'volume': self.player.volume,
                     'mute': self.player.mute,
+                    'shuffle': self.shuffle,
+                    'loop': self.loop,
                     'playlist_len': playlist_len,
                     'current_num': current_num,
                     'run_time': time() - self.start_time

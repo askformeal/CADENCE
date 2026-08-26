@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## [0.30.0] - 2026-08-26
+
+### Added
+
+- Tray menu gains checkable items: `Mute`, `Shuffle` and `Loop` now show a checkmark reflecting the backend state, refreshed via the 0.5 s status poll.
+- Tray menu is only rebuilt when its content actually changes (signature comparison of menu text plus mute/shuffle/loop state) — avoids destroying the displayed native menu mid-open.
+- `status` attachment now includes `shuffle` and `loop`; the CLI `status` output shows both.
+- `SongOutput` raw accessors (`mute_raw`, `shuffle_raw`, `loop_raw`, `in_lib_raw`) for frontends that need the un-prettified values.
+
+### Changed
+
+- `SongOutput` toggle display values `Yes`/`No` → `On`/`Off` (mute, shuffle, loop).
+- `TRAY_POLL_INTERVAL` from 1 s to 0.5 s.
+
 ## [0.29.0] - 2026-08-26
 
 ### Added

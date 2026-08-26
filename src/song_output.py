@@ -26,6 +26,7 @@ class SongOutput:
         self.path = info.get('path', '?')
 
         self.in_lib = {True: 'Yes', False: 'No', '?': '?'}[info.get('in_library', '?')]
+        self.in_lib_raw = info.get('in_library', None)
         self.lib_id = info.get('id', '?')
 
         self.aliases = info.get('aliases', '?')
@@ -60,7 +61,14 @@ class SongOutput:
             self.percentage = '--'
 
         self.volume = info.get('volume', '?')
-        self.mute = {True: 'Yes', False: 'No', '?': '?'}[info.get('mute', '?')]
+        self.mute = {True: 'On', False: 'Off', '?': '?'}[info.get('mute', '?')]
+        self.mute_raw = info.get('mute', None)
+
+        self.shuffle = {True: 'On', False: 'Off', '?': '?'}[info.get('shuffle', '?')]
+        self.shuffle_raw = info.get('shuffle', None)
+
+        self.loop = {True: 'On', False: 'Off', '?': '?'}[info.get('loop', '?')]
+        self.loop_raw = info.get('loop', None)
 
         self.playlist_len = info.get('playlist_len', '?')
 

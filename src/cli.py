@@ -339,6 +339,8 @@ def main():
                                         f'Player status: {output.player_status}',
                                         f'Volume: {output.volume}%',
                                         f'Mute: {output.mute}',
+                                        f'\nShuffle: {output.shuffle}',
+                                        f'Loop: {output.loop}',
                                         f'\nCADENCE backend had been running for {output.run_time}',
                         ))
 
