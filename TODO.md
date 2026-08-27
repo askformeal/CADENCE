@@ -33,6 +33,8 @@
 - [X] Verify request is dict
 - [X] Tray icon frontend
 - [ ] TUI frontend
+  - [X] Interactive dashboard (`cadence dash`) — status display, playlist browsing, playback controls
+  - [ ] Remaining keys (volume, shuffle, loop, seek, dice, stop, mute, page up/down)
 - [ ] HTTP frontend
 - [ ] Bluetooth frontend
 - [ ] Advanced library management

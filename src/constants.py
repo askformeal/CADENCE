@@ -3,6 +3,8 @@ from importlib.resources import files
 from pathlib import Path
 import logging
 
+import readchar
+
 from src.sentinels import SENTINELS
 from src.converter import CONVERTER
 
@@ -29,6 +31,7 @@ BACKEND_LOG_PATH = LOG_DIR / 'cadence.log'
 SOCKET_LOG_PATH = LOG_DIR / 'cadence-socket.log'
 HOTKEY_LOG_PATH = LOG_DIR / 'cadence-hotkey.log'
 TRAY_LOG_PATH = LOG_DIR / 'cadence-tray.log'
+DASH_LOG_PATH = LOG_DIR / 'cadence-dash.log'
 CONFIG_LOG_PATH = LOG_DIR / 'cadence-config.log'
 PID_LOG_PATH = LOG_DIR / 'cadence-pid.log'
 
@@ -47,6 +50,7 @@ TERMINATE_TIMEOUT = 3
 
 LOOP_INTERVAL = 0.05
 TRAY_POLL_INTERVAL = 0.5
+DASH_POLL_INTERVAL = 0.1
 
 HEARTBEAT_POLL_INTERVAL = 3
 DEATH_CONFIRM_INTERVAL = 0.3
@@ -73,6 +77,8 @@ HOTKEY_COOL_DOWN = 0.5
 
 TRAY_ERROR_DISPLAY_TIME = 1.5
 
+DASH_MAX_SHOW_SONG = 9
+
 MEDIA_KEY_TO_ACTION = {
     0xb0: 'next',
     0xb1: 'prev',
@@ -90,6 +96,43 @@ READABLE_TYPE_NAMES = {
     CONVERTER.pos_float: 'positive float',
     CONVERTER.percentage: 'percentage number'
 }
+
+class DashKeyMap: # why not a dict? because this works better with my IDE's suggestions
+    def __init__(self):
+        self.quit = ('q', readchar.key.CTRL_C, readchar.key.CTRL_Z)
+
+        self.toggle = readchar.key.SPACE
+        self.stop = 'x'
+        self.dice = 'd'
+
+        self.forward = '.'
+        self.backward = ','
+
+        self.shuffle = 's'
+        self.loop = 'r'
+
+        self.vol_up = '='
+        self.vol_down = '-'
+        self.mute = 'm'
+
+        self.prev = 'p'
+        self.next = 'n'
+
+        self.select_up = ('k', readchar.key.UP)
+        self.select_down = ('j', readchar.key.DOWN)
+        self.select_current = 'c'
+
+        self.page_up = readchar.key.PAGE_UP
+        self.page_down = readchar.key.PAGE_DOWN
+
+        self.switch_select = readchar.key.ENTER
+
+        for name in vars(self).keys():
+            value = getattr(self, name)
+            if not isinstance(value, tuple):
+                setattr(self, name, (value,))
+
+DASH_KEY_MAP = DashKeyMap()
 
 # Config
 
@@ -187,6 +230,7 @@ CONFIG_SCHEME = {
 SOURCES = {
     SENTINELS.SOURCE_NOT_PROVIDED: '[source not provided]',
     'cli': 'teletypewriter interface (non-interactive)',
+    'dash': 'teletypewriter interface (dashboard)',
     'backend': 'backend inter-process communication from backend',
     'player': 'backend inter-process communication from player',
     'hotkey': 'Hotkey control service',

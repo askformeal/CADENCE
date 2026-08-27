@@ -41,7 +41,7 @@ class Hotkey:
                     action = MEDIA_KEY_TO_ACTION[vk]
                     logger.info(f'action triggered: {action}')
                     response = send_request(action=action, source='hotkey', notify_support=False)
-                    self._handle_code(response['code'])
+                    handle_code(response['code'], self.exit)
         except Exception as e:
             logger.exception('An error occurred during handling a key press')
 

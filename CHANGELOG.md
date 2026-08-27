@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## [0.33.0] - 2026-08-27
+
+### Added
+
+- Dashboard frontend (`cadence dash`) — interactive TUI with live status display, playlist browsing, keyboard controls and alternate-screen-buffer rendering (`src/dash.py`).
+- `DASH_KEY_MAP` in constants — centralized keybindings (playback, selection, page up/down; volume/shuffle/loop/seek/dice/stop/mute declared but not wired yet).
+- `dash` source in `SOURCES`, `cadence-dash.log`, `DASH_POLL_INTERVAL`, `DASH_MAX_SHOW_SONG`.
+- `utils.center()` helper and `box()` padding arguments (`l_pad`/`r_pad`).
+- Tests for `box()` and `center()` (CJK width, padding, centering).
+
+### Changed
+
+- `utils.box()` now returns lines joined without a trailing newline (callers use `print`, so output is unchanged); padding arguments added.
+- Tray `_update` exits the tray on an unexpected update error instead of silently retrying.
+- Tray `_send_tray_request` builds the request dict in one place (`**kwargs` merged inside).
+
+### Fixed
+
+- Hotkey frontend passed only one argument to `handle_code(code, callback)` — media keys now correctly handle backend death/exit codes.
+
 ## [0.32.0] - 2026-08-27
 
 ### Added

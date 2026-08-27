@@ -1,5 +1,6 @@
 # divide into separate files (time_utils.py, etc) if things got messy
 import os
+import math
 import shutil
 import subprocess
 from pathlib import Path
@@ -54,20 +55,25 @@ def parse_time(time):
         ms = parts[-1] * 1000 + parts[-2] * 60000 + parts[-3] * 3600000
         return ms
 
-def box(text: str):
+def box(text: str, l_pad=0, r_pad=0):
     lines = text.split('\n')
     max_len = max(map(wcswidth, lines))
 
-    result = f" {'_' * (max_len + 4)} \n"
-    result += f"/  {' ' * max_len}  \\\n"
+    l_space = ' ' * l_pad
+    r_space = ' ' * r_pad
+
+    result = [
+        f" {'_' * (max_len + l_pad + r_pad + 4)} ",
+        f"/{l_space}  {' ' * max_len}  {r_space}\\"
+        ]
 
     for line in lines:
         pad = ' ' * (max_len - wcswidth(line))
-        result += f'|  {line}{pad}  |\n'
+        result.append(f'|{l_space}  {line}{pad}  {r_space}|')
 
-    result += f"\\{'_' * (max_len + 4)}/\n"
+    result.append(f"\\{'_' * (max_len + l_pad + r_pad + 4)}/")
 
-    return result
+    return '\n'.join(result)
 
 def verify_path_format(raw: str):
     if len(raw.strip()) == 0 or '\x00' in raw:
@@ -115,3 +121,8 @@ def open_file(path):
                 return SENTINELS.SUCCESS
     else:
         return SENTINELS.FILE_IO_FAILED
+
+def center(text, width):
+    l_pad = ' ' * math.ceil((width - wcswidth(text)) / 2)
+    r_pad = ' ' * math.floor((width - wcswidth(text)) / 2)
+    return f'{l_pad}{text}{r_pad}'

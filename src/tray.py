@@ -133,6 +133,7 @@ class Tray(Icon):
                 sleep(TRAY_POLL_INTERVAL)
             except Exception as e:
                 logger.exception('An error occurred during updating icon')
+                self.exit()
 
     def _open_file(self, *_):
         file_types = list(map(lambda x: (x[0], '*'+x[1]), AUDIO_FILE_TYPES))
@@ -144,8 +145,8 @@ class Tray(Icon):
             self._send_tray_request('open', song=path)
 
     def _send_tray_request(self, action, silent=False, **kwargs):
-        request = {'action': action, 'source': 'tray', 'notify_support': False, 'silent': silent}
-        response = send_request(**request, **kwargs)
+        request = {'action': action, 'source': 'tray', 'notify_support': False, 'silent': silent, **kwargs}
+        response = send_request(**request)
         if response.get('code', None) != 0:
             self.error_time = time()
         if not silent:
@@ -168,6 +169,7 @@ class Tray(Icon):
 
     def exit(self):
         self.stop()
+        logger.info('Exit tray frontend')
         self.running = False
 
 if __name__ == '__main__':

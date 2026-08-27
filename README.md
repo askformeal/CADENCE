@@ -21,6 +21,7 @@ Retrieves collections of mechanically-represented wave data from persistent stor
 - Volume and mute control
 - Hotkey frontend (pynput)
 - Tray icon frontend (pystray): playback controls, song/playlist switching, volume presets, now-playing tooltip and error indicator
+- Dashboard frontend (`cadence dash`): interactive TUI with live status, playlist browsing and keyboard controls
 - Socket-based backend/frontend architecture (see [docs/protocol.md](docs/protocol.md))
 
 ## Installation
@@ -134,10 +135,27 @@ The tray icon starts with the backend (unless the `tray` config option is off) a
 - Volume presets (0/25/50/75/100%), Mute, checkable Shuffle/Loop states
 - The icon switches to an error variant for 1.5 s after a failed request
 
+### Dashboard
+
+The dashboard (`cadence dash`) is an interactive terminal UI. It shows the current song, playlist (with the playing song and your selection highlighted) and player status, and is controlled entirely from the keyboard. It starts its own frontend process and uses the same socket protocol as the other frontends.
+
+Keys (defined in `DASH_KEY_MAP` in `src/constants.py`):
+
+| Key | Action |
+| --- | --- |
+| `Space` | Play / pause |
+| `n` / `p` | Next / previous song |
+| `j` / `k`, `↑` / `↓` | Move selection up / down |
+| `c` | Jump selection to the currently playing song |
+| `Enter` | Play the selected song |
+| `q`, `Ctrl+C`, `Ctrl+Z` | Quit the dashboard |
+
+The dashboard also reserves keys for stop (`x`), dice (`d`), seek (`.`/`,`), shuffle (`s`), loop (`r`), volume (`=`/`-`), mute (`m`) and page up/down — these are declared in `DASH_KEY_MAP` but not wired up yet.
+
 ## Architecture
 
 - **Backend** (`src/backend.py`) — owns the VLC player and the SQLite database, listens on `127.0.0.1:17891` for JSON requests over a socket.
-- **Frontends** — `src/cli.py` (the `cadence` CLI), `src/hotkey.py` (media key hotkeys), `src/tray.py` (system tray icon). They send action requests to the backend and format responses.
+- **Frontends** — `src/cli.py` (the `cadence` CLI), `src/hotkey.py` (media key hotkeys), `src/tray.py` (system tray icon), `src/dash.py` (interactive dashboard). They send action requests to the backend and format responses.
 - **Protocol** — all communication is JSON over a length-prefixed socket connection. See [docs/protocol.md](docs/protocol.md).
 
 ## Data
@@ -156,7 +174,7 @@ Log file location (platform-dependent, managed by platformdirs):
 | Linux    | `$XDG_STATE_HOME/cadence/log/cadence.log`, defaults to `~/.local/state/cadence/log/cadence.log` |
 | macOS    | `~/Library/Logs/cadence/cadence.log`                                                              |
 
-Log files: `cadence.log` (backend), `cadence-socket.log` (client/connection), `cadence-hotkey.log` (hotkey frontend), `cadence-tray.log` (tray frontend), plus `cadence-config.log` and `cadence-pid.log`.
+Log files: `cadence.log` (backend), `cadence-socket.log` (client/connection), `cadence-hotkey.log` (hotkey frontend), `cadence-tray.log` (tray frontend), `cadence-dash.log` (dashboard frontend), plus `cadence-config.log` and `cadence-pid.log`.
 
 ## TODO
 
