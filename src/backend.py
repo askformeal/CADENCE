@@ -910,14 +910,12 @@ class Backend:
         playlist_id = None
         
         id = self._get_song(song, cwd)
-        if id is SENTINELS.MISSING_CWD:
-            response = gen_response.MissingCWD('open')
-        elif id is not SENTINELS.NOT_IN_LIB:
+        if id not in (SENTINELS.NOT_IN_LIB, SENTINELS.MISSING_CWD):
             # open single song by path / alias
             info_to_set = (self.database.get_song_info(id),)
             paths_to_load = [info_to_set[0][0]['path']]
         else:
-            path = Path(cwd) / song
+            # try as playlist name
             info, playlist_id = self._get_playlist_songs(song, return_id=True)
             if info is SENTINELS.PLAYLIST_EMPTY:
                 playlist_id = None
@@ -931,12 +929,22 @@ class Backend:
             else:
                 # Not in library, try to open as path
                 playlist_id = None
-                if path.is_file():
-                    info_to_set = ([{'path': str(path)}], False)
-                    paths_to_load = [str(path)]
+                path = None
+                if Path(song).is_absolute():
+                    path = Path(song)
                 else:
-                    logger.warning(f'Can not open {path}')
-                    response = gen_response.InvalidPath(str(path))
+                    if cwd is None:
+                        response = gen_response.MissingCWD('open')
+                    else:
+                        path = Path(cwd) / song
+                        
+                if path is not None:
+                    if path.is_file():
+                        info_to_set = ([{'path': str(path)}], False)
+                        paths_to_load = [str(path)]
+                    else:
+                        logger.warning(f'Can not open {path}')
+                        response = gen_response.Failed(f'\"{song}\" can not parsed as an alias, library id, file path or playlist name')
 
         if paths_to_load is not None:
             if self.current_song_info is None:

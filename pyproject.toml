@@ -24,7 +24,7 @@ cadence = "src.cli:main"
 include = ["src*", "res*"]
 
 [tool.setuptools.package-data]
-res = ["*.ico"]
+res = ["*.ico", "*.png"]
 
 [tool.bumpversion]
 current_version = "0.31.0"

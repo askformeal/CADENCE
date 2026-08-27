@@ -1,6 +1,18 @@
 import logging
 
-from src.constants import FILE_LOG_LEVEL, CONSOLE_LOG_LEVEL, ENCODING
+from src.constants import FILE_LOG_LEVEL, CONSOLE_LOG_LEVEL, ENCODING, LOG_MAX_LENGTH
+
+class TruncateFilter(logging.Filter):
+    def __init__(self, max_len):
+        super().__init__()
+        self.max_len = max_len
+
+    def filter(self, record):
+        message = record.getMessage()
+        if len(message) > self.max_len:
+            record.msg = f'{message[:self.max_len]}... (truncated, {len(message)} chars in total)'
+            record.args = ()
+        return True
 
 class FlushFileHandler(logging.FileHandler):
     def __init__(self, filename, mode = "a", encoding = None, delay = False, errors = None):
@@ -25,6 +37,7 @@ def setup_logger(name, path) -> logging.Logger:
 
         logger.addHandler(console)
         logger.addHandler(file)
+        logger.addFilter(TruncateFilter(LOG_MAX_LENGTH))
         logger.setLevel(FILE_LOG_LEVEL)
 
     return logger

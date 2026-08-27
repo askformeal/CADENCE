@@ -1,12 +1,14 @@
-from importlib.resources import files
 from threading import Thread
 from time import sleep, time
+from pathlib import Path
+from tkinter import filedialog
 
 from pystray import Icon, Menu, MenuItem
 from PIL import Image
 
 from src.log import setup_logger
-from src.constants import ICON_FILENAME, ERROR_ICON_FILENAME, HEARTBEAT_POLL_INTERVAL, TRAY_POLL_INTERVAL, TRAY_ERROR_DISPLAY_TIME
+from src.constants import ICON_PATH, ERROR_ICON_PATH, HEARTBEAT_POLL_INTERVAL, TRAY_POLL_INTERVAL, TRAY_ERROR_DISPLAY_TIME
+from src.constants import AUDIO_FILE_TYPES
 from src.constants import TRAY_LOG_PATH
 from src.client import send_request, test_heartbeat, handle_code
 from src.song_output import SongOutput
@@ -19,8 +21,8 @@ class Label(MenuItem):
 class Tray(Icon):
     def __init__(self):
         self.running = True
-        self.ok_icon = Image.open((files('res') / ICON_FILENAME).open('rb'))
-        self.error_icon = Image.open((files('res') / ERROR_ICON_FILENAME).open('rb'))
+        self.ok_icon = Image.open(Path(ICON_PATH).open('rb'))
+        self.error_icon = Image.open(Path(ERROR_ICON_PATH).open('rb'))
 
         super().__init__('cadence', self.ok_icon)
         self._last_sig = None
@@ -34,7 +36,7 @@ class Tray(Icon):
                 title = 'CADENCE'
                 
                 songs_sub_menu = Menu(Label('---'))
-                playlists_sub_menu = Menu(Label('---'))
+                playlists_sub_menu = [MenuItem('[Play All]', lambda *_: self._send_tray_request('play-all'))]
 
                 self._mute = None
                 self._shuffle = None
@@ -50,9 +52,9 @@ class Tray(Icon):
                     if status.mute_raw is not None:
                         self._mute = status.mute_raw # fucking lying pystray only accepts nones and callbacks for checked for some reason
                     if status.shuffle_raw is not None:
-                        self._shuffle = status.shuffle_raw # fucking lying pystray only accepts nones and callbacks for checked for some reason
+                        self._shuffle = status.shuffle_raw
                     if status.loop_raw is not None:
-                        self._loop = status.loop_raw # fucking lying pystray only accepts nones and callbacks for checked for some reason
+                        self._loop = status.loop_raw 
 
                 current_songs = self._send_tray_request('list', silent=True)
                 if current_songs is not None:
@@ -69,17 +71,17 @@ class Tray(Icon):
 
                 playlists = self._send_tray_request('lib.playlist.list', silent=True)
                 if playlists is not None:
-                    if len(playlists) == 0:
-                        playlists_sub_menu = Menu(Label('Empty'))
-                    else:
-                        playlist_buttons = []
+                    if len(playlists) > 0:
                         for playlist in playlists:
                             name = playlist['name']
-                            playlist_buttons.append(MenuItem(name, lambda *_, x=name: self._send_tray_request('open', song=x)))
-                        playlists_sub_menu = Menu(*playlist_buttons)
+                            playlists_sub_menu.append(MenuItem(name, lambda *_, x=name: self._send_tray_request('open', song=x)))
+
+                playlists_sub_menu = Menu(*playlists_sub_menu)
 
                 menu = Menu(
                     Label(title),
+                    MenuItem('Open', self._open_file),
+                    Menu.SEPARATOR,
                     MenuItem('Play/Pause', lambda *_: self._send_tray_request('toggle'), default=True),
                     MenuItem('Previous Song', lambda *_: self._send_tray_request('prev')),
                     MenuItem('Next Song', lambda *_: self._send_tray_request('next')),
@@ -87,6 +89,13 @@ class Tray(Icon):
                     MenuItem('Dice', lambda *_: self._send_tray_request('dice')),
                     MenuItem('Stop', lambda *_: self._send_tray_request('stop')),
                     MenuItem('Replay', lambda *_: self._send_tray_request('replay')),
+                    MenuItem('Jump', Menu(
+                        MenuItem('0%', lambda *_: self._send_tray_request('jump', progress=0)),
+                        MenuItem('25%', lambda *_: self._send_tray_request('jump', progress=25)),
+                        MenuItem('50%', lambda *_: self._send_tray_request('jump', progress=50)),
+                        MenuItem('75%', lambda *_: self._send_tray_request('jump', progress=75)),
+                        MenuItem('100%', lambda *_: self._send_tray_request('jump', progress=100)),
+                    )),
                     Menu.SEPARATOR,
                     MenuItem('Playlists', playlists_sub_menu),
                     Menu.SEPARATOR,
@@ -124,6 +133,15 @@ class Tray(Icon):
                 sleep(TRAY_POLL_INTERVAL)
             except Exception as e:
                 logger.exception('An error occurred during updating icon')
+
+    def _open_file(self, *_):
+        file_types = list(map(lambda x: (x[0], '*'+x[1]), AUDIO_FILE_TYPES))
+        path = filedialog.askopenfilename(
+            title= 'Select a song file',
+            filetypes=file_types,
+        )
+        if path != '':
+            self._send_tray_request('open', song=path)
 
     def _send_tray_request(self, action, silent=False, **kwargs):
         request = {'action': action, 'source': 'tray', 'notify_support': False, 'silent': silent}

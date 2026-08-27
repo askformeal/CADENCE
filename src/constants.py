@@ -1,4 +1,5 @@
 from platformdirs import PlatformDirs
+from importlib.resources import files
 from pathlib import Path
 import logging
 
@@ -13,9 +14,8 @@ class IterType:
 ENCODING = 'utf-8'
 
 # Paths
-
-ICON_FILENAME = 'icon.ico'
-ERROR_ICON_FILENAME = 'icon_error.ico'
+ICON_PATH = str(files('res') / 'icon.ico')
+ERROR_ICON_PATH = str(files('res') / 'icon_error.ico')
 
 dirs = PlatformDirs('cadence', ensure_exists=True)
 
@@ -34,6 +34,8 @@ PID_LOG_PATH = LOG_DIR / 'cadence-pid.log'
 
 DATABASE_PATH = DATA_DIR / 'cadence.db'
 DATABASE_DEV_PATH = DATA_DIR / 'cadence-dev.db'
+
+LOG_MAX_LENGTH = 500
 
 FILE_LOG_LEVEL = logging.DEBUG
 CONSOLE_LOG_LEVEL = logging.INFO
@@ -350,15 +352,45 @@ FILE_META = {
     'album': 'album'
 }
 
-AUDIO_EXTENSIONS = {
-    '.mp3', '.flac', '.wav', '.ogg', '.opus', '.oga',
-    '.m4a', '.m4b', '.aac', '.mp4', '.m4p',
-    '.ape', '.wma', '.aiff', '.aif', '.au',
-    '.ac3', '.dts', '.dsf', '.dsd', '.dff',
-    '.mka', '.wv', '.mpc', '.tta', '.tak',
-    '.ra', '.rm', '.amr', '.3gp', '.caf',
-    '.mid', '.midi', '.spx',
-}
+# file type descriptions, kept short like those used in file selectors
+AUDIO_FILE_TYPES = (
+    ('MP3 Audio', '.mp3'),
+    ('FLAC Audio', '.flac'),
+    ('WAV Audio', '.wav'),
+    ('OGG Audio', '.ogg'),
+    ('Opus Audio', '.opus'),
+    ('OGG Audio', '.oga'),
+    ('M4A Audio', '.m4a'),
+    ('M4B Audio', '.m4b'),
+    ('AAC Audio', '.aac'),
+    ('MP4 Audio', '.mp4'),
+    ('M4P Audio', '.m4p'),
+    ('APE Audio', '.ape'),
+    ('WMA Audio', '.wma'),
+    ('AIFF Audio', '.aiff'),
+    ('AIF Audio', '.aif'),
+    ('AU Audio', '.au'),
+    ('AC3 Audio', '.ac3'),
+    ('DTS Audio', '.dts'),
+    ('DSF Audio', '.dsf'),
+    ('DSD Audio', '.dsd'),
+    ('DFF Audio', '.dff'),
+    ('MKA Audio', '.mka'),
+    ('WV Audio', '.wv'),
+    ('MPC Audio', '.mpc'),
+    ('TTA Audio', '.tta'),
+    ('TAK Audio', '.tak'),
+    ('RA Audio', '.ra'),
+    ('RM Audio', '.rm'),
+    ('AMR Audio', '.amr'),
+    ('3GP Audio', '.3gp'),
+    ('CAF Audio', '.caf'),
+    ('MIDI Audio', '.mid'),
+    ('MIDI Audio', '.midi'),
+    ('Speex Audio', '.spx'),
+)
+
+AUDIO_EXTENSIONS = set(map(lambda x: x[1], AUDIO_FILE_TYPES))
 
 WINDOWS_ILLEGAL = r'[<>:"|?*]'
 WINDOWS_RESERVED = {'CON', 'PRN', 'AUX', 'NUL',

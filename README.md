@@ -2,6 +2,8 @@
 
 **C**ommand-line **A**udio **D**ecoding **E**ngine with **N**avigation and **C**ontinuous **E**xecution
 
+![CADENCE logo](res/musical.png)
+
 Retrieves collections of mechanically-represented wave data from persistent storage, decompartmentalizes their format-specific encapsulation, reconstitutes the original waveform through algorithmic reconstruction, and transmits the resulting signal to a computer-connected mechanical wave generator. Controlled via a teletype-like interactive interface. Supports automatic transition to the next data set or the beginning of the current data set upon completion, based on a configured mode.
 
 (CLI music player. Lives in the terminal.)
@@ -125,9 +127,10 @@ Values are validated on write; invalid ones are rejected. The default value is u
 The tray icon starts with the backend (unless the `tray` config option is off) and offers:
 
 - Now-playing label and dynamic tooltip (song name + player status)
+- Open — pick a song file with a file dialog (all supported audio types)
 - Play/Pause (double-click), Previous/Next, Stop, Dice, Replay
 - Switch submenu — jump to any song in the current playlist
-- Playlists submenu — open any library playlist by name
+- Playlists submenu — open any library playlist by name (plus `[Play All]`)
 - Volume presets (0/25/50/75/100%), Mute, checkable Shuffle/Loop states
 - The icon switches to an error variant for 1.5 s after a failed request
 

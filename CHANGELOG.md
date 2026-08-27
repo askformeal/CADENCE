@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## [0.32.0] - 2026-08-27
+
+### Added
+
+- Tray `Open` menu item — pick a song file with a file dialog (filters from `AUDIO_FILE_TYPES`).
+- `[Play All]` entry at the top of the tray Playlists submenu.
+- `AUDIO_FILE_TYPES` constant — `(description, extension)` pairs for file selectors, replacing the bare `AUDIO_EXTENSIONS` set (which is now derived from it).
+- README logo (`res/musical.png`, packed as package data).
+
+### Changed
+
+- `_open_song` fallback: absolute paths open without a `cwd`; a song that is neither alias, library ID, file path nor playlist name now reports that explicitly instead of the old "valid and existing path" error.
+- Log lines are capped at `LOG_MAX_LENGTH` (500 chars) via `TruncateFilter` — huge entries (e.g. playlist song info dumps) no longer bloat `cadence.log`.
+- Icon paths moved to `ICON_PATH`/`ERROR_ICON_PATH` in constants (resolved via `importlib.resources`); tray no longer resolves them itself.
+- `res/icon_error.ico` regenerated as a multi-size set (16/24/32/48/64/256 px).
+
+### Fixed
+
+- Tray exit no longer crashes on `self.root.destroy()` (a leftover that referenced a nonexistent attribute); `exit()` is back to `stop()` + `running = False`.
+
 ## [0.31.0] - 2026-08-26
 
 ### Added

@@ -220,7 +220,15 @@ def test_open_raw_path(backend, audio_file):
 def test_open_missing_file(backend):
     response = _request(backend, 'open', song='nonexistent_song.flac')
     assert response['code'] == 1
-    assert 'valid and existing path' in response['msg']
+    assert 'can not parsed as an alias, library id, file path or playlist name' in response['msg']
+
+
+def test_open_without_cwd_not_playlist(backend):
+    """Tray sends open without cwd; a song that is neither playlist nor file
+    must return a clean MissingCWD, not crash on Path(None) / song."""
+    response = backend.dispatch({'action': 'open', 'song': 'not_a_playlist_either'})
+    assert response['code'] == 1
+    assert 'cwd' in response['msg']
 
 
 def test_open_via_library_path(backend, audio_file):
@@ -266,7 +274,7 @@ def test_open_song_id_not_found_falls_back_to_path(backend, audio_file):
     database.add_song(audio_file)
     response = _request(backend, 'open', song='999')
     assert response['code'] == 1
-    assert 'valid and existing path' in response['msg']
+    assert 'can not parsed as an alias, library id, file path or playlist name' in response['msg']
 
 
 def test_open_superscript_does_not_crash(backend, audio_file):
@@ -275,7 +283,7 @@ def test_open_superscript_does_not_crash(backend, audio_file):
     database.add_song(audio_file)
     response = _request(backend, 'open', song='²')
     assert response['code'] == 1
-    assert 'valid and existing path' in response['msg']
+    assert 'can not parsed as an alias, library id, file path or playlist name' in response['msg']
 
 
 def test_open_alias_priority_over_song_id(backend, audio_file, tmp_path):
