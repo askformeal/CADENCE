@@ -1,5 +1,33 @@
 # CHANGELOG
 
+## [0.34.0] - 2026-08-28
+
+### Added
+
+- Dashboard progress bar — position/time display (`[bar] [elapsed/total]`) with `DASH_POS_BAR_LEN`.
+- Dashboard volume bar and merged state row (volume left, shuffle/loop/player status right).
+- Box style system: `BOX_STYLES` named styles (`ascii`, `at`, `rounded`, `square`, `double-corner`, `heavy-corner`, `double`, `heavy`), `box(style=)` parameter, and `cli_box_style` / `dash_box_style` config options (appearance section).
+- Dashboard theme switching keys `t` / `T` (next/previous box style, runtime only — not persisted), with a toast notification (`DASH_TOAST_TIME`).
+- Dashboard playback keys wired up: volume (`=`/`-`, step from `dash_volume_step`), mute (`m`), dice (`d`), shuffle (`s`), loop (`r`), stop (`x`), page up/down, redraw (`Ctrl+L`, `F5`).
+- `dash_volume_step` and `dash_pos_step` config options (dash section).
+- `utils.progress_bar()` and `utils.align()` helpers.
+- `setup_logger()` `add_console` parameter.
+
+### Changed
+
+- `BOX_STYLES` keys renamed from digits to names; `box()` default style is `ascii`, config defaults are `rounded`.
+- `pos_float` converter split into `pos_int` (positive integer, rejects 0) and `timeout` (positive float with `MIN_TIMEOUT` floor).
+- `SongOutput` time/length raw values use `None` for missing keys instead of `-1`.
+- Dashboard no longer attaches a console log handler (`add_console=False`).
+- `DASH_MAX_SHOW_SONG` raised 9 → 15.
+
+### Fixed
+
+- Dashboard progress bar rendered full when nothing was playing (VLC reports `time`/`length` as `-1`) — now falls back to an empty bar when either value is `<= 0`.
+- `progress_bar()` now clamps progress to `[0, length]` (no oversized bars on out-of-range input).
+- Dashboard `prev_box` theme cycle skipped a style (boundary checked `== 0` instead of `< 0`).
+- Tests updated for the box style interface change (named style keys, `ascii` default).
+
 ## [0.33.0] - 2026-08-27
 
 ### Added

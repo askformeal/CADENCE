@@ -137,7 +137,7 @@ The tray icon starts with the backend (unless the `tray` config option is off) a
 
 ### Dashboard
 
-The dashboard (`cadence dash`) is an interactive terminal UI. It shows the current song, playlist (with the playing song and your selection highlighted) and player status, and is controlled entirely from the keyboard. It starts its own frontend process and uses the same socket protocol as the other frontends.
+The dashboard (`cadence dash`) is an interactive terminal UI. It shows the current song, a progress bar with elapsed/total time, volume bar and playback state, the playlist (with the playing song and your selection highlighted), and is controlled entirely from the keyboard. It starts its own frontend process and uses the same socket protocol as the other frontends.
 
 Keys (defined in `DASH_KEY_MAP` in `src/constants.py`):
 
@@ -146,11 +146,18 @@ Keys (defined in `DASH_KEY_MAP` in `src/constants.py`):
 | `Space` | Play / pause |
 | `n` / `p` | Next / previous song |
 | `j` / `k`, `↑` / `↓` | Move selection up / down |
+| `PgUp` / `PgDn` | Page selection up / down |
 | `c` | Jump selection to the currently playing song |
 | `Enter` | Play the selected song |
+| `x` / `d` | Stop / random song jump |
+| `s` / `r` | Toggle shuffle / loop |
+| `=` / `-` | Volume up / down (step from `dash_volume_step`) |
+| `m` | Mute |
+| `t` / `T` | Next / previous box style (runtime only, not persisted) |
+| `Ctrl+L`, `F5` | Redraw the screen |
 | `q`, `Ctrl+C`, `Ctrl+Z` | Quit the dashboard |
 
-The dashboard also reserves keys for stop (`x`), dice (`d`), seek (`.`/`,`), shuffle (`s`), loop (`r`), volume (`=`/`-`), mute (`m`) and page up/down — these are declared in `DASH_KEY_MAP` but not wired up yet.
+Seek keys (`.`/`,`) and help (`h`/`?`) are declared in `DASH_KEY_MAP` but not wired up yet.
 
 ## Architecture
 

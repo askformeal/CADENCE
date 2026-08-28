@@ -70,6 +70,10 @@ Read and modify the configuration file. These actions operate on the options def
 | `default_shuffle` | boolean | playback | `false` | Shuffle mode on start |
 | `pos_memorize_interval` | positive float | playback | `5` | Interval of memorized position updates (seconds) |
 | `player_timeout` | positive float | playback | `1` | Timeout of backend waiting for a player action (seconds) |
+| `dash_volume_step` | positive int | dash | `5` | Step of volume increase/decrease on dashboard |
+| `dash_pos_step` | positive int | dash | `5` | Step of position forward/backward on dashboard |
+| `cli_box_style` | box style | appearance | `rounded` | Box style of CLI (`ascii`, `at`, `rounded`, `square`, `double-corner`, `heavy-corner`, `double`, `heavy`) |
+| `dash_box_style` | box style | appearance | `rounded` | Box style of dashboard |
 
 The default value does not go through the type converter; values from the file are validated against the option type and fall back to the default if invalid.
 
