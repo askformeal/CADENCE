@@ -139,5 +139,5 @@ def align(width, left='', right=''):
         return f'{left}{' '*(width-l_len-r_len)}{right}'
     
 def progress_bar(progress, length):
-    progress = round(progress)
+    progress = min(max(round(progress), 0), length)
     return f"{'█'*progress}{'░'*(length-progress)}"
