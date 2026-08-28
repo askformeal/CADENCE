@@ -20,10 +20,25 @@ class Converter:
         else:
             return value
 
-    def pos_float(self, value):
+    def pos_int(self, value):
+        value = int(value)
+        if value <= 0:
+            raise ValueError
+        else:
+            return value
+        
+    def timeout(self, value):
         value = float(value)
         from src.constants import MIN_TIMEOUT
         if value < MIN_TIMEOUT:
+            raise ValueError
+        else:
+            return value
+
+    def box_style(self, value):
+        value = str(value)
+        from src.constants import BOX_STYLES
+        if value not in BOX_STYLES.keys():
             raise ValueError
         else:
             return value

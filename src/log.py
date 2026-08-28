@@ -22,7 +22,7 @@ class FlushFileHandler(logging.FileHandler):
         super().emit(record)
         self.flush()
 
-def setup_logger(name, path) -> logging.Logger:
+def setup_logger(name, path, add_console=True) -> logging.Logger:
     logger = logging.getLogger(name)
     if len(logger.handlers) == 0:
         format=logging.Formatter("%(asctime)s [%(levelname)s] [%(name)s] %(message)s")
@@ -35,7 +35,8 @@ def setup_logger(name, path) -> logging.Logger:
         file.setLevel(FILE_LOG_LEVEL)
         file.setFormatter(format)
 
-        logger.addHandler(console)
+        if add_console:
+            logger.addHandler(console)
         logger.addHandler(file)
         logger.addFilter(TruncateFilter(LOG_MAX_LENGTH))
         logger.setLevel(FILE_LOG_LEVEL)

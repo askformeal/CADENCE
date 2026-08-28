@@ -49,18 +49,20 @@ class SongOutput:
 
         self.player_status = info.get('player_status', '?')
 
-        raw_time = info.get('time', -1)
-        raw_length = info.get('length', -1)
+        self.time_raw = info.get('time', None)
+        self.length_raw = info.get('length', None)
 
-        self.time = format_time(raw_time)
-        self.length = format_time(raw_length)
+        self.time = format_time(self.time_raw)
+        self.length = format_time(self.length_raw)
     
-        if raw_length != -1:
-            self.percentage = f'{raw_time / raw_length * 100:.0f}'
+        if self.length_raw is not None and self.time_raw is not None:
+            self.percentage = f'{self.time_raw / self.length_raw * 100:.0f}'
         else:
             self.percentage = '--'
 
         self.volume = info.get('volume', '?')
+        self.volume_raw = info.get('volume', None)
+
         self.mute = {True: 'On', False: 'Off', '?': '?'}[info.get('mute', '?')]
         self.mute_raw = info.get('mute', None)
 

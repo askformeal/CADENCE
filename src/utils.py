@@ -9,7 +9,7 @@ import sys
 from typing import Literal
 from wcwidth import wcswidth
 
-from src.constants import WINDOWS_ILLEGAL, WINDOWS_RESERVED
+from src.constants import WINDOWS_ILLEGAL, WINDOWS_RESERVED, BOX_STYLES
 from src.sentinels import SENTINELS
 
 
@@ -55,7 +55,11 @@ def parse_time(time):
         ms = parts[-1] * 1000 + parts[-2] * 60000 + parts[-3] * 3600000
         return ms
 
-def box(text: str, l_pad=0, r_pad=0):
+def box(text: str, l_pad=0, r_pad=0, style='ascii'):
+    style = str(style)
+
+    upper_left, upper_right, lower_left, lower_right, vertical, horizontal = BOX_STYLES[style]
+    
     lines = text.split('\n')
     max_len = max(map(wcswidth, lines))
 
@@ -63,15 +67,14 @@ def box(text: str, l_pad=0, r_pad=0):
     r_space = ' ' * r_pad
 
     result = [
-        f" {'_' * (max_len + l_pad + r_pad + 4)} ",
-        f"/{l_space}  {' ' * max_len}  {r_space}\\"
+        f"{upper_left}{horizontal * (max_len + l_pad + r_pad + 4)}{upper_right}",
         ]
 
     for line in lines:
         pad = ' ' * (max_len - wcswidth(line))
-        result.append(f'|{l_space}  {line}{pad}  {r_space}|')
+        result.append(f'{vertical}{l_space}  {line}{pad}  {r_space}{vertical}')
 
-    result.append(f"\\{'_' * (max_len + l_pad + r_pad + 4)}/")
+    result.append(f"{lower_left}{horizontal * (max_len + l_pad + r_pad + 4)}{lower_right}")
 
     return '\n'.join(result)
 
@@ -126,3 +129,15 @@ def center(text, width):
     l_pad = ' ' * math.ceil((width - wcswidth(text)) / 2)
     r_pad = ' ' * math.floor((width - wcswidth(text)) / 2)
     return f'{l_pad}{text}{r_pad}'
+
+def align(width, left='', right=''):
+    l_len = wcswidth(left)
+    r_len = wcswidth(right)
+    if l_len + r_len > width:
+        return f'{left}{right}'
+    else:
+        return f'{left}{' '*(width-l_len-r_len)}{right}'
+    
+def progress_bar(progress, length):
+    progress = round(progress)
+    return f"{'█'*progress}{'░'*(length-progress)}"

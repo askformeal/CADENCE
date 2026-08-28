@@ -77,7 +77,9 @@ HOTKEY_COOL_DOWN = 0.5
 
 TRAY_ERROR_DISPLAY_TIME = 1.5
 
-DASH_MAX_SHOW_SONG = 9
+DASH_MAX_SHOW_SONG = 15
+DASH_VOL_BAR_LEN = 20
+DASH_TOAST_TIME = 3
 
 MEDIA_KEY_TO_ACTION = {
     0xb0: 'next',
@@ -93,20 +95,30 @@ READABLE_TYPE_NAMES = {
     IterType: 'list or tuple',
     CONVERTER.boolean: 'boolean',
     CONVERTER.port: 'network port',
-    CONVERTER.pos_float: 'positive float',
+    CONVERTER.pos_int: 'positive integer',
+    CONVERTER.timeout: 'positive float',
     CONVERTER.percentage: 'percentage number'
+}
+
+BOX_STYLES = {
+    'ascii': ('/', '\\', '\\', '/', '|', '='),
+    'at': ('@', '@', '@', '@', '|', '='),
+    'rounded': ('╭', '╮', '╰', '╯', '│', '─'),
+    'square': ('┌', '┐', '└', '┘', '│', '─'),
+    'double-corner': ('╔', '╗', '╚', '╝', '│', '─'),
+    'heavy-corner': ('┏', '┓', '┗', '┛', '│', '─'),
+    'double': ('╔', '╗', '╚', '╝', '║', '═'),
+    'heavy': ('┏', '┓', '┗', '┛', '┃', '━'),
 }
 
 class DashKeyMap: # why not a dict? because this works better with my IDE's suggestions
     def __init__(self):
-        self.quit = ('q', readchar.key.CTRL_C, readchar.key.CTRL_Z)
-
         self.toggle = readchar.key.SPACE
         self.stop = 'x'
         self.dice = 'd'
 
-        self.forward = '.'
-        self.backward = ','
+        self.forward = ('.', readchar.key.RIGHT)
+        self.backward = (',', readchar.key.LEFT)
 
         self.shuffle = 's'
         self.loop = 'r'
@@ -126,6 +138,15 @@ class DashKeyMap: # why not a dict? because this works better with my IDE's sugg
         self.page_down = readchar.key.PAGE_DOWN
 
         self.switch_select = readchar.key.ENTER
+
+        self.help = ('h', '?')
+
+        self.next_box = 't'
+        self.prev_box = 'T'
+
+        self.redraw = (readchar.key.CTRL_L, readchar.key.F5)
+
+        self.quit = ('q', readchar.key.CTRL_C, readchar.key.CTRL_Z)
 
         for name in vars(self).keys():
             value = getattr(self, name)
@@ -184,7 +205,7 @@ CONFIG_SCHEME = {
         'description': 'Host for frontend to send requests to'
     },
     'ipc_timeout': {
-        'type': CONVERTER.pos_float,
+        'type': CONVERTER.timeout,
         'section': 'network',
         'default': 10,
         'description': 'Timeout of frontend-backend communication (seconds). May cause error if not enough higher than player timeout'
@@ -214,16 +235,40 @@ CONFIG_SCHEME = {
         'description': 'Shuffle mode on start'
     },
     'pos_memorize_interval': {
-        'type': CONVERTER.pos_float,
+        'type': CONVERTER.timeout,
         'section': 'playback',
         'default': 5,
         'description': 'Interval between update of the memorized position of the currently played song (seconds)'
     },
     'player_timeout': {
-        'type': CONVERTER.pos_float,
+        'type': CONVERTER.timeout,
         'section': 'playback',
         'default': 1,
         'description': 'Timeout of backend waiting for a player action to be completed. May cause error if not enough lower than IPC timeout'
+    },
+    'dash_volume_step': {
+        'type': CONVERTER.pos_int,
+        'section': 'dash',
+        'default': 5,
+        'description': 'Step of volume increase/decrease on dashboard'
+    },
+    'dash_pos_step': {
+        'type': CONVERTER.pos_int,
+        'section': 'dash',
+        'default': 5,
+        'description': 'Step of position forward/backward on dashboard'
+    },
+    'cli_box_style': {
+        'type': CONVERTER.box_style,
+        'section': 'appearance',
+        'default': 'rounded',
+        'description': 'Box style of CLI'
+    },
+    'dash_box_style': {
+        'type': CONVERTER.box_style,
+        'section': 'appearance',
+        'default': 'rounded',
+        'description': 'Box style of dashboard'
     }
 }
 

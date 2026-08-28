@@ -5,6 +5,7 @@ import readchar
 from time import sleep
 
 from src import version
+from src.config import CONFIG
 from src.sentinels import SENTINELS
 from src.client import send_request, test_alive
 from src.process import start, kill
@@ -300,7 +301,7 @@ def main():
             print('[Failed]: Invalid response received from CADENCE backend')
 
         elif code == 0:
-            print(box(f'[Succeeded]: {response['msg']}'))
+            print(_cli_box(f'[Succeeded]: {response['msg']}'))
 
             if action == 'exit' and is_reboot:
                 print('Waiting for backend to fully exit...')
@@ -347,7 +348,7 @@ def main():
                         if output.dev:
                             text += '\n\nDEVELOPMENT MODE ON'
 
-                        print(box(text))
+                        print(_cli_box(text))
 
                     elif action == 'list':
                         _show_song_info(attachment, 'No songs are being played', show_num=True)
@@ -408,32 +409,32 @@ def main():
                         _show_option_info(attachment)
 
                     elif action == 'config.path':
-                        print(box(attachment))
+                        print(_cli_box(attachment))
 
         elif code == 1:
-            print(box(f'[Failed]: {response['msg']}'))
+            print(_cli_box(f'[Failed]: {response['msg']}'))
             if is_reboot:
                 print('Failed to exit backend, rebooting aborted')
 
         elif code == 2:
-            print(box('Failed to connect to CADENCE backend. You can try to use the start subcommand to start it'))
+            print(_cli_box('Failed to connect to CADENCE backend. You can try to use the start subcommand to start it'))
 
         elif code == 3:
-            print(box('[Failed]: received an unexpected default response code from CADENCE backend which is not to be used under any circumstances. Please report this error'))
+            print(_cli_box('[Failed]: received an unexpected default response code from CADENCE backend which is not to be used under any circumstances. Please report this error'))
 
         elif code == 4:
-            print(box('[Failed]: CADENCE backend is exiting'))
+            print(_cli_box('[Failed]: CADENCE backend is exiting'))
 
         elif code == 5:
-            print(box('[Failed]: Token rejected, authorization failed'))
+            print(_cli_box('[Failed]: Token rejected, authorization failed'))
 
         else:
-            print(box(f'[Failed]: Unknown response code \"{code}\"'))
+            print(_cli_box(f'[Failed]: Unknown response code \"{code}\"'))
 
         if len(failed) > 0:
             lines = [f'There are failed actions ({len(failed)}):\n']
             lines += list(map(lambda x: f'  {x['msg']}', failed))
-            print(box('\n'.join(lines)))
+            print(_cli_box('\n'.join(lines)))
 
         print()
         return code
@@ -456,6 +457,9 @@ def _start_backend(**kwargs):
         print(f'Failed to start CADENCE backend')
     return result, notifies
 
+def _cli_box(*args, **kwargs):
+    return box(*args, style=CONFIG.cli_box_style, **kwargs)
+
 def _show_notifies(notifies=None):
     if notifies is None:
         notifies = []
@@ -465,7 +469,7 @@ def _show_notifies(notifies=None):
             f'Notifies from CADENCE backend ({len(notifies)}):'
         ]
         lines += list(map(lambda x: f'  {x}', notifies))
-        print(box('\n'.join(lines)))
+        print(_cli_box('\n'.join(lines)))
 
 def _show_option_info(info):
     name = info.get('name', 'N/A')
@@ -480,7 +484,7 @@ def _show_option_info(info):
         f'Default Value: {default}',
         f'\n\"{description}\"'
         ]
-    print(box('\n'.join(lines)))
+    print(_cli_box('\n'.join(lines)))
 
 def _show_song_info(info, empty_msg='No information to be shown', show_aliases=False, show_playlists=False, show_num=False, show_tech=False):
     if not isinstance(info, (list, tuple)):
@@ -519,7 +523,7 @@ def _show_song_info(info, empty_msg='No information to be shown', show_aliases=F
             if show_playlists:
                 lines += [f"\nPlaylists ({output.playlists_num}): {output.playlists}"]
 
-            print(box('\n'.join(lines)))
+            print(_cli_box('\n'.join(lines)))
     else:
         print(empty_msg)
 
