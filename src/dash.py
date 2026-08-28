@@ -10,13 +10,13 @@ from src import version
 from src.log import setup_logger
 from src.constants import DASH_LOG_PATH
 from src.constants import HEARTBEAT_POLL_INTERVAL, DASH_POLL_INTERVAL
-from src.constants import DASH_MAX_SHOW_SONG, DASH_VOL_BAR_LEN, DASH_TOAST_TIME
+from src.constants import DASH_MAX_SHOW_SONG, DASH_POS_BAR_LEN, DASH_VOL_BAR_LEN, DASH_TOAST_TIME
 from src.constants import DASH_KEY_MAP as KEY_MAP
 from src.constants import BOX_STYLES
 from src.config import CONFIG
 from src.client import test_heartbeat, handle_code, send_request
 from src.song_output import SongOutput
-from src.utils import box, center, progress_bar, align
+from src.utils import box, center, progress_bar, align, format_time
 
 logger = setup_logger(__name__, DASH_LOG_PATH, add_console=False)
 
@@ -66,11 +66,13 @@ class Dash:
                         self.volume += CONFIG.dash_volume_step
                         self.volume = min(self.volume, 100)
                         self._send_dash_request('volume', volume=self.volume)
+
                 elif key in KEY_MAP.vol_down:
                     if isinstance(self.volume, int):
                         self.volume -= CONFIG.dash_volume_step
                         self.volume = max(self.volume, 0)
                         self._send_dash_request('volume', volume=self.volume)
+
                 elif key in KEY_MAP.mute:
                     self._send_dash_request('mute')
                     
@@ -135,15 +137,15 @@ class Dash:
                     self.display_name = status.display_name
                     self.artist = status.artist
                     self.album = status.album
-                    self.time = status.time
-                    self.length = status.length
+                    self.time = status.time_raw
+                    self.length = status.length_raw
                     self.volume = status.volume
                     self.mute = status.mute_raw
-                    self.shuffle = {True: '[Shuffle]', False: '', None: '?'}[status.shuffle_raw]
-                    self.loop = {True: '[Loop]', False: '', None: '?'}[status.loop_raw]
+                    self.shuffle = {True: '[Shuffle] ', False: '', None: '?'}[status.shuffle_raw]
+                    self.loop = {True: '[Loop] ', False: '', None: '?'}[status.loop_raw]
                     self.current_num = status.current_num
                     self.playlist_len = status.playlist_len
-                    self.player_status = status.player_status.capitalize()
+                    self.player_status = f'[{status.player_status.capitalize()}]'
 
                 songs = self._send_dash_request('list', silent=True)
                 if songs is not None:
@@ -196,9 +198,9 @@ class Dash:
                 lines += [
                     '\n{separator}\n',
                     '{song_info}\n',
+                    '{pos}\n',
                     '{album}\n',
                     '{state}',
-                    '{player_status}',
                     ]
                 lines += songs_lines
                 lines += ['{toast}']
@@ -210,6 +212,16 @@ class Dash:
                 song_info = center(f'{self.display_name} - {self.artist} [{self.current_num}/{self.playlist_len}]', max_len)
                 album = center(f'Album: {self.album}', max_len)
 
+                if not isinstance(self.time, int) or not isinstance(self.length, int) or self.time <= 0 or self.length <= 0:
+                    bar = progress_bar(0, DASH_POS_BAR_LEN)
+                    pos_num = '--:--:--/--:--:--'
+                else:
+                    progress = self.time / self.length
+                    bar = progress_bar(DASH_POS_BAR_LEN * progress, DASH_POS_BAR_LEN)
+                    pos_num = f'{format_time(self.time)}/{format_time(self.length)}'
+
+                pos = center(f'{bar} [{pos_num}]', max_len)
+
                 if not isinstance(self.volume, int):
                     bar = progress_bar(0, DASH_VOL_BAR_LEN)
                     vol_num = '?%'
@@ -218,11 +230,9 @@ class Dash:
                     vol_num = f'{self.volume}%'
                 if self.mute:
                     vol_num += ' [MUTE]'
-                volume = f'[{bar}] {vol_num}'
+                volume = f'{bar} [{vol_num}]'
 
-                state = align(max_len, volume, f'{self.shuffle} {self.loop}')
-
-                player_status = align(max_len, right=f'[{self.player_status}]')
+                state = align(max_len, volume, f"{self.shuffle}{self.loop}{self.player_status}")
 
                 if (time.time() - self.toast_time) <= DASH_TOAST_TIME:
                     toast = self.toast_text
@@ -235,8 +245,8 @@ class Dash:
                     separator=separator, 
                     song_info=song_info,
                     album=album,
+                    pos=pos,
                     state=state,
-                    player_status=player_status,
                     toast=toast
                     )
                 text = self._dash_box(text, l_pad=2, r_pad=2)

@@ -78,6 +78,7 @@ HOTKEY_COOL_DOWN = 0.5
 TRAY_ERROR_DISPLAY_TIME = 1.5
 
 DASH_MAX_SHOW_SONG = 15
+DASH_POS_BAR_LEN = 50
 DASH_VOL_BAR_LEN = 20
 DASH_TOAST_TIME = 3
 
@@ -117,8 +118,8 @@ class DashKeyMap: # why not a dict? because this works better with my IDE's sugg
         self.stop = 'x'
         self.dice = 'd'
 
-        self.forward = ('.', readchar.key.RIGHT)
-        self.backward = (',', readchar.key.LEFT)
+        self.forward = ('.', 'h', readchar.key.RIGHT)
+        self.backward = (',', 'l', readchar.key.LEFT)
 
         self.shuffle = 's'
         self.loop = 'r'
@@ -139,7 +140,7 @@ class DashKeyMap: # why not a dict? because this works better with my IDE's sugg
 
         self.switch_select = readchar.key.ENTER
 
-        self.help = ('h', '?')
+        self.help = ('H', '?')
 
         self.next_box = 't'
         self.prev_box = 'T'
