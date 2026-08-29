@@ -70,11 +70,13 @@ python -m src
 | `cadence shuffle`      | Toggle shuffle mode                                    |
 | `cadence loop`         | Toggle loop mode                                       |
 | `cadence switch <num>` | Switch to a song in current playlist via number        |
-| `cadence seek <time>`  | Jump to a specific time (HH:MM:SS)                     |
+| `cadence seek <time>`  | Jump to a specific time, or seek relative to the current position with a `+`/`-` prefix (e.g. `seek +10` forward, `seek -10` backward) |
 | `cadence jump <pct>`   | Jump to progress of the current song (percentage)      |
 | `cadence replay`       | Clear memorized progress and replay the current song   |
-| `cadence volume <pct>` | Set volume (0-100)                                     |
+| `cadence volume <pct>` | Set volume (0-100), or adjust relatively with a `+`/`-` prefix (e.g. `volume +5`, `volume -5`) |
 | `cadence mute`         | Toggle mute                                            |
+
+Note: a negative seek time starts with `-`, which the command-line parser treats as an option flag — quote it to pass it through, e.g. `cadence seek "-1:30"`. Plain numbers like `seek -10` work without quotes.
 
 ### Library
 
@@ -153,11 +155,12 @@ Keys (defined in `DASH_KEY_MAP` in `src/constants.py`):
 | `s` / `r` | Toggle shuffle / loop |
 | `=` / `-` | Volume up / down (step from `dash_volume_step`) |
 | `m` | Mute |
+| `,` / `h`, `←` | Jump backward (step from `dash_pos_step`) |
+| `.` / `l`, `→` | Jump forward (step from `dash_pos_step`) |
 | `t` / `T` | Next / previous box style (runtime only, not persisted) |
+| `?` / `F1` | Toggle the key map help screen |
 | `Ctrl+L`, `F5` | Redraw the screen |
 | `q`, `Ctrl+C`, `Ctrl+Z` | Quit the dashboard |
-
-Seek keys (`.`/`,`) and help (`h`/`?`) are declared in `DASH_KEY_MAP` but not wired up yet.
 
 ## Architecture
 

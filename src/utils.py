@@ -13,6 +13,14 @@ from src.constants import WINDOWS_ILLEGAL, WINDOWS_RESERVED, BOX_STYLES
 from src.sentinels import SENTINELS
 
 
+def squeeze(number, highest, lowest=0):
+    if number > highest:
+        number = highest
+    elif number < lowest:
+        number = lowest
+
+    return number
+
 def format_time(raw_time, unit: Literal['ms', 'sec']='ms'):
     if raw_time is None:
         return '--:--:--'
@@ -141,3 +149,37 @@ def align(width, left='', right=''):
 def progress_bar(progress, length):
     progress = min(max(round(progress), 0), length)
     return f"{'█'*progress}{'░'*(length-progress)}"
+
+def window_list(lines, window_len, selected, current=None, end_of_line_char=''):
+    result = []
+
+    length = len(lines)
+    selected = squeeze(selected, length-1)
+
+    above_selector_num = math.ceil(selected - window_len / 2)
+    below_selector_num = math.ceil(selected + window_len / 2)
+
+    if above_selector_num < 0:
+        below_selector_num -= above_selector_num
+        above_selector_num = 0
+
+    if below_selector_num >= length:
+        above_selector_num -= below_selector_num - length + 1
+        below_selector_num = length - 1
+
+    for i, line in enumerate(lines):
+        if i == selected:
+            lines[i] = f'[{line}]'
+        if i == current:
+            lines[i] = f'> {line} <'
+
+        if i in range(above_selector_num, below_selector_num+1):
+            result.append(lines[i])
+
+    max_len = max(map(wcswidth, lines))
+
+    for i, line in enumerate(result):
+        pad = ' ' * (max_len - wcswidth(line))
+        result[i] = f'{line}{pad}{end_of_line_char}'
+
+    return result

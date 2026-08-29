@@ -1,5 +1,27 @@
 # CHANGELOG
 
+## [0.35.0] - 2026-08-29
+
+### Added
+
+- Relative seek: `seek +10` / `seek -10` (forward/backward from the current position). Relative times are clamped to the song length; an unsigned time still means an absolute jump.
+- Relative volume: `volume +5` / `volume -5` (adjust by a step, clamped to 0-100). Absolute values still validated.
+- Dashboard seek keys wired: `.` / `l` / `→` jump forward, `,` / `h` / `←` jump backward (step from `dash_pos_step`).
+- Dashboard key map help screen (`?` / `F1`) — browsable list of all key bindings (`DASH_MAX_SHOW_BIND`).
+- `Bind` keymap class with display names plus `CHAR_TO_NAME` reverse key-name lookup in `src/constants.py`.
+- `utils.squeeze()` (clamp) and `utils.window_list()` (windowed list rendering with selection/playing markers) helpers.
+
+### Changed
+
+- Dashboard volume keys now send relative volume steps (`+N`/`-N`) instead of accumulating locally.
+- `volume` action and CLI now take a string (`+5` / `-5` / absolute); validation and clamping happen in the backend.
+- Dashboard movement keys follow vim-style horizontal navigation (`l` right, `h` left); help moved from `h`/`H` to `?` / `F1`.
+
+### Fixed
+
+- Dashboard crashed when the playing-song index was missing (`'?'` from older daemons or `None`) while rendering the windowed playlist — the playing marker is now guarded.
+- Tests updated for the relative seek interface (`-5:30` is a valid relative jump now); added relative seek coverage (invalid, before-open, forward, backward).
+
 ## [0.34.0] - 2026-08-28
 
 ### Added

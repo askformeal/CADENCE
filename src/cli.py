@@ -82,7 +82,7 @@ def main():
     replay_parser = command_sub.add_parser('replay', help='Clear memorized progress and jump to the beginning of the current playing song')
 
     volume_parser = command_sub.add_parser('volume', help='Set volume')
-    volume_parser.add_argument('volume', type=_percent, help='Volume to set (percentage)')
+    volume_parser.add_argument('volume', type=str, help='Volume to set (percentage)')
 
     mute_parser = command_sub.add_parser('mute', help='Toggle mute')
 

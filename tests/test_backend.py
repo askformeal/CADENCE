@@ -967,10 +967,31 @@ def test_seek_invalid_time(backend):
     assert 'invalid time' in response['msg']
 
 
-def test_seek_invalid_time_negative(backend):
-    response = _request(backend, 'seek', time='-5:30')
+def test_seek_invalid_relative_time(backend):
+    response = _request(backend, 'seek', time='+abc')
     assert response['code'] == 1
-    assert 'invalid time' in response['msg']
+    assert 'invalid' in response['msg']
+
+
+def test_seek_relative_before_open(backend):
+    response = _request(backend, 'seek', time='+1')
+    assert response['code'] == 1
+    assert 'neither playing nor paused' in response['msg']
+
+
+def test_seek_relative_forward(backend, audio_file):
+    _request(backend, 'open', song=audio_file)
+    response = _request(backend, 'seek', time='+1')
+    assert response['code'] == 0
+    assert 'jumped to' in response['msg']
+
+
+def test_seek_relative_backward(backend, audio_file):
+    _request(backend, 'open', song=audio_file)
+    _request(backend, 'seek', time='+1')
+    response = _request(backend, 'seek', time='-1')
+    assert response['code'] == 0
+    assert 'jumped to' in response['msg']
 
 
 def test_seek_invalid_time_too_many_parts(backend):

@@ -376,11 +376,29 @@ class Backend:
 
             elif action == 'seek':
                 raw_time = request['time']
-                pos = parse_time(raw_time)
-                if pos is SENTINELS.INVALID_TIME:
-                    response = gen_response.Failed(f'invalid time: {raw_time}')
-                else:
-                    response = self._jump_to_pos(pos)
+                if raw_time.startswith(('+', '-')):
+                    step = parse_time(raw_time[1:])
+                    if step is SENTINELS.INVALID_TIME:
+                        response = gen_response.Failed(f'invalid forward/backward time: {raw_time}')
+                    else:
+                        if raw_time.startswith('-'):
+                            step = -step
+
+                        progress = self.player.get_progress()
+                        length = progress['length']
+                        current_pos = progress['time']
+
+                        pos = current_pos + step
+                        if length > 0:
+                            pos = min(pos, length)
+                        pos = max(pos, 0)
+                        response = self._jump_to_pos(pos)
+                else:   
+                    pos = parse_time(raw_time)
+                    if pos is SENTINELS.INVALID_TIME:
+                        response = gen_response.Failed(f'invalid time: {raw_time}')
+                    else:
+                        response = self._jump_to_pos(pos)
 
             elif action == 'jump':
                 percent = request['progress']
@@ -402,13 +420,31 @@ class Backend:
 
             elif action == 'volume':
                 volume = request['volume']
-                if volume < 0:
-                    response = gen_response.PercentageTooLow(volume)
-                elif volume > 100:
-                    response = gen_response.PercentageTooHigh(volume)
+                if volume.startswith(('+', '-')):
+                    try:
+                        step = int(volume[1:])
+                    except ValueError:
+                        response = gen_response.Failed(f'invalid increase/decrease volume: {volume}')
+                    else:
+                        if volume.startswith('-'):
+                            step = -step
+                        target_vol = self.player.volume + step
+                        target_vol = max(min(target_vol, 100), 0)
+                        self.player.set_volume(target_vol)
+                        response = gen_response.Success(f'set volume to {self.player.volume}%')
                 else:
-                    self.player.set_volume(volume)
-                    response = gen_response.Success(f'set volume to {self.player.volume}%')
+                    try:
+                        volume = int(volume)
+                    except ValueError:
+                        response = gen_response.Failed(f'invalid volume: {volume}')
+                    else:
+                        if volume < 0:
+                            response = gen_response.PercentageTooLow(volume)
+                        elif volume > 100:
+                            response = gen_response.PercentageTooHigh(volume)
+                        else:
+                            self.player.set_volume(volume)
+                            response = gen_response.Success(f'set volume to {self.player.volume}%')
 
             elif action == 'mute':
                 self.player.set_mute(not self.player.mute)
