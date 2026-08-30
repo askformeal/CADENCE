@@ -75,14 +75,14 @@ def box(text: str, l_pad=0, r_pad=0, style='ascii'):
     r_space = ' ' * r_pad
 
     result = [
-        f"{upper_left}{horizontal * (max_len + l_pad + r_pad + 4)}{upper_right}",
+        f"{upper_left}{horizontal * (max_len + l_pad + r_pad + 2)}{upper_right}",
         ]
 
     for line in lines:
         pad = ' ' * (max_len - wcswidth(line))
-        result.append(f'{vertical}{l_space}  {line}{pad}  {r_space}{vertical}')
+        result.append(f'{vertical}{l_space} {line}{pad} {r_space}{vertical}')
 
-    result.append(f"{lower_left}{horizontal * (max_len + l_pad + r_pad + 4)}{lower_right}")
+    result.append(f"{lower_left}{horizontal * (max_len + l_pad + r_pad + 2)}{lower_right}")
 
     return '\n'.join(result)
 
@@ -165,7 +165,7 @@ def wrap_text(text, max_len):
             lines.append(word)
     return '\n'.join(lines)
 
-def window_list(lines, window_len, selected, current=None, filter='', end_of_line_char=''):
+def window_list(lines, window_len, selected, current=None, filter='', newline_selected=False, mark_unshown=True, left_align=True, end_of_line_char=''):
     result = []
 
     length = len(lines)
@@ -192,6 +192,9 @@ def window_list(lines, window_len, selected, current=None, filter='', end_of_lin
                 lines[i] = f'{line[:start]}[{line[start:end]}]{line[end:]}'
         if i == selected:
             lines[i] = f'-[ {lines[i]} ]-'
+            lines[i] = lines[i].replace('\n', ' ]-\n-[ ')
+            if newline_selected:
+                lines[i] = f'\n{lines[i]}\n'
         if i == current:
             lines[i] = f'> {lines[i]} <'
 
@@ -199,13 +202,17 @@ def window_list(lines, window_len, selected, current=None, filter='', end_of_lin
             result.append(lines[i])
 
     for i, line in enumerate(result):
-        pad = ' ' * (max_len - wcswidth(line))
+        if left_align:
+            pad = ' ' * (max_len - wcswidth(line))
+        else:
+            pad = ''
         result[i] = f'{line}{pad}{end_of_line_char}'
 
-    above_mark = [align(max_len, right=f'{max(upper_index, 0)} ↑ ')]
-    below_mark = [align(max_len, right=f'{len(lines)-lower_index-1} ↓ ')]
+    if mark_unshown:
+        above_mark = [align(max_len, right=f'{max(upper_index, 0)} ↑ ')]
+        below_mark = [align(max_len, right=f'{len(lines)-lower_index-1} ↓ ')]
 
-    result = above_mark + result + below_mark
+        result = above_mark + result + below_mark
 
     return result
 
@@ -236,17 +243,17 @@ def parse_lyric(path):
                 else:
                     result.append([pos, text])
                     
-        return result
+    return result
 
 def get_lyric_line(lyric, pos):
     if len(lyric) == 0:
         return None
     else:
         if pos < lyric[0][0]:
-            return (0, '')
+            return SENTINELS.BEFORE_FIRST_LYRIC
         elif pos >= lyric[-1][0]:
-            return lyric[-1]
+            return len(lyric)-1
         else:
             for i, line in enumerate(lyric[:-1]):
                 if pos >= line[0] and pos < lyric[i+1][0]:
-                    return line
+                    return i

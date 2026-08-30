@@ -31,7 +31,6 @@ class Config:
             return SENTINELS.INVALID_CONFIG_FILE
 
         else:
-            logger.debug(f'{count_dict(file_config)} options found in file')
             return file_config
 
     def set_file(self, file_config):

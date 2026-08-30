@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## [0.40.0] - 2026-08-30
+
+### Added
+
+- Dashboard lyric panel: shows a small window of lyric lines around the current one (`DASH_MAX_SHOW_LYRIC`), with the current line highlighted and blank-line emphasis; shows `...` before the first line during the intro.
+- `window_list()` gains `newline_selected` (blank lines around the selected row), `mark_unshown` (toggle the `↑`/`↓` remaining-count markers) and `left_align` options.
+
+### Changed
+
+- `get_lyric_line()` now returns the lyric line index (or the `BEFORE_FIRST_LYRIC` sentinel) instead of the line tuple — callers map the text themselves.
+- `box()` inner padding reduced from 2 to 1 space per side (tighter frames).
+- `lib list` empty playlist message changed to `Player Empty`.
+
+### Fixed
+
+- `parse_lyric()` returned after the first parsed line (the `return result` was inside the line loop) — now returns all lines.
+
 ## [0.39.0] - 2026-08-30
 
 ### Added

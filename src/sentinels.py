@@ -86,5 +86,6 @@ class Sentinels:
         self.ROOT_SECTION = Sentinel('This Config Option is in the Root Section')
         self.FILE_IO_FAILED = Sentinel('Failed to Write/Read File')
         self.NO_OPENER = Sentinel('No Available File Opener Found')
+        self.BEFORE_FIRST_LYRIC = Sentinel('Position Before First Lyric Line')
 
 SENTINELS = Sentinels()
