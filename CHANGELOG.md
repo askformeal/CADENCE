@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## [0.38.0] - 2026-08-30
+
+### Added
+
+- Lyric support: `lyric` backend action returns the current song's parsed lyric lines; `cadence lib lyric set <song> <path>` binds a `.lrc` file to a song (empty string unsets).
+- Dashboard shows the current lyric line (synchronized to playback position via the LRC timestamps), fetched lazily when the song's lyric path changes.
+- Dashboard `Ctrl+A` play-all key.
+- `utils.parse_lyric()` / `utils.get_lyric_line()` — LRC parsing with an encoding fallback chain (`utf-8`, `gb18030`, `big5`, `shift_jis`, `utf-16`), multi-timestamp line merging, and position lookup.
+- `DASH_MIN_WIDTH` (80) — dashboard layout enforces a minimum width so the lyric line and status rows don't collapse on narrow terminals.
+- `utils.center()` now centers multi-line text line by line.
+
+### Changed
+
+- `METADATA` includes `lyric` (settable through `lib.meta.set` too); database migration adds the `songs.lyric` column.
+- Dashboard layout reordered: album, progress bar, lyric line, state row, playlist.
+- `window_list()` reserves extra padding for the selection/playing markers and clamps the above-count to non-negative.
+
 ## [0.37.0] - 2026-08-30
 
 ### Added

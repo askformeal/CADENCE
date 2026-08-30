@@ -92,6 +92,7 @@ Note: a negative seek time starts with `-`, which the command-line parser treats
 | `cadence lib reset`         | Reset library and delete all data (confirmation)   |
 | `cadence lib meta set`      | Set metadata of a song (use `""` to clear)         |
 | `cadence lib meta read-file`| Set metadata of a song from its file tags (`--all` for every field) |
+| `cadence lib lyric set`     | Set the lyric file of a song (use `""` to unset)   |
 | `cadence lib alias ...`     | List/bind/unbind aliases (`bind <song> <alias>...`, `unbind <alias>...`) |
 | `cadence lib playlist ...`  | List/create/add/kick/delete playlists (`lib playlist list` supports `-a`/`-p`/`-t`) |
 
@@ -139,13 +140,14 @@ The tray icon starts with the backend (unless the `tray` config option is off) a
 
 ### Dashboard
 
-The dashboard (`cadence dash`) is an interactive terminal UI. It shows the current song, a progress bar with elapsed/total time, volume bar and playback state, the playlist (with the playing song and your selection highlighted), and is controlled entirely from the keyboard. It starts its own frontend process and uses the same socket protocol as the other frontends.
+The dashboard (`cadence dash`) is an interactive terminal UI. It shows the current song, a progress bar with elapsed/total time, volume bar and playback state, the current lyric line (if the song has a lyric file set via `cadence lib lyric set`), the playlist (with the playing song and your selection highlighted), and is controlled entirely from the keyboard. It starts its own frontend process and uses the same socket protocol as the other frontends.
 
 Keys (defined in `DASH_KEY_MAP` in `src/constants.py`):
 
 | Key | Action |
 | --- | --- |
 | `Space` | Play / pause |
+| `Ctrl+A` | Play all songs in the library |
 | `o` | Open a song — prompts for a song name, library ID, file path or playlist name |
 | `/` | Filter the playlist — prompts for text, matches against song name and artist; highlights matches and shows remaining counts above/below |
 | `g` | Jump to a specific time — prompts for `HH:MM:SS` |

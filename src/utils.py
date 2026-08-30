@@ -9,7 +9,7 @@ import sys
 from typing import Literal
 from wcwidth import wcswidth
 
-from src.constants import WINDOWS_ILLEGAL, WINDOWS_RESERVED, BOX_STYLES
+from src.constants import ENCODING, ENCODING_CHAIN, WINDOWS_ILLEGAL, WINDOWS_RESERVED, BOX_STYLES
 from src.sentinels import SENTINELS
 
 
@@ -134,9 +134,12 @@ def open_file(path):
         return SENTINELS.FILE_IO_FAILED
 
 def center(text, width):
-    l_pad = ' ' * math.ceil((width - wcswidth(text)) / 2)
-    r_pad = ' ' * math.floor((width - wcswidth(text)) / 2)
-    return f'{l_pad}{text}{r_pad}'
+    result = []
+    for line in text.splitlines():
+        l_pad = ' ' * math.ceil((width - wcswidth(line)) / 2)
+        r_pad = ' ' * math.floor((width - wcswidth(line)) / 2)
+        result.append(f'{l_pad}{line}{r_pad}')
+    return '\n'.join(result)
 
 def align(width, left='', right=''):
     l_len = wcswidth(left)
@@ -179,6 +182,8 @@ def window_list(lines, window_len, selected, current=None, filter='', end_of_lin
         upper_index -= lower_index - length + 1
         lower_index = length - 1
 
+    max_len = max(map(wcswidth, lines)) + 10
+
     for i, line in enumerate(lines):
         if filter != '':
             start = line.lower().find(filter.lower())
@@ -193,15 +198,55 @@ def window_list(lines, window_len, selected, current=None, filter='', end_of_lin
         if i in range(upper_index, lower_index+1):
             result.append(lines[i])
 
-    max_len = max(map(wcswidth, lines))
-
     for i, line in enumerate(result):
         pad = ' ' * (max_len - wcswidth(line))
         result[i] = f'{line}{pad}{end_of_line_char}'
 
-    above_mark = [align(max_len, right=f'{upper_index} ↑ ')]
+    above_mark = [align(max_len, right=f'{max(upper_index, 0)} ↑ ')]
     below_mark = [align(max_len, right=f'{len(lines)-lower_index-1} ↓ ')]
 
     result = above_mark + result + below_mark
 
     return result
+
+def parse_lyric(path):
+    timestamp = re.compile(r'\[(\d+):(\d+)(?:\.(\d+))?\]')
+    for encoding in ENCODING_CHAIN:
+        try:
+            with open(path, 'r', encoding=encoding) as f:
+                content = f.read()
+        except (OSError, UnicodeDecodeError):
+            continue
+        else:
+            break
+    else:
+        return SENTINELS.FILE_IO_FAILED
+    result = []
+    lines = content.splitlines()
+    for line in lines:
+        matches = re.findall(timestamp, line)            
+        if len(matches) > 0:
+            text = timestamp.sub('', line).strip()
+            for minute, second, ms in matches:
+                pos = int(minute) * 60000 + int(second) * 1000
+                if ms != '':
+                    pos += int(ms.ljust(2, '0')) * 10
+                if len(result) > 0 and pos == result[-1][0]:
+                    result[-1][1] += f'\n{text}'
+                else:
+                    result.append([pos, text])
+                    
+        return result
+
+def get_lyric_line(lyric, pos):
+    if len(lyric) == 0:
+        return None
+    else:
+        if pos < lyric[0][0]:
+            return (0, '')
+        elif pos >= lyric[-1][0]:
+            return lyric[-1]
+        else:
+            for i, line in enumerate(lyric[:-1]):
+                if pos >= line[0] and pos < lyric[i+1][0]:
+                    return line

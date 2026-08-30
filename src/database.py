@@ -81,6 +81,7 @@ class Database:
             )''',
 
             'ALTER TABLE playlists ADD COLUMN last_num INTEGER',
+            'ALTER TABLE songs ADD COLUMN lyric TEXT',
         ]
         version = self.execute('PRAGMA user_version').fetchone()[0]
         for i, sql in enumerate(INIT_DATABASE):

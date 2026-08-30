@@ -163,6 +163,13 @@ def main():
     alias_unbind_parser = alias_sub.add_parser('unbind', help='Unbind aliases from their songs in library')
     alias_unbind_parser.add_argument('aliases', type=str, nargs='+', help='Aliases to unbind')
 
+    lyric_parser = lib_sub.add_parser('lyric', help='Manage lyrics')
+    lyric_sub = lyric_parser.add_subparsers(dest='lyric_action', required=True)
+
+    lyric_set_parser = lyric_sub.add_parser('set', help='Set lyric file of a song. Using empty string (\"\") to unset')
+    lyric_set_parser.add_argument('song', type=str, help='Song to set lyric file')
+    lyric_set_parser.add_argument('path', type=_path, help='Path of lyric file')
+
     playlist_parser = lib_sub.add_parser('playlist', help='Manage playlists')
     playlist_sub = playlist_parser.add_subparsers(dest='playlist_action', required=True)
 
@@ -244,6 +251,10 @@ def main():
         if args.get('alias_action', None) is not None:
             args['lib_action'] = f"{args['lib_action']}.{args['alias_action']}"
             del args['alias_action']
+
+        if args.get('lyric_action', None) is not None:
+            args['lib_action'] = f"{args['lib_action']}.{args['lyric_action']}"
+            del args['lyric_action']
 
         if args.get('playlist_action', None) is not None:
             args['lib_action'] = f"{args['lib_action']}.{args['playlist_action']}"
@@ -342,12 +353,13 @@ def main():
                                         f'In library: {output.in_lib}',
                                         f'Album: {output.album}',
                                         f'Path: {output.path}\n',
+                                        f'Lyric File Path: {output.lyric}',
                                         f'Player status: {output.player_status}',
                                         f'Volume: {output.volume}%',
                                         f'Mute: {output.mute}',
                                         f'\nShuffle: {output.shuffle}',
                                         f'Loop: {output.loop}',
-                                        f'\nCADENCE backend had been running for {output.run_time}',
+                                        f'\nCADENCE backend has been running for {output.run_time}',
                         ))
 
                         if output.dev:

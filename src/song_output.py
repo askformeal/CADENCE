@@ -16,6 +16,9 @@ class SongOutput:
         self.artist = info.get('artist', '?')
         self.album = info.get('album', '?')
 
+        self.lyric = info.get('lyric', '?')
+        self.lyric_raw = info.get('lyric', None)
+
         self.duration = format_time(info.get('duration', -1))
         self.bitrate = info.get('bitrate', '?')
         if isinstance(self.bitrate, int):

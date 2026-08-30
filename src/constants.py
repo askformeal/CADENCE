@@ -14,6 +14,7 @@ class IterType:
         self.element_type = element_type
 
 ENCODING = 'utf-8'
+ENCODING_CHAIN = ('utf-8', 'gb18030', 'big5', 'shift_jis', 'utf-16')
 
 # Paths
 ICON_PATH = str(files('res') / 'icon.ico')
@@ -77,6 +78,7 @@ HOTKEY_COOL_DOWN = 0.5
 
 TRAY_ERROR_DISPLAY_TIME = 1.5
 
+DASH_MIN_WIDTH = 80
 DASH_MAX_SHOW_SONG = 15
 DASH_MAX_SHOW_BIND = 25
 DASH_POS_BAR_LEN = 50
@@ -141,6 +143,7 @@ class Bind:
 class DashKeyMap: # why not a dict? because this works better with my IDE's suggestions
     def __init__(self):
         self.open = Bind('o', name='Open')
+        self.play_all = Bind(readchar.key.CTRL_A, name='Play All')
         self.toggle = Bind(readchar.key.SPACE, name='Play/Pause')
         self.stop = Bind('x', name='Stop Playback')
         self.dice = Bind('d', name='Dice')
@@ -376,6 +379,7 @@ ACTION_KEYS = {
         'bitrate': (int, False, None),
         'sample_rate': (int, False, None),
         'channels': (int, False, None),
+        'lyric': (str, False, None),
     },
 
     'lib.meta.read-file': {
@@ -399,6 +403,11 @@ ACTION_KEYS = {
     },
     'lib.alias.unbind': {
         'aliases': (IterType(str), True)
+    },
+    'lib.lyric.set':
+    {
+        'song': (str, True),
+        'path': (str, True)
     },
     'lib.playlist.list': {
         'playlist': (str, False, None),
@@ -457,7 +466,7 @@ ATTACHMENT_REQUIRED_ACTIONS = [
     'config.path'
 ]
 
-METADATA = ['name', 'artist', 'album', 'duration', 'bitrate', 'sample_rate', 'channels']
+METADATA = ['name', 'artist', 'album', 'duration', 'bitrate', 'sample_rate', 'channels', 'lyric']
 SEARCH_META = ['name', 'artist', 'album'] # metadata that can be used for searching
 
 FILE_META = {

@@ -40,6 +40,8 @@
   - [X] `cadence dash` subcommand to start the dashboard
   - [X] Dashboard filter key (`/`) — filter playlist by name/artist with match highlighting and remaining counts
   - [X] Dashboard seek key (`g`) — prompt for a time to jump to
+  - [X] Lyrics — `lib lyric set` to bind a `.lrc` file, dashboard shows the synchronized lyric line (encoding fallback chain for GBK/Big5/Shift_JIS)
+  - [X] Dashboard play-all key (`Ctrl+A`)
 - [ ] HTTP frontend
 - [ ] Bluetooth frontend
 - [ ] Advanced library management

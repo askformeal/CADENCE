@@ -7,15 +7,16 @@ import readchar
 
 from src import version
 from src.log import setup_logger
-from src.constants import DASH_LOG_PATH, DASH_MAX_SHOW_BIND
+from src.constants import DASH_LOG_PATH, DASH_MAX_SHOW_BIND, DASH_MIN_WIDTH
 from src.constants import HEARTBEAT_POLL_INTERVAL, DASH_POLL_INTERVAL
 from src.constants import DASH_MAX_SHOW_SONG, DASH_POS_BAR_LEN, DASH_VOL_BAR_LEN, DASH_TOAST_TIME
 from src.constants import DASH_KEY_MAP as KEY_MAP
 from src.constants import BOX_STYLES
 from src.config import CONFIG
 from src.client import test_heartbeat, handle_code, send_request
+
 from src.song_output import SongOutput
-from src.utils import box, center, progress_bar, align, format_time, window_list, squeeze, wrap_text
+from src.utils import box, center, get_lyric_line, progress_bar, align, format_time, window_list, squeeze, wrap_text
 
 logger = setup_logger(__name__, DASH_LOG_PATH, add_console=False)
 
@@ -32,7 +33,7 @@ class Dash:
         self.paused = False
 
         self.old_text = ''
-        self.redraw = False
+        self.redraw = True
         self.box_styles = list(BOX_STYLES.keys())
         self.box_style_num = self.box_styles.index(CONFIG.dash_box_style)
 
@@ -40,6 +41,8 @@ class Dash:
 
         self.toast_text = ''
         self.toast_time = 0
+
+        self.lyric = {}
 
         print('\033[?1049h', end='')
         self._cursor_off()
@@ -65,6 +68,9 @@ class Dash:
                     song = self._get_input('Enter song name/library ID/file path/playlist name: ')
                     if song != '':
                         self._send_dash_request('open', song=song)
+
+                elif key in KEY_MAP.play_all:
+                    self._send_dash_request('play-all')
 
                 elif key in KEY_MAP.toggle:
                     self._send_dash_request('toggle')
@@ -201,10 +207,11 @@ class Dash:
 
                     status = self._send_dash_request('status', silent=True)
                     if status is not None:
-                        status = SongOutput(status)
+                        status = SongOutput(status, prettify_none=False)
                         self.display_name = status.display_name
                         self.artist = status.artist
                         self.album = status.album
+                        lyric_path = status.lyric_raw
                         self.time = status.time_raw
                         self.length = status.length_raw
                         self.volume = status.volume
@@ -215,8 +222,19 @@ class Dash:
                         if isinstance(self.current_num, int):
                             self.current_num -= 1
                         self.playlist_len = status.playlist_len
-                        self.player_status = f'[{status.player_status.capitalize()}]'
+                        self.player_status = status.player_status
+                        if self.player_status is None:
+                            self.player_status = 'N/A'
+                        else:
+                            self.player_status = f'[{self.player_status.capitalize()}]'
 
+                        if self.lyric.get('path', None) != lyric_path:
+                            self.lyric = self._send_dash_request('lyric')
+                            if self.lyric is None:
+                                self.lyric = {'path': lyric_path}
+                            if self.lyric != {}:
+                                logger.debug(f'Lyric file update: {self.lyric}')
+                            
                     songs = self._send_dash_request('list', silent=True)
                     if songs is not None:
                         if len(songs) == 0:
@@ -251,16 +269,19 @@ class Dash:
                     lines += [
                         '\n{separator}\n',
                         '{song_info}\n',
-                        '{pos}\n',
                         '{album}\n',
-                        '{state}',
+                        '{pos}\n',
+                        '{lyric}\n',
+                        '{state}\n\n',
                         ]
                     if self.filter != '':
                         lines += [f'Filter: \"{self.filter}\"']
-                    lines += songs_lines
-                    lines += ['{toast}']
+                    lines += [
+                        '{playlist}',
+                        '{toast}'
+                        ]
 
-                    max_len = max(map(wcswidth, lines))
+                    max_len = max(max(map(wcswidth, lines)), DASH_MIN_WIDTH)
 
                     title = center(f'CADENCE {version} Dashboard', max_len)
                     separator = '='*max_len
@@ -269,7 +290,6 @@ class Dash:
                         current += 1
 
                     song_info = center(f'{self.display_name} - {self.artist} [{current}/{self.playlist_len}]', max_len)
-                    album = center(f'Album: {self.album}', max_len)
 
                     if not isinstance(self.time, int) or not isinstance(self.length, int) or self.time <= 0 or self.length <= 0:
                         bar = progress_bar(0, DASH_POS_BAR_LEN)
@@ -280,6 +300,15 @@ class Dash:
                         pos_num = f'{format_time(self.time)}/{format_time(self.length)}'
 
                     pos = center(f'{bar} [{pos_num}]', max_len)
+
+                    album = center(f'Album: {self.album}', max_len)
+
+                    lyric = ''
+                    if isinstance(self.time, int):
+                        line = get_lyric_line(self.lyric.get('lyric', []), self.time)
+                        if line is not None:
+                            lyric = line[1]
+                            lyric = center(wrap_text(lyric, max_len), max_len)
 
                     if not isinstance(self.volume, int):
                         bar = progress_bar(0, DASH_VOL_BAR_LEN)
@@ -293,6 +322,10 @@ class Dash:
 
                     state = align(max_len, volume, f"{self.shuffle}{self.loop}{self.player_status}")
 
+                    for i, line in enumerate(songs_lines):
+                        songs_lines[i] = center(line, max_len)
+                    playlist = '\n'.join(songs_lines)
+
                     if (time.time() - self.toast_time) <= DASH_TOAST_TIME:
                         toast = wrap_text(self.toast_text, max_len)
                     else:
@@ -304,8 +337,10 @@ class Dash:
                         separator=separator, 
                         song_info=song_info,
                         album=album,
+                        lyric=lyric,
                         pos=pos,
                         state=state,
+                        playlist=playlist,
                         toast=toast
                         )
                 text = self._dash_box(text, l_pad=2, r_pad=2)
@@ -313,7 +348,6 @@ class Dash:
 
                 if (text != self.old_text or self.redraw) and not self.paused:
                     if self.old_text != '':
-                        # print(f'\033[{len(self.old_text.split('\n'))}F\033[J', end='')
                         print(f'\033[2J\033[H', end='')
                     print(text)
                     self.old_text = text

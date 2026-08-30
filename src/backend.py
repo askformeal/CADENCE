@@ -27,7 +27,7 @@ from src import gen_response
 from src.database import Database
 from src.player import Player
 from src.pid import add_pid, remove_pid
-from src.utils import format_time, parse_time, verify_path_format
+from src.utils import format_time, parse_lyric, parse_time, verify_path_format
 
 logger = setup_logger(__name__, BACKEND_LOG_PATH)
 
@@ -211,6 +211,7 @@ class Backend:
                     'name': info.get('name', None),
                     'artist': info.get('artist', None),
                     'album': info.get('album', None),
+                    'lyric': info.get('lyric', None),
                     'in_library': self.current_song_in_lib,
                     'player_status': player_status,
                     'volume': self.player.volume,
@@ -450,6 +451,22 @@ class Backend:
                 self.player.set_mute(not self.player.mute)
                 mode = {True: 'on', False: 'off'}[self.player.mute]
                 response = gen_response.Success(f'turned mute mode {mode}')
+
+            elif action == 'lyric':
+                if self.current_song_info is None:
+                    response = gen_response.PlayerEmpty('get lyric of current song')
+                else:
+                    info = self.current_song_info[self.current_song_num]
+                    lyric_path = info.get('lyric', None)
+                    if lyric_path is None:
+                        response = gen_response.Success('this song does not have a lyric file set')
+                    else:
+                        lyric = parse_lyric(lyric_path)
+                        if lyric is SENTINELS.FILE_IO_FAILED:
+                            response = gen_response.Failed(f'can not open lyric file \"{lyric_path}\"')
+                        else:
+                            attachment = {'path': lyric_path, 'lyric': lyric}
+                            response = gen_response.Success('lyric of current song obtained', attachment=attachment)
 
             elif action == 'lib.info':
                 songs = request['songs']
@@ -764,6 +781,21 @@ class Backend:
                             failed.append(gen_response.Failed(f'can not unbind {alias} because it does not exist in library'))
 
                     response = gen_response.BatchAuto('aliases unbound', len(failed), len(aliases), failed=failed)
+
+            elif action == 'lib.lyric.set':
+                song = request['song']
+                path = request['path']
+
+                song_id = self._get_song(song, cwd)
+                if song_id is SENTINELS.MISSING_CWD:
+                    response = gen_response.MissingCWD('lib.lyric.set')
+                elif song_id is SENTINELS.NOT_IN_LIB:
+                    response = gen_response.SongNotExist(f'set lyric file of \"{song}\"')
+                else:
+                    if path == '':
+                        path = SENTINELS.CLEAR_META
+                    self.database.set_song_meta(song_id, 'lyric', path)
+                    response = gen_response.Success(f'set lyric file of \"{song}\"')
 
             elif action == 'lib.playlist.list':
                 response = gen_response.Success('obtained list of playlist in library')
