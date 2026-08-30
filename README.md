@@ -154,6 +154,7 @@ Keys (defined in `DASH_KEY_MAP` in `src/constants.py`):
 | `n` / `p` | Next / previous song |
 | `j` / `k`, `↑` / `↓` | Move selection up / down |
 | `PgUp` / `PgDn` | Page selection up / down |
+| `Home` / `End` | Jump to top / bottom of the list |
 | `c` | Jump selection to the currently playing song |
 | `Enter` | Play the selected song |
 | `x` / `d` | Stop / random song jump |

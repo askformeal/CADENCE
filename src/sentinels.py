@@ -87,5 +87,6 @@ class Sentinels:
         self.FILE_IO_FAILED = Sentinel('Failed to Write/Read File')
         self.NO_OPENER = Sentinel('No Available File Opener Found')
         self.BEFORE_FIRST_LYRIC = Sentinel('Position Before First Lyric Line')
+        self.END_OF_LIST = Sentinel('End of List')
 
 SENTINELS = Sentinels()

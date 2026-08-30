@@ -9,7 +9,7 @@ import sys
 from typing import Literal
 from wcwidth import wcswidth
 
-from src.constants import ENCODING, ENCODING_CHAIN, WINDOWS_ILLEGAL, WINDOWS_RESERVED, BOX_STYLES
+from src.constants import ENCODING_CHAIN, WINDOWS_ILLEGAL, WINDOWS_RESERVED, BOX_STYLES
 from src.sentinels import SENTINELS
 
 
@@ -204,21 +204,24 @@ def window_list(lines, window_len, selected, current=None, filter='', newline_se
     max_len = max(map(wcswidth, lines)) + 10
 
     for i, line in enumerate(lines):
+        line = line.strip()
         if filter != '':
             start = line.lower().find(filter.lower())
             if start != -1:
                 end = start + len(filter)
-                lines[i] = f'{line[:start]}[{line[start:end]}]{line[end:]}'
+                line = f'{line[:start]}[{line[start:end]}]{line[end:]}'
         if i == selected:
-            lines[i] = f'-[ {lines[i]} ]-'
-            lines[i] = lines[i].replace('\n', ' ]-\n-[ ')
-            if newline_selected:
-                lines[i] = f'\n{lines[i]}\n'
+            line = f'-[ {line} ]-'
+            line = line.replace('\n', ' ]-\n-[ ')
+
         if i == current:
-            lines[i] = f'> {lines[i]} <'
+            line = f'> {line} <'
+
+        if i == selected and newline_selected:
+            line = f'\n{line}\n'
 
         if i in range(upper_index, lower_index+1):
-            result.append(lines[i])
+            result.append(line)
 
     for i, line in enumerate(result):
         if left_align:

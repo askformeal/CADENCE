@@ -82,7 +82,6 @@ DASH_MIN_WIDTH = 80
 DASH_MAX_SHOW_SONG = 30
 DASH_MAX_SHOW_LYRIC = 3
 DASH_MAX_SHOW_BIND = 25
-DASH_POS_BAR_LEN = 50
 DASH_VOL_BAR_LEN = 20
 DASH_TOAST_TIME = 5
 
@@ -169,6 +168,9 @@ class DashKeyMap: # why not a dict? because this works better with my IDE's sugg
 
         self.page_up = Bind(readchar.key.PAGE_UP, name='Page Up')
         self.page_down = Bind(readchar.key.PAGE_DOWN, name='Page Down')
+
+        self.home = Bind(readchar.key.HOME, name='Go to top')
+        self.end = Bind(readchar.key.END, name='Go to end')
 
         self.filter = Bind('/', name='Filter Playlist')
 
@@ -298,6 +300,18 @@ CONFIG_SCHEME = {
         'section': 'appearance',
         'default': 'rounded',
         'description': 'Box style of dashboard'
+    },
+    'dash_screen_buffer': {
+        'type': CONVERTER.boolean,
+        'section': 'appearance',
+        'default': True,
+        'description': 'Whether to use alt screen buffer for dashboard'
+    },
+    'auto_dash_height': {
+        'type': CONVERTER.boolean,
+        'section': 'appearance',
+        'default': True,
+        'description': 'Whether to automatically set dashboard height depending on terminal height'
     }
 }
 

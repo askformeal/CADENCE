@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## [0.42.0] - 2026-08-30
+
+### Added
+
+- Dashboard `Home` / `End` keys — jump the selection to the top / bottom of the list (playlist and help screen), using a deferred `END_OF_LIST` sentinel resolved against the actual list length.
+- New config options: `dash_screen_buffer` (use the terminal alt-screen buffer for the dashboard; off leaves the dashboard drawn on the normal screen) and `auto_dash_height` (size the playlist window from the terminal height instead of the fixed `DASH_MAX_SHOW_SONG`).
+
+### Changed
+
+- Dashboard playlist height adapts to the terminal (clamped to at least 1); page up/down step by the dynamic height.
+- Progress bar length now follows the panel width (`max_len - 20`) instead of the fixed `DASH_POS_BAR_LEN`.
+- Dashboard layout: state row moved above the lyric panel.
+- `window_list()` no longer mutates the input list in place (builds the marked line as a local before appending); strips surrounding whitespace from each line.
+
+### Fixed
+
+- Help screen `End` key no longer crashes — `bind_selected` resolves `END_OF_LIST` like the song list does.
+
 ## [0.41.0] - 2026-08-30
 
 ### Added

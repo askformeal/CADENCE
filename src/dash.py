@@ -1,5 +1,6 @@
 import time
 import os
+import shutil
 from threading import Thread
 
 from wcwidth import wcswidth
@@ -9,7 +10,7 @@ from src import version
 from src.log import setup_logger
 from src.constants import DASH_LOG_PATH, DASH_MAX_SHOW_BIND, DASH_MAX_SHOW_LYRIC, DASH_MIN_WIDTH
 from src.constants import HEARTBEAT_POLL_INTERVAL, DASH_POLL_INTERVAL
-from src.constants import DASH_MAX_SHOW_SONG, DASH_POS_BAR_LEN, DASH_VOL_BAR_LEN, DASH_TOAST_TIME
+from src.constants import DASH_MAX_SHOW_SONG, DASH_VOL_BAR_LEN, DASH_TOAST_TIME
 from src.constants import DASH_KEY_MAP as KEY_MAP
 from src.constants import BOX_STYLES
 from src.config import CONFIG
@@ -29,6 +30,8 @@ class Dash:
         self.song_selected = 0 # 0-based!
         self.bind_selected = 0 # 0-based!
 
+        self.playlist_height = 0
+
         self.filter = ''
 
         self.paused = False
@@ -45,7 +48,10 @@ class Dash:
 
         self.lyric = {}
 
-        print('\033[?1049h', end='')
+        self.use_buffer = CONFIG.dash_screen_buffer
+
+        if self.use_buffer:
+            print('\033[?1049h', end='')
         self._cursor_off()
         logger.debug(f'{__name__} initiated')
 
@@ -125,12 +131,24 @@ class Dash:
                     if self.show_help:
                         self.bind_selected -= DASH_MAX_SHOW_BIND
                     else:
-                        self.song_selected -= DASH_MAX_SHOW_SONG
+                        self.song_selected -= self.playlist_height
                 elif key in KEY_MAP.page_down:
                     if self.show_help:
                         self.bind_selected += DASH_MAX_SHOW_BIND
                     else:
-                        self.song_selected += DASH_MAX_SHOW_SONG
+                        self.song_selected += self.playlist_height
+
+                elif key in KEY_MAP.home:
+                    if self.show_help:
+                        self.bind_selected = 0
+                    else:
+                        self.song_selected = 0
+                elif key in KEY_MAP.end:
+                    if self.show_help:
+                        self.bind_selected = SENTINELS.END_OF_LIST
+                    else:
+                        self.song_selected = SENTINELS.END_OF_LIST
+                    
 
                 elif key in KEY_MAP.select_current:
                     if isinstance(self.current_num, int):
@@ -182,8 +200,11 @@ class Dash:
                     for bind in vars(KEY_MAP).values():
                         keys = ', '.join(list(map(lambda x: f'[{x}]', bind.key_names)))
                         bind_lines.append(f'{bind.name}: {keys}')
-                        
-                    self.bind_selected = squeeze(self.bind_selected, len(bind_lines)-1)
+
+                    if self.bind_selected is SENTINELS.END_OF_LIST:
+                        self.bind_selected = len(bind_lines) - 1
+                    else:
+                        self.bind_selected = squeeze(self.bind_selected, len(bind_lines)-1)
                     
                     bind_lines = window_list(bind_lines, DASH_MAX_SHOW_BIND, self.bind_selected)
                     bind_lines = self._dash_box('\n'.join(bind_lines)).split('\n')
@@ -265,7 +286,16 @@ class Dash:
                             if len(songs_lines) == 0:
                                 songs_lines = ['No matches of filter']
                             else:
-                                self.song_selected = squeeze(self.song_selected, len(songs_lines)-1)
+                                if CONFIG.auto_dash_height:
+                                    self.playlist_height = max(shutil.get_terminal_size((0, DASH_MAX_SHOW_SONG+12)).lines-12, 1)
+                                else:
+                                    self.playlist_height = DASH_MAX_SHOW_SONG
+
+                                if self.song_selected is SENTINELS.END_OF_LIST:
+                                    self.song_selected = len(songs_lines) - 1
+                                else:                                
+                                    self.song_selected = squeeze(self.song_selected, len(songs_lines)-1)
+
                                 current = None
                                 if isinstance(self.current_num, int):
                                     try:
@@ -273,7 +303,7 @@ class Dash:
                                     except ValueError:
                                         ...
 
-                                songs_lines = window_list(songs_lines, DASH_MAX_SHOW_SONG, self.song_selected, current=current, filter=self.filter)
+                                songs_lines = window_list(songs_lines, self.playlist_height, self.song_selected, current=current, filter=self.filter)
                                 if self.filter != '':
                                     songs_lines = [f'Filter: \"{self.filter}\"', *songs_lines]
 
@@ -287,8 +317,8 @@ class Dash:
                         '{song_info}\n',
                         '{album}\n',
                         '{pos}\n',
-                        '{lyric}\n',
-                        '{state}\n\n',
+                        '{state}\n',
+                        '{lyric}',
                         ]
                     lines += [
                         '{toast}'
@@ -305,12 +335,12 @@ class Dash:
                     song_info = center(f'{self.display_name} - {self.artist} [{current}/{self.playlist_len}]', max_len)
 
                     if not isinstance(self.time, int) or not isinstance(self.length, int) or self.time <= 0 or self.length <= 0:
-                        bar = progress_bar(0, DASH_POS_BAR_LEN)
+                        bar = progress_bar(0, max_len-20)
                         pos_num = '--:--:--/--:--:--'
                     else:
                         progress = self.time / self.length
-                        bar = progress_bar(DASH_POS_BAR_LEN * progress, DASH_POS_BAR_LEN)
                         pos_num = f'{format_time(self.time)}/{format_time(self.length)}'
+                        bar = progress_bar((max_len-20) * progress, max_len-20)
 
                     pos = center(f'{bar} [{pos_num}]', max_len)
 
@@ -400,7 +430,8 @@ class Dash:
 
     def exit(self):
         self._cursor_on()
-        print('\033[?1049l')
+        if self.use_buffer:
+            print('\033[?1049l')
         logger.info('Exit dashboard frontend')
         self.running = False
             
