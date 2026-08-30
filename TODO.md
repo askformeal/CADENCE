@@ -38,6 +38,8 @@
   - [X] Dashboard seek keys (`./l/→`, `,/h/←`) and help screen (`?`/`F1`) on dashboard
   - [X] Dashboard open key (`o`) — prompt to open a song/alias/path/playlist
   - [X] `cadence dash` subcommand to start the dashboard
+  - [X] Dashboard filter key (`/`) — filter playlist by name/artist with match highlighting and remaining counts
+  - [X] Dashboard seek key (`g`) — prompt for a time to jump to
 - [ ] HTTP frontend
 - [ ] Bluetooth frontend
 - [ ] Advanced library management

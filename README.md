@@ -147,6 +147,8 @@ Keys (defined in `DASH_KEY_MAP` in `src/constants.py`):
 | --- | --- |
 | `Space` | Play / pause |
 | `o` | Open a song — prompts for a song name, library ID, file path or playlist name |
+| `/` | Filter the playlist — prompts for text, matches against song name and artist; highlights matches and shows remaining counts above/below |
+| `g` | Jump to a specific time — prompts for `HH:MM:SS` |
 | `n` / `p` | Next / previous song |
 | `j` / `k`, `↑` / `↓` | Move selection up / down |
 | `PgUp` / `PgDn` | Page selection up / down |

@@ -150,30 +150,47 @@ def progress_bar(progress, length):
     progress = min(max(round(progress), 0), length)
     return f"{'█'*progress}{'░'*(length-progress)}"
 
-def window_list(lines, window_len, selected, current=None, end_of_line_char=''):
+def wrap_text(text, max_len):
+    lines = ['']
+    words = text.split(' ')
+    for word in words:
+        if wcswidth(lines[-1]) + wcswidth(word) + 1 <= max_len:
+            if lines[-1] != '':
+                lines[-1] += ' '
+            lines[-1] += word
+        else:
+            lines.append(word)
+    return '\n'.join(lines)
+
+def window_list(lines, window_len, selected, current=None, filter='', end_of_line_char=''):
     result = []
 
     length = len(lines)
     selected = squeeze(selected, length-1)
 
-    above_selector_num = math.ceil(selected - window_len / 2)
-    below_selector_num = math.ceil(selected + window_len / 2)
+    upper_index = math.ceil(selected - window_len / 2)
+    lower_index = math.ceil(selected + window_len / 2)
 
-    if above_selector_num < 0:
-        below_selector_num -= above_selector_num
-        above_selector_num = 0
+    if upper_index < 0:
+        lower_index -= upper_index
+        upper_index = 0
 
-    if below_selector_num >= length:
-        above_selector_num -= below_selector_num - length + 1
-        below_selector_num = length - 1
+    if lower_index >= length:
+        upper_index -= lower_index - length + 1
+        lower_index = length - 1
 
     for i, line in enumerate(lines):
+        if filter != '':
+            start = line.lower().find(filter.lower())
+            if start != -1:
+                end = start + len(filter)
+                lines[i] = f'{line[:start]}[{line[start:end]}]{line[end:]}'
         if i == selected:
-            lines[i] = f'[{line}]'
+            lines[i] = f'-[ {lines[i]} ]-'
         if i == current:
-            lines[i] = f'> {line} <'
+            lines[i] = f'> {lines[i]} <'
 
-        if i in range(above_selector_num, below_selector_num+1):
+        if i in range(upper_index, lower_index+1):
             result.append(lines[i])
 
     max_len = max(map(wcswidth, lines))
@@ -181,5 +198,10 @@ def window_list(lines, window_len, selected, current=None, end_of_line_char=''):
     for i, line in enumerate(result):
         pad = ' ' * (max_len - wcswidth(line))
         result[i] = f'{line}{pad}{end_of_line_char}'
+
+    above_mark = [align(max_len, right=f'{upper_index} ↑ ')]
+    below_mark = [align(max_len, right=f'{len(lines)-lower_index-1} ↓ ')]
+
+    result = above_mark + result + below_mark
 
     return result

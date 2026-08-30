@@ -15,7 +15,7 @@ from src.constants import BOX_STYLES
 from src.config import CONFIG
 from src.client import test_heartbeat, handle_code, send_request
 from src.song_output import SongOutput
-from src.utils import box, center, progress_bar, align, format_time, window_list, squeeze
+from src.utils import box, center, progress_bar, align, format_time, window_list, squeeze, wrap_text
 
 logger = setup_logger(__name__, DASH_LOG_PATH, add_console=False)
 
@@ -26,6 +26,8 @@ class Dash:
 
         self.song_selected = 0 # 0-based!
         self.bind_selected = 0 # 0-based!
+
+        self.filter = ''
 
         self.paused = False
 
@@ -68,6 +70,11 @@ class Dash:
                     self._send_dash_request('toggle')
                 elif key in KEY_MAP.stop:
                     self._send_dash_request('stop')
+
+                elif key in KEY_MAP.seek:
+                    pos = self._get_input('Enter time (HH:MM:SS): ')
+                    if pos != '':
+                        self._send_dash_request('seek', time=pos)
 
                 elif key in KEY_MAP.forward:
                     self._send_dash_request('seek', time=f'+{CONFIG.dash_pos_step}')
@@ -120,9 +127,18 @@ class Dash:
 
                 elif key in KEY_MAP.select_current:
                     if isinstance(self.current_num, int):
-                        self.song_selected = self.current_num - 1
+                        try:
+                            self.song_selected = self.songs_nums.index(self.current_num)
+                        except ValueError:
+                            ...
+
+                elif key in KEY_MAP.filter:
+                    self.filter = self._get_input('Enter filter: ').strip()
+
                 elif key in KEY_MAP.switch_select:
-                    self._send_dash_request('switch', number=self.song_selected+1)
+                    if len(self.songs_nums) > 0:
+                        num = self.songs_nums[self.song_selected] + 1
+                        self._send_dash_request('switch', number=num)
 
                 elif key in KEY_MAP.help:
                     self.show_help = not self.show_help
@@ -181,6 +197,7 @@ class Dash:
                     self.playlist_len = '[MISSING]'
                     self.player_status = '[MISSING]'
                     songs_lines = ['[MISSING]']
+                    self.songs_nums = [] # to prevent selected_song -> actual number in playlist mismatch when filter is applied
 
                     status = self._send_dash_request('status', silent=True)
                     if status is not None:
@@ -195,6 +212,8 @@ class Dash:
                         self.shuffle = {True: '[Shuffle] ', False: '', None: '?'}[status.shuffle_raw]
                         self.loop = {True: '[Loop] ', False: '', None: '?'}[status.loop_raw]
                         self.current_num = status.current_num
+                        if isinstance(self.current_num, int):
+                            self.current_num -= 1
                         self.playlist_len = status.playlist_len
                         self.player_status = f'[{status.player_status.capitalize()}]'
 
@@ -203,19 +222,28 @@ class Dash:
                         if len(songs) == 0:
                             songs_lines = ['---']
                         else:
-                            self.song_selected = squeeze(self.song_selected, len(songs)-1)
                             songs_lines = []
+                            self.songs_nums = []
                             for i, song in enumerate(songs):
                                 song = SongOutput(song)
-                                song_info = f'{i+1}. {song.display_name} - {song.artist}'
-                                songs_lines.append(song_info)
+                                filter = self.filter.lower()
+                                if filter in song.display_name.lower() or filter in song.artist.lower():
+                                    song_info = f'{song.display_name} - {song.artist}'
+                                    songs_lines.append((song_info))
+                                    self.songs_nums.append(i)
 
-                            if isinstance(self.current_num, int):
-                                current = self.current_num - 1
+                            if len(songs_lines) == 0:
+                                songs_lines = ['No matches of filter']
                             else:
+                                self.song_selected = squeeze(self.song_selected, len(songs_lines)-1)
                                 current = None
+                                if isinstance(self.current_num, int):
+                                    try:
+                                        current = self.songs_nums.index(self.current_num)
+                                    except ValueError:
+                                        ...
 
-                            songs_lines = window_list(songs_lines, DASH_MAX_SHOW_SONG, self.song_selected, current=current)
+                                songs_lines = window_list(songs_lines, DASH_MAX_SHOW_SONG, self.song_selected, current=current, filter=self.filter)
 
                     songs_lines = self._dash_box('\n'.join(songs_lines)).split('\n')
 
@@ -227,6 +255,8 @@ class Dash:
                         '{album}\n',
                         '{state}',
                         ]
+                    if self.filter != '':
+                        lines += [f'Filter: \"{self.filter}\"']
                     lines += songs_lines
                     lines += ['{toast}']
 
@@ -234,7 +264,11 @@ class Dash:
 
                     title = center(f'CADENCE {version} Dashboard', max_len)
                     separator = '='*max_len
-                    song_info = center(f'{self.display_name} - {self.artist} [{self.current_num}/{self.playlist_len}]', max_len)
+                    current = self.current_num
+                    if isinstance(current, int):
+                        current += 1
+
+                    song_info = center(f'{self.display_name} - {self.artist} [{current}/{self.playlist_len}]', max_len)
                     album = center(f'Album: {self.album}', max_len)
 
                     if not isinstance(self.time, int) or not isinstance(self.length, int) or self.time <= 0 or self.length <= 0:
@@ -260,7 +294,7 @@ class Dash:
                     state = align(max_len, volume, f"{self.shuffle}{self.loop}{self.player_status}")
 
                     if (time.time() - self.toast_time) <= DASH_TOAST_TIME:
-                        toast = self.toast_text
+                        toast = wrap_text(self.toast_text, max_len)
                     else:
                         toast = ''
 
@@ -279,7 +313,8 @@ class Dash:
 
                 if (text != self.old_text or self.redraw) and not self.paused:
                     if self.old_text != '':
-                        print(f'\033[{len(self.old_text.split('\n'))}F\033[J', end='')
+                        # print(f'\033[{len(self.old_text.split('\n'))}F\033[J', end='')
+                        print(f'\033[2J\033[H', end='')
                     print(text)
                     self.old_text = text
                     self.redraw = False
@@ -293,7 +328,7 @@ class Dash:
         request = {'action': action, 'source': 'dash', 'notify_support': False, 'silent': silent, **kwargs}
         response = send_request(**request)
         if response.get('code', None) != 0:
-            self._toast(response.get('msg', 'No message'))
+            self._toast(f"[Failed] {response.get('msg', 'No message')}")
         if not silent:
             logger.info(f'Sent request: {request}, response received: {response}')
         handle_code(response.get('code', None), self.exit)

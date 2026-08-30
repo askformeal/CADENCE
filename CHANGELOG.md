@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## [0.37.0] - 2026-08-30
+
+### Added
+
+- Dashboard filter key (`/`) — filter the playlist by song name or artist. Matches are highlighted with brackets, the filter is shown in the status area, and remaining-count markers (`N ↑` / `N ↓`) indicate how many songs sit above/below the current window. Enter still switches to the filtered selection via the original playlist number.
+- Dashboard seek key (`g`) — prompt for a time (`HH:MM:SS`) to jump to.
+- `utils.wrap_text()` — word-wrap helper used for dashboard toast messages.
+- Failed dashboard requests now surface as `[Failed] ...` toasts.
+
+### Changed
+
+- Redraw uses a full screen clear + cursor home (`\033[2J\033[H`) instead of moving up by the old text height, fixing leftover lines at the top of the screen after prompts.
+- Toast display time increased from 3 s to 5 s (`DASH_TOAST_TIME`).
+- `window_list()` gained a `filter` parameter (match highlighting) and returns above/below remaining-count markers; selected lines render as `- [ item ] -`.
+
+### Fixed
+
+- Dashboard selection no longer points at the wrong song when a filter is active — filtered rows track their original playlist numbers, and `c` / `Enter` resolve through that mapping.
+- `c` key handled `ValueError` (song not in the filtered list) instead of crashing the key handler.
+
 ## [0.36.0] - 2026-08-30
 
 ### Added

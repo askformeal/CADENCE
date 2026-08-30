@@ -81,7 +81,7 @@ DASH_MAX_SHOW_SONG = 15
 DASH_MAX_SHOW_BIND = 25
 DASH_POS_BAR_LEN = 50
 DASH_VOL_BAR_LEN = 20
-DASH_TOAST_TIME = 3
+DASH_TOAST_TIME = 5
 
 MEDIA_KEY_TO_ACTION = {
     0xb0: 'next',
@@ -145,6 +145,7 @@ class DashKeyMap: # why not a dict? because this works better with my IDE's sugg
         self.stop = Bind('x', name='Stop Playback')
         self.dice = Bind('d', name='Dice')
 
+        self.seek = Bind('g', name='Jump to Time')
         self.forward = Bind('.', 'l', readchar.key.RIGHT, name='Jump Forward')
         self.backward = Bind(',', 'h', readchar.key.LEFT, name='Jump Backward')
 
@@ -164,6 +165,8 @@ class DashKeyMap: # why not a dict? because this works better with my IDE's sugg
 
         self.page_up = Bind(readchar.key.PAGE_UP, name='Page Up')
         self.page_down = Bind(readchar.key.PAGE_DOWN, name='Page Down')
+
+        self.filter = Bind('/', name='Filter Playlist')
 
         self.switch_select = Bind(readchar.key.ENTER, name='Switch to Selected Song')
 
