@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## [0.36.0] - 2026-08-30
+
+### Added
+
+- `cadence dash` subcommand — start the dashboard directly from the CLI (previously only `python -m src.dash`).
+- Dashboard `o` key — open a song from the dashboard with a prompt (song name, library ID, file path or playlist name). The display pauses while typing, then resumes.
+
+### Changed
+
+- Dashboard cursor helpers extracted to `_cursor_on()` / `_cursor_off()`; open key moved into `DASH_KEY_MAP` (`Open`).
+
 ## [0.35.0] - 2026-08-29
 
 ### Added

@@ -43,6 +43,8 @@ def main():
     reboot_parser.add_argument('--dev', action='store_true', help='Reboot in development mode')
     reboot_parser.add_argument('-c', '--continue', action='store_true', help='Continue playing last song')
 
+    dash_parser = command_sub.add_parser('dash', help='Open Dashboard')
+
     status_parser = command_sub.add_parser('status', help='Show CADENCE status')
 
     open_parser = command_sub.add_parser('open', help='Open a song or playlist. Supports alias, file path and playlist name')
@@ -212,7 +214,6 @@ def main():
 
     args = vars(parser.parse_args())
 
-
     if args['action'] == 'start':
         notifies = _start_backend(CADENCE_DEV=int(args['dev']), CADENCE_CONTINUE=int(args['continue']))[1]
         _show_notifies(notifies)
@@ -230,6 +231,10 @@ def main():
             }[process_result]
 
             print(f' PID {pid}: {msg}')
+
+    elif args['action'] == 'dash':
+        from src.dash import Dash
+        Dash().run()
 
     else:
         if args.get('meta_action', None) is not None:

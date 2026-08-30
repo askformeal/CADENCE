@@ -140,6 +140,7 @@ class Bind:
 
 class DashKeyMap: # why not a dict? because this works better with my IDE's suggestions
     def __init__(self):
+        self.open = Bind('o', name='Open')
         self.toggle = Bind(readchar.key.SPACE, name='Play/Pause')
         self.stop = Bind('x', name='Stop Playback')
         self.dice = Bind('d', name='Dice')

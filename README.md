@@ -146,6 +146,7 @@ Keys (defined in `DASH_KEY_MAP` in `src/constants.py`):
 | Key | Action |
 | --- | --- |
 | `Space` | Play / pause |
+| `o` | Open a song — prompts for a song name, library ID, file path or playlist name |
 | `n` / `p` | Next / previous song |
 | `j` / `k`, `↑` / `↓` | Move selection up / down |
 | `PgUp` / `PgDn` | Page selection up / down |

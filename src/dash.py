@@ -27,6 +27,8 @@ class Dash:
         self.song_selected = 0 # 0-based!
         self.bind_selected = 0 # 0-based!
 
+        self.paused = False
+
         self.old_text = ''
         self.redraw = False
         self.box_styles = list(BOX_STYLES.keys())
@@ -38,8 +40,18 @@ class Dash:
         self.toast_time = 0
 
         print('\033[?1049h', end='')
-        print('\033[?25l', end='')
+        self._cursor_off()
         logger.debug(f'{__name__} initiated')
+
+    def _get_input(self, msg=''):
+        self.paused = True
+        self._cursor_on()
+        result = input(msg)
+        self._cursor_off()
+        self.paused = False
+        self.redraw = True
+
+        return result
 
     def _listen_hotkey(self):
         while self.running:
@@ -47,7 +59,12 @@ class Dash:
                 key = readchar.readkey()
                 logger.debug(f'Read key: {key}')
 
-                if key in KEY_MAP.toggle:
+                if key in KEY_MAP.open:
+                    song = self._get_input('Enter song name/library ID/file path/playlist name: ')
+                    if song != '':
+                        self._send_dash_request('open', song=song)
+
+                elif key in KEY_MAP.toggle:
                     self._send_dash_request('toggle')
                 elif key in KEY_MAP.stop:
                     self._send_dash_request('stop')
@@ -260,7 +277,7 @@ class Dash:
                 text = self._dash_box(text, l_pad=2, r_pad=2)
 
 
-                if text != self.old_text or self.redraw:
+                if (text != self.old_text or self.redraw) and not self.paused:
                     if self.old_text != '':
                         print(f'\033[{len(self.old_text.split('\n'))}F\033[J', end='')
                     print(text)
@@ -275,6 +292,8 @@ class Dash:
     def _send_dash_request(self, action, silent=False, **kwargs):
         request = {'action': action, 'source': 'dash', 'notify_support': False, 'silent': silent, **kwargs}
         response = send_request(**request)
+        if response.get('code', None) != 0:
+            self._toast(response.get('msg', 'No message'))
         if not silent:
             logger.info(f'Sent request: {request}, response received: {response}')
         handle_code(response.get('code', None), self.exit)
@@ -286,6 +305,12 @@ class Dash:
 
     def _dash_box(self, *args, **kwargs):
         return box(*args, style=self.box_styles[self.box_style_num], **kwargs)
+
+    def _cursor_on(self):
+        print('\033[?25h', end='')
+
+    def _cursor_off(self):
+        print('\033[?25l', end='')
 
     def run(self):
         logger.info('Dashboard started')
@@ -300,7 +325,7 @@ class Dash:
             ...
 
     def exit(self):
-        print('\033[?25h', end='')
+        self._cursor_on()
         print('\033[?1049l')
         logger.info('Exit dashboard frontend')
         self.running = False

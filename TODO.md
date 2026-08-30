@@ -36,6 +36,8 @@
   - [X] Interactive dashboard (`cadence dash`) — status display, playlist browsing, playback controls
   - [X] Dashboard playback keys (volume, shuffle, loop, dice, stop, mute, page up/down), progress/volume bars, box style switching
   - [X] Dashboard seek keys (`./l/→`, `,/h/←`) and help screen (`?`/`F1`) on dashboard
+  - [X] Dashboard open key (`o`) — prompt to open a song/alias/path/playlist
+  - [X] `cadence dash` subcommand to start the dashboard
 - [ ] HTTP frontend
 - [ ] Bluetooth frontend
 - [ ] Advanced library management
