@@ -353,6 +353,7 @@ ACTION_KEYS = {
         'aliases': (IterType(str), False, []),
         'skip_meta': (bool, False, False),
         'skip_alias': (bool, False, False),
+        'skip_lyric': (bool, False, False),
         'loose_path': (bool, False, False)
     },
     'lib.del': {
@@ -368,7 +369,8 @@ ACTION_KEYS = {
         'recurse': (bool, False, False),
         'dry_run': (bool, False, False),
         'skip_meta': (bool, False, False),
-        'skip_alias': (bool, False, False)
+        'skip_alias': (bool, False, False),
+        'skip_lyric': (bool, False, False),
     },
     'lib.meta.set': {
         'song': (str, True),

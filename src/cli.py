@@ -111,6 +111,7 @@ def main():
     lib_add_parser.add_argument('-a', '--aliases', type=str, nargs='+', default=[], help='Aliases to bind to the new songs')
     lib_add_parser.add_argument('--skip-meta', action='store_true', help='Disable automatic setting metadata')
     lib_add_parser.add_argument('--skip-alias', action='store_true', help='Disable automatic binding aliases')
+    lib_add_parser.add_argument('--skip-lyric', action='store_true', help='Disable automatic setting lyric file')
     lib_add_parser.add_argument('--loose-path', action='store_true', help='Adding songs without checking the availability of the paths. May cause automatic setting of metadata and binding of aliases to fail')
 
     lib_del_parser = lib_sub.add_parser('del', help='Delete songs from library')
@@ -126,6 +127,7 @@ def main():
     lib_scan_parser.add_argument('-d', '--dry-run', action='store_true', help='Show found files without adding to library')
     lib_scan_parser.add_argument('--skip-meta', action='store_true', help='Disable automatic setting metadata')
     lib_scan_parser.add_argument('--skip-alias', action='store_true', help='Disable automatic binding alias')
+    lib_scan_parser.add_argument('--skip-lyric', action='store_true', help='Disable automatic setting lyric file')
 
     lib_reset_parser = lib_sub.add_parser('reset', help='Reset library and delete all data')
     lib_reset_parser.add_argument('-y', '--yes', action='store_true', help='Skip confirmation')
@@ -531,6 +533,7 @@ def _show_song_info(info, empty_msg='No information to be shown', show_aliases=F
 
             lines += [
                 f'\nPath: {output.path}',
+                f'Lyric Path: {output.lyric}',
                 f'\nLibrary ID: {output.lib_id}'
             ]
 

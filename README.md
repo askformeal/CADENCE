@@ -85,9 +85,9 @@ Note: a negative seek time starts with `-`, which the command-line parser treats
 | `cadence lib list`          | Show all songs in library (`-a` aliases, `-p` playlists, `-t` tech metadata) |
 | `cadence lib info <song>...`| Show detailed info of songs (`-a` aliases, `-p` playlists, `-t` tech) |
 | `cadence lib search <kw>...`| Search songs by name/artist/album/alias (`-o` any-keyword match) |
-| `cadence lib add <path>...`| Add new songs to library (`-a/--aliases` to bind aliases, `--loose-path` to allow missing paths) |
+| `cadence lib add <path>...`| Add new songs to library (`-a/--aliases` to bind aliases, `--loose-path` to allow missing paths, `--skip-meta`/`--skip-alias`/`--skip-lyric` to disable auto-detection) |
 | `cadence lib del <song>...`| Delete songs from library (path, alias or ID)          |
-| `cadence lib scan <dir>`    | Scan a directory for audio files and add them (`-d` dry run) |
+| `cadence lib scan <dir>`    | Scan a directory for audio files and add them (`-d` dry run, `--skip-meta`/`--skip-alias`/`--skip-lyric`) |
 | `cadence lib prune`         | Delete all songs whose file no longer exists (`-d` dry run)  |
 | `cadence lib reset`         | Reset library and delete all data (confirmation)   |
 | `cadence lib meta set`      | Set metadata of a song (use `""` to clear)         |

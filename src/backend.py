@@ -560,6 +560,7 @@ class Backend:
 
                 set_meta = not request['skip_meta']
                 bind_alias = not request['skip_alias']
+                set_lyric = not request['skip_lyric']
                 if len(paths) == 0:
                     response = gen_response.EmptyList('paths')
                 elif len(paths) != len(aliases) and len(aliases) > 0:
@@ -570,7 +571,7 @@ class Backend:
                     failed = []
                     succeed = [] # otherwise all the info about auto meta and alias will be lost
                     for path, alias in zip(paths, aliases):
-                        add_response = self._add_song(path, set_meta, bind_alias, alias, cwd=cwd, loose_path=loose_path)
+                        add_response = self._add_song(path, set_meta, bind_alias, set_lyric, alias=alias, cwd=cwd, loose_path=loose_path)
                         if add_response.ok():
                             succeed.append(add_response)
                         else:
@@ -639,6 +640,7 @@ class Backend:
 
                     set_meta = not request['skip_meta']
                     bind_alias = not request['skip_alias']
+                    set_lyric = not request['skip_lyric']
 
                     failed_responses = []
 
@@ -656,7 +658,7 @@ class Backend:
                             else:
                                 ids = []
                                 for path in paths:
-                                    song_id, add_response = self._add_song(path, set_meta, bind_alias, return_id=True)
+                                    song_id, add_response = self._add_song(path, set_meta, bind_alias, set_lyric, return_id=True)
                                     if not add_response.ok():
                                         failed_responses.append(add_response)
                                     else:
@@ -1270,7 +1272,7 @@ class Backend:
             info[i]['playlists'] = list(map(lambda pl: pl['name'], playlists_info))
         return info
 
-    def _add_song(self, path, set_meta=True, bind_alias=True, alias=None, cwd=None, loose_path=False, return_id=False) -> tuple[int, gen_response.Response] | gen_response.Response:
+    def _add_song(self, path, set_meta=True, bind_alias=True, set_lyric=True, alias=None, cwd=None, loose_path=False, return_id=False) -> tuple[int, gen_response.Response] | gen_response.Response:
         song_id = None
         if not Path(path).is_absolute():
             if cwd is None:
@@ -1336,6 +1338,12 @@ class Backend:
                         else:
                             bind_msg = f'bound alias \"{name}\" from filename'
                     auto_alias_response = gen_response.Success(bind_msg)
+
+                # --- auto set lyric file ---
+                if set_lyric:
+                    lyric_path = Path(path).with_suffix('.lrc')
+                    if lyric_path.is_file():
+                        self.database.set_song_meta(song_id, 'lyric', str(lyric_path))
 
                 response = add_response + alias_response + meta_response + auto_alias_response
             else:

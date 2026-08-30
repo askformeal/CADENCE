@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [0.39.0] - 2026-08-30
+
+### Added
+
+- Auto lyric detection: `lib add` and `lib scan` automatically bind a same-name `.lrc` file next to the audio file as the song's lyric (`--skip-lyric` disables this, mirroring `--skip-meta` / `--skip-alias`).
+- Lyric path shown in `lib list` / `lib info` output (`Lyric Path` row).
+- Tests for auto lyric binding (bind, skip flag, missing file, skip-alias independence).
+
+### Fixed
+
+- `lib.add` used `skip_alias` instead of `skip_lyric` when deciding whether to auto-detect lyric files (copy-paste bug).
+- `lib.scan` referenced an undefined `result` variable instead of `request` when reading `skip_lyric`, crashing scan with `UnboundLocalError`.
+
 ## [0.38.0] - 2026-08-30
 
 ### Added
