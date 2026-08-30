@@ -41,38 +41,53 @@ def test_verify_path_format_posix_ignores_windows_rules(monkeypatch):
 def test_box_single_line():
     lines = box('hello').split('\n')
     assert len(lines) == 3                      # top + content + bottom
-    assert lines[0] == '/=======\\'            # 7 horizontals = 5 + 1+1 padding
-    assert lines[1] == '| hello |'
-    assert lines[2] == '\\=======/'
+    assert lines[0] == '/=========\\'            # 9 horizontals = 5 + 2+2 padding
+    assert lines[1] == '|  hello  |'
+    assert lines[2] == '\\=========/'
 
 
 def test_box_multiple_lines_pads_to_max_width():
     lines = box('a\nlonger').split('\n')
-    assert lines[0] == '/========\\'
-    assert lines[1] == '| a      |'           # padded to 'longer' width
-    assert lines[2] == '| longer |'
-    assert lines[3] == '\\========/'
+    assert lines[0] == '/==========\\'
+    assert lines[1] == '|  a       |'           # padded to 'longer' width
+    assert lines[2] == '|  longer  |'
+    assert lines[3] == '\\==========/'
 
 
 def test_box_padding_arguments():
-    lines = box('hi', l_pad=2, r_pad=3).split('\n')
-    assert lines[0] == '/=========\\'          # 9 horizontals = 2+2+3+2
-    assert lines[1] == '|   hi    |'          # 2 left + content + 3 right
-    assert lines[2] == '\\=========/'
+    lines = box('hi', l_pad=0, r_pad=0).split('\n')
+    assert lines[0] == '/==\\'                  # 2 horizontals = 2 content + 0+0
+    assert lines[1] == '|hi|'
+    assert lines[2] == '\\==/'
 
 
 def test_box_cjk_width_uses_display_columns():
     # '中' is 2 display columns wide but 1 char; box must pad by display width
-    lines = box('中\nab').split('\n')
-    assert lines[1] == '| 中 |'
-    assert lines[2] == '| ab |'
+    lines = box('中\nab', l_pad=0, r_pad=0).split('\n')
+    assert lines[1] == '|中|'
+    assert lines[2] == '|ab|'
 
 
 def test_box_style_parameter():
-    lines = box('hi', style='double').split('\n')
-    assert lines[0] == '╔════╗'
-    assert lines[1] == '║ hi ║'
-    assert lines[2] == '╚════╝'
+    lines = box('hi', l_pad=0, r_pad=0, style='double').split('\n')
+    assert lines[0] == '╔══╗'
+    assert lines[1] == '║hi║'
+    assert lines[2] == '╚══╝'
+
+
+def test_box_multiple_texts_side_by_side():
+    lines = box('ab', 'cd', l_pad=1, r_pad=1, style='rounded').split('\n')
+    assert lines[0] == '╭────┬────╮'            # two columns joined by ┬
+    assert lines[1] == '│ ab │ cd │'
+    assert lines[2] == '╰────┴────╯'            # bottom joined by ┴
+
+
+def test_box_multiple_texts_uneven_heights():
+    lines = box('a\nb', 'c', l_pad=1, r_pad=1, style='square').split('\n')
+    assert lines[0] == '┌───┬───┐'
+    assert lines[1] == '│ a │ c │'
+    assert lines[2] == '│ b │   │'              # shorter column padded with blank
+    assert lines[3] == '└───┴───┘'
 
 
 def test_center_pads_evenly():

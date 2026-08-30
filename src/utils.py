@@ -63,28 +63,47 @@ def parse_time(time):
         ms = parts[-1] * 1000 + parts[-2] * 60000 + parts[-3] * 3600000
         return ms
 
-def box(text: str, l_pad=0, r_pad=0, style='ascii'):
+def box(*texts: str, l_pad=2, r_pad=2, style='ascii'):
     style = str(style)
 
-    upper_left, upper_right, lower_left, lower_right, vertical, horizontal = BOX_STYLES[style]
-    
-    lines = text.split('\n')
-    max_len = max(map(wcswidth, lines))
+    upper_left, upper_right, lower_left, lower_right, vertical, horizontal, t_down, t_up = BOX_STYLES[style]
 
     l_space = ' ' * l_pad
     r_space = ' ' * r_pad
 
-    result = [
-        f"{upper_left}{horizontal * (max_len + l_pad + r_pad + 2)}{upper_right}",
-        ]
+    lines = list(map(lambda x:x.splitlines(), texts))
 
-    for line in lines:
-        pad = ' ' * (max_len - wcswidth(line))
-        result.append(f'{vertical}{l_space} {line}{pad} {r_space}{vertical}')
+    max_lines = max(map(len, lines))
 
-    result.append(f"{lower_left}{horizontal * (max_len + l_pad + r_pad + 2)}{lower_right}")
+    max_width = []
+    for text_lines in lines:
+        max_width.append(max(map(wcswidth, text_lines)))
 
-    return '\n'.join(result)
+    top_line = ''
+    for length in max_width:
+        top_line += f'{horizontal * (length + l_pad + r_pad)}{t_down}'
+    top_line = f'{upper_left}{top_line[:-1]}{upper_right}'
+
+    bottom_line = ''
+    for length in max_width:
+        bottom_line += f'{horizontal * (length + l_pad + r_pad)}{t_up}'
+    bottom_line = f'{lower_left}{bottom_line[:-1]}{lower_right}'
+
+    middle_lines = []
+    for i in range(max_lines):
+        line = []
+        for j, text_lines in enumerate(lines):
+            if i < len(text_lines):
+                text = text_lines[i]
+            else:
+                text = ''
+            pad = ' ' * (max_width[j] - wcswidth(text))
+            line.append(f'{text}{pad}')
+
+        line = f'{r_space}{vertical}{l_space}'.join(line)
+        middle_lines.append(f'{vertical}{l_space}{line}{r_space}{vertical}')
+
+    return '\n'.join((top_line, *middle_lines, bottom_line))
 
 def verify_path_format(raw: str):
     if len(raw.strip()) == 0 or '\x00' in raw:

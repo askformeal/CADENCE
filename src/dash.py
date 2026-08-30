@@ -274,6 +274,10 @@ class Dash:
                                         ...
 
                                 songs_lines = window_list(songs_lines, DASH_MAX_SHOW_SONG, self.song_selected, current=current, filter=self.filter)
+                                if self.filter != '':
+                                    songs_lines = [f'Filter: \"{self.filter}\"', *songs_lines]
+
+                                songs_lines = ['Playlist\n', *songs_lines]
 
                     # songs_lines = self._dash_box('\n'.join(songs_lines)).split('\n')
 
@@ -286,10 +290,7 @@ class Dash:
                         '{lyric}\n',
                         '{state}\n\n',
                         ]
-                    if self.filter != '':
-                        lines += [f'Filter: \"{self.filter}\"']
                     lines += [
-                        '{playlist}',
                         '{toast}'
                         ]
 
@@ -329,7 +330,7 @@ class Dash:
 
                     state = align(max_len, volume, f"{self.shuffle}{self.loop}{self.player_status}")
 
-                    playlist = self._dash_box(center('\n'.join(songs_lines), max_len-4))
+                    playlist = '\n'.join(songs_lines)
 
                     if (time.time() - self.toast_time) <= DASH_TOAST_TIME:
                         toast = wrap_text(self.toast_text, max_len)
@@ -345,10 +346,9 @@ class Dash:
                         pos=pos,
                         lyric=lyric,
                         state=state,
-                        playlist=playlist,
                         toast=toast
                         )
-                text = self._dash_box(text, l_pad=2, r_pad=2)
+                text = self._dash_box(text, playlist, l_pad=2, r_pad=2)
 
 
                 if (text != self.old_text or self.redraw) and not self.paused:

@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## [0.41.0] - 2026-08-30
+
+### Added
+
+- `box()` supports multiple texts rendered side by side as columns, joined by T-junction characters (`┬` / `┴`); each column sizes to its own content, shorter columns pad with blank rows. All `BOX_STYLES` entries gained the two junction characters (8-tuple).
+- Dashboard now renders the status panel and the playlist side by side in one box; `Playlist` and `Filter: "..."` headers moved inside the playlist column.
+- Default `box()` padding is now `l_pad=2, r_pad=2`.
+
+### Changed
+
+- `DASH_MAX_SHOW_SONG` increased from 15 to 30.
+
 ## [0.40.0] - 2026-08-30
 
 ### Added
