@@ -207,6 +207,7 @@ class Backend:
                     current_num = self.current_song_num
 
                 status = {
+                    'id': info.get('id', None),
                     'path': info.get('path', None),
                     'name': info.get('name', None),
                     'artist': info.get('artist', None),
@@ -472,17 +473,27 @@ class Backend:
                 songs = request['songs']
                 show_aliases = request['show_aliases']
                 show_playlists = request['show_playlists']
+                force_id = request['force_id']
 
                 failed = []
                 info = []
 
                 for song in songs:
-                    song_id = self._get_song(song, cwd)
-                    if song_id is SENTINELS.MISSING_CWD:
-                        failed.append(gen_response.MissingCWD('lib.info'))
-                    elif song_id is SENTINELS.NOT_IN_LIB:
-                        failed.append(gen_response.SongNotExist(f'get information of song \"{song}\"'))
+                    song_id = None
+                    if force_id:
+                        if song.isdecimal() and self.database.song_exists(int(song)):
+                            song_id = int(song)
+                        else:
+                            failed.append(gen_response.SongNotExist(f'get information of song \"{song}\"'))
                     else:
+                        get_song_result = self._get_song(song, cwd)
+                        if get_song_result is SENTINELS.MISSING_CWD:
+                            failed.append(gen_response.MissingCWD('lib.info'))
+                        elif get_song_result is SENTINELS.NOT_IN_LIB:
+                            failed.append(gen_response.SongNotExist(f'get information of song \"{song}\"'))
+                        else:
+                            song_id = get_song_result
+                    if song_id is not None:
                         song_info = self.database.get_song_info(song_id)[0]
 
                         if show_aliases:

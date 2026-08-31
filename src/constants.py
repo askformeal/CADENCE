@@ -78,7 +78,7 @@ HOTKEY_COOL_DOWN = 0.5
 
 TRAY_ERROR_DISPLAY_TIME = 1.5
 
-DASH_MIN_WIDTH = 80
+DASH_MIN_WIDTH = 50
 DASH_MAX_SHOW_SONG = 30
 DASH_MAX_SHOW_LYRIC = 3
 DASH_MAX_SHOW_BIND = 25
@@ -352,7 +352,8 @@ ACTION_KEYS = {
     {
         'songs': (IterType(str), True),
         'show_aliases': (bool, False, False),
-        'show_playlists': (bool, False, False)
+        'show_playlists': (bool, False, False),
+        'force_id': (bool, False, False)
     },
     'lib.list': {
         'show_aliases': (bool, False, False),

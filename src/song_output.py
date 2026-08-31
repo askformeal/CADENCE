@@ -31,8 +31,11 @@ class SongOutput:
         self.in_lib = {True: 'Yes', False: 'No', '?': '?'}[info.get('in_library', '?')]
         self.in_lib_raw = info.get('in_library', None)
         self.lib_id = info.get('id', '?')
+        self.lib_id_raw = info.get('id', None)
 
         self.aliases = info.get('aliases', '?')
+        self.aliases_raw = info.get('aliases', [])
+
         self.aliases_num = '?'
         if self.aliases != '?':
             self.aliases_num = len(self.aliases)
@@ -42,6 +45,8 @@ class SongOutput:
                 self.aliases = 'No aliases are bond to this song'
 
         self.playlists = info.get('playlists', '?')
+        self.playlists_raw = info.get('playlists', [])
+
         self.playlists_num = '?'
         if self.playlists != '?':
             self.playlists_num = len(self.playlists)

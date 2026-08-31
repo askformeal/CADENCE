@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## [0.43.0] - 2026-08-31
+
+### Added
+
+- Dashboard song info panel — a left column showing the current song's library info (duration, name/artist/album, bitrate/sample rate/channels, aliases and playlists). Fetched via a new `force_id` option on `lib.info` that looks songs up directly by library ID (no alias/path resolution, no `cwd` needed) — the dashboard requests it without a `cwd`.
+- `status` attachment now includes the current song's library `id`.
+- `SongOutput` gains `aliases_raw` / `playlists_raw` (the unjoined alias/playlist lists) alongside the prettified strings.
+- Tests for `lib.info` with `force_id`: basic lookup, non-existent ID, non-decimal input (no alias resolution), and `cwd=None` (direct ID lookup).
+
+### Changed
+
+- Dashboard layout is now three columns: info panel, main panel, playlist — using the multi-column `box()`.
+- `DASH_MIN_WIDTH` reduced from 80 to 50; new `DASH_INFO_MAX_WIDTH` caps the info column width.
+
 ## [0.42.0] - 2026-08-30
 
 ### Added

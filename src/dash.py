@@ -212,26 +212,42 @@ class Dash:
                     text = '\n'.join(lines)
                     
                 else:
+                    self.lib_id = None
                     self.display_name = '[MISSING]'
+                    self.meta_name = '[MISSING]'
                     self.artist = '[MISSING]'
                     self.album = '[MISSING]'
+
                     self.time = '[MISSING]'
                     self.length = '[MISSING]'
+
                     self.volume = '[MISSING]'
                     self.mute = '[MISSING]'
+
                     self.shuffle = '[MISSING]'
                     self.loop = '[MISSING]'
+
                     self.current_num = '[MISSING]' # 1-based!
                     self.playlist_len = '[MISSING]'
+
                     self.player_status = '[MISSING]'
-                    songs_lines = ['[MISSING]']
-                    lyric_lines = ['[MISSING]']
+
+                    self.duration = '[MISSING]'
+                    self.bitrate = '[MISSING]'
+                    self.sample_rate = '[MISSING]'
+                    self.channels = '[MISSING]'
+
+                    self.aliases = ['[MISSING]']
+                    self.added_playlists = ['[MISSING]']
+
                     self.songs_nums = [] # to prevent selected_song -> actual number in playlist mismatch when filter is applied
 
                     status = self._send_dash_request('status', silent=True)
                     if status is not None:
                         status = SongOutput(status, prettify_none=False)
+                        self.lib_id = status.lib_id_raw
                         self.display_name = status.display_name
+                        self.meta_name = status.name
                         self.artist = status.artist
                         self.album = status.album
                         lyric_path = status.lyric_raw
@@ -258,128 +274,29 @@ class Dash:
                             if self.lyric != {}:
                                 logger.debug(f'Lyric file update: {self.lyric}')
 
-                    lyric_lines = ['No Lyric']
-                    if isinstance(self.time, int):
-                        current_line = get_lyric_line(self.lyric.get('lyric', []), self.time)
-                        if current_line is not None:
-                            text = list(map(lambda x:x[1], self.lyric.get('lyric', [])))
-                            if current_line is SENTINELS.BEFORE_FIRST_LYRIC:
-                                current_line = 0
-                                text = ['...'] + text
-                            lyric_lines = window_list(text, DASH_MAX_SHOW_LYRIC, current_line, newline_selected=True, mark_unshown=False, left_align=False)
-                    
-                    songs = self._send_dash_request('list', silent=True)
-                    if songs is not None:
-                        if len(songs) == 0:
-                            songs_lines = ['Player Empty']
-                        else:
-                            songs_lines = []
-                            self.songs_nums = []
-                            for i, song in enumerate(songs):
-                                song = SongOutput(song)
-                                filter = self.filter.lower()
-                                if filter in song.display_name.lower() or filter in song.artist.lower():
-                                    song_info = f'{song.display_name} - {song.artist}'
-                                    songs_lines.append((song_info))
-                                    self.songs_nums.append(i)
+                    if self.lib_id is not None:
+                        info = self._send_dash_request('lib.info', 
+                                                       songs=[str(self.lib_id)], 
+                                                       show_aliases=True, 
+                                                       show_playlists=True, 
+                                                       force_id=True, 
+                                                       silent=True)
+                        if info is not None:
+                            info = SongOutput(info[0], prettify_none=False)
+                            self.duration = info.duration
 
-                            if len(songs_lines) == 0:
-                                songs_lines = ['No matches of filter']
-                            else:
-                                if CONFIG.auto_dash_height:
-                                    self.playlist_height = max(shutil.get_terminal_size((0, DASH_MAX_SHOW_SONG+12)).lines-12, 1)
-                                else:
-                                    self.playlist_height = DASH_MAX_SHOW_SONG
+                            self.bitrate = info.bitrate
+                            self.sample_rate = info.sample_rate
+                            self.channels = info.channels
 
-                                if self.song_selected is SENTINELS.END_OF_LIST:
-                                    self.song_selected = len(songs_lines) - 1
-                                else:                                
-                                    self.song_selected = squeeze(self.song_selected, len(songs_lines)-1)
+                            self.aliases = info.aliases_raw
+                            self.added_playlists = info.playlists_raw
 
-                                current = None
-                                if isinstance(self.current_num, int):
-                                    try:
-                                        current = self.songs_nums.index(self.current_num)
-                                    except ValueError:
-                                        ...
+                main_text = self._gen_main_text()
+                playlist_text = self._gen_playlist_text()
+                info_text = self._gen_info_text()
 
-                                songs_lines = window_list(songs_lines, self.playlist_height, self.song_selected, current=current, filter=self.filter)
-                                if self.filter != '':
-                                    songs_lines = [f'Filter: \"{self.filter}\"', *songs_lines]
-
-                                songs_lines = ['Playlist\n', *songs_lines]
-
-                    # songs_lines = self._dash_box('\n'.join(songs_lines)).split('\n')
-
-                    lines = ['{title}']
-                    lines += [
-                        '\n{separator}\n',
-                        '{song_info}\n',
-                        '{album}\n',
-                        '{pos}\n',
-                        '{state}\n',
-                        '{lyric}',
-                        ]
-                    lines += [
-                        '{toast}'
-                        ]
-
-                    max_len = max(max(map(wcswidth, lines)), DASH_MIN_WIDTH)
-
-                    title = center(f'CADENCE {version} Dashboard', max_len)
-                    separator = '='*max_len
-                    current = self.current_num
-                    if isinstance(current, int):
-                        current += 1
-
-                    song_info = center(f'{self.display_name} - {self.artist} [{current}/{self.playlist_len}]', max_len)
-
-                    if not isinstance(self.time, int) or not isinstance(self.length, int) or self.time <= 0 or self.length <= 0:
-                        bar = progress_bar(0, max_len-20)
-                        pos_num = '--:--:--/--:--:--'
-                    else:
-                        progress = self.time / self.length
-                        pos_num = f'{format_time(self.time)}/{format_time(self.length)}'
-                        bar = progress_bar((max_len-20) * progress, max_len-20)
-
-                    pos = center(f'{bar} [{pos_num}]', max_len)
-
-                    album = center(f'Album: {self.album}', max_len)
-
-                    lyric = self._dash_box(center('\n'.join(lyric_lines), max_len-4))
-
-                    if not isinstance(self.volume, int):
-                        bar = progress_bar(0, DASH_VOL_BAR_LEN)
-                        vol_num = '?%'
-                    else:
-                        bar = progress_bar(DASH_VOL_BAR_LEN*self.volume/100, DASH_VOL_BAR_LEN)
-                        vol_num = f'{self.volume}%'
-                    if self.mute:
-                        vol_num += ' [MUTE]'
-                    volume = f'{bar} [{vol_num}]'
-
-                    state = align(max_len, volume, f"{self.shuffle}{self.loop}{self.player_status}")
-
-                    playlist = '\n'.join(songs_lines)
-
-                    if (time.time() - self.toast_time) <= DASH_TOAST_TIME:
-                        toast = wrap_text(self.toast_text, max_len)
-                    else:
-                        toast = ''
-
-                    text = '\n'.join(lines)
-                    text = text.format(
-                        title=title, 
-                        separator=separator, 
-                        song_info=song_info,
-                        album=album,
-                        pos=pos,
-                        lyric=lyric,
-                        state=state,
-                        toast=toast
-                        )
-                text = self._dash_box(text, playlist, l_pad=2, r_pad=2)
-
+                text = self._dash_box(info_text, main_text, playlist_text, l_pad=2, r_pad=2)
 
                 if (text != self.old_text or self.redraw) and not self.paused:
                     if self.old_text != '':
@@ -392,6 +309,151 @@ class Dash:
             except Exception as e:
                 logger.exception('An error occurred during updating dashboard')
                 self.exit()
+
+    def _gen_main_text(self):
+        lyric_lines = ['No Lyric']
+        if isinstance(self.time, int):
+            current_line = get_lyric_line(self.lyric.get('lyric', []), self.time)
+            if current_line is not None:
+                text = list(map(lambda x:x[1], self.lyric.get('lyric', [])))
+                if current_line is SENTINELS.BEFORE_FIRST_LYRIC:
+                    current_line = 0
+                    text = ['...'] + text
+                lyric_lines = window_list(text, DASH_MAX_SHOW_LYRIC, current_line, newline_selected=True, mark_unshown=False, left_align=False)
+
+        lines = [
+            '{title}'
+            '\n{separator}\n',
+            '{song_info}\n',
+            '{pos}\n\n',
+            '{state}\n',
+            '{lyric}',
+            '{toast}'
+            ]
+
+        max_len = max(max(map(wcswidth, lines)), DASH_MIN_WIDTH)
+
+        title = center(f'CADENCE {version} Dashboard', max_len)
+        separator = '='*max_len
+        current = self.current_num
+        if isinstance(current, int):
+            current += 1
+
+        song_info = center(f'{self.display_name} [{current}/{self.playlist_len}]', max_len)
+
+        if not isinstance(self.time, int) or not isinstance(self.length, int) or self.time <= 0 or self.length <= 0:
+            bar = progress_bar(0, max_len-20)
+            pos_num = '--:--:--/--:--:--'
+        else:
+            progress = self.time / self.length
+            pos_num = f'{format_time(self.time)}/{format_time(self.length)}'
+            bar = progress_bar((max_len-20) * progress, max_len-20)
+        
+        pos = center(f'{bar} [{pos_num}]', max_len)
+        
+        lyric = self._dash_box(center('\n'.join(lyric_lines), max_len-4))
+
+        if not isinstance(self.volume, int):
+            bar = progress_bar(0, DASH_VOL_BAR_LEN)
+            vol_num = '?%'
+        else:
+            bar = progress_bar(DASH_VOL_BAR_LEN*self.volume/100, DASH_VOL_BAR_LEN)
+            vol_num = f'{self.volume}%'
+        if self.mute:
+            vol_num += ' [MUTE]'
+        volume = f'{bar} [{vol_num}]'
+        
+        state = align(max_len, volume, f"{self.shuffle}{self.loop}{self.player_status}")
+
+        if (time.time() - self.toast_time) <= DASH_TOAST_TIME:
+            toast = wrap_text(self.toast_text, max_len)
+        else:
+            toast = ''
+
+        text = '\n'.join(lines)
+        text = text.format(
+            title=title, 
+            separator=separator, 
+            song_info=song_info,
+            pos=pos,
+            lyric=lyric,
+            state=state,
+            toast=toast
+            )
+
+        return text
+
+    def _gen_playlist_text(self):
+        songs_lines = ['[MISSING]']
+        songs = self._send_dash_request('list', silent=True)
+        if songs is not None:
+            if len(songs) == 0:
+                songs_lines = ['Player Empty']
+            else:
+                songs_lines = []
+                self.songs_nums = []
+                for i, song in enumerate(songs):
+                    song = SongOutput(song)
+                    filter = self.filter.lower()
+                    if filter in song.display_name.lower() or filter in song.artist.lower():
+                        song_info = f'{song.display_name} - {song.artist}'
+                        songs_lines.append((song_info))
+                        self.songs_nums.append(i)
+        
+                if len(songs_lines) == 0:
+                    songs_lines = ['No matches of filter']
+                else:
+                    if CONFIG.auto_dash_height:
+                        self.playlist_height = max(shutil.get_terminal_size((0, DASH_MAX_SHOW_SONG+12)).lines-12, 1)
+                    else:
+                        self.playlist_height = DASH_MAX_SHOW_SONG
+        
+                    if self.song_selected is SENTINELS.END_OF_LIST:
+                        self.song_selected = len(songs_lines) - 1
+                    else:                                
+                        self.song_selected = squeeze(self.song_selected, len(songs_lines)-1)
+        
+                    current = None
+                    if isinstance(self.current_num, int):
+                        try:
+                            current = self.songs_nums.index(self.current_num)
+                        except ValueError:
+                            ...
+        
+                    songs_lines = window_list(songs_lines, self.playlist_height, self.song_selected, current=current, filter=self.filter)
+                    if self.filter != '':
+                        songs_lines = [f'Filter: \"{self.filter}\"', *songs_lines]
+        
+                    songs_lines = ['Playlist', *songs_lines]
+
+        text = '\n'.join(songs_lines)
+
+        return text
+
+    def _gen_info_text(self):
+
+        lines = [
+            'Information\n',
+            f'Duration: {self.duration}',
+            '',
+            f'Name: {self.meta_name}',
+            f'Artist: {self.artist}',
+            f'Album: {self.album}',
+            '',
+            f'Bitrate: {self.bitrate} kbps',
+            f'Sample Rate: {self.sample_rate}',
+            f'Channels: {self.channels}',
+            '',
+            'Aliases:',
+            f'  {'\n  '.join(self.aliases)}',
+            '',
+            'Playlists:',
+            f'  {'\n  '.join(self.added_playlists)}'
+        ]
+
+        text = '\n'.join(lines)
+
+        return text
 
     def _send_dash_request(self, action, silent=False, **kwargs):
         request = {'action': action, 'source': 'dash', 'notify_support': False, 'silent': silent, **kwargs}

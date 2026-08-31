@@ -140,7 +140,31 @@ The tray icon starts with the backend (unless the `tray` config option is off) a
 
 ### Dashboard
 
-The dashboard (`cadence dash`) is an interactive terminal UI. It shows the current song, a progress bar with elapsed/total time, volume bar and playback state, the current lyric line (if the song has a lyric file set via `cadence lib lyric set`), the playlist (with the playing song and your selection highlighted), and is controlled entirely from the keyboard. It starts its own frontend process and uses the same socket protocol as the other frontends.
+The dashboard (`cadence dash`) is an interactive terminal UI. It shows the current song, a progress bar with elapsed/total time, volume bar and playback state, the current lyric line (if the song has a lyric file set via `cadence lib lyric set`), the playlist (with the playing song and your selection highlighted), and is controlled entirely from the keyboard. A left column shows library information for the current song (duration, metadata, tech fields, aliases and playlists). It starts its own frontend process and uses the same socket protocol as the other frontends.
+
+Screenshot:
+
+```
+╭──────────────────────────┬────────────────────────────────────────────────────────┬─────────────────────────────────────────────────────────────────╮
+│  Information             │               CADENCE 0.43.0 Dashboard                 │  Playlist                                                       │
+│                          │  ==================================================    │                                                           0 ↑   │
+│  Duration: 00:04:26      │                                                        │  -[ Night Witches - Sabaton ]-                                  │
+│                          │                  Inmate 4859 [4/13]                    │  No Bullets Fly - Sabaton                                       │
+│  Name: Inmate 4859       │                                                        │  Smoking Snakes - Sabaton                                       │
+│  Artist: Sabaton         │  █████████████████░░░░░░░░░░░░░ [00:02:29/00:04:26]    │  > Inmate 4859 - Sabaton <                                      │
+│  Album: Heroes           │                                                        │  To Hell and Back - Sabaton                                     │
+│                          │                                                        │  The Ballad of Bull - Sabaton                                   │
+│  Bitrate: 1035.725 kbps  │  ████████████████████ [100%]               [Paused]    │  Resist and Bite - Sabaton                                      │
+│  Sample Rate: 44100      │                                                        │  Soldier of 3 Armies - Sabaton                                  │
+│  Channels: 2             │  ╭──────────────────────────────────────────────────╮  │  Far from the Fame - Sabaton                                    │
+│                          │  │                     No Lyric                     │  │  Hearts of Iron - Sabaton                                       │
+│  Aliases:                │  ╰──────────────────────────────────────────────────╯  │  7734 - Sabaton                                                 │
+│    Inmate 4859           │                                                        │  Man of War - Sabaton                                           │
+│                          │                                                        │  For Whom the Bell Tolls (Metallica Cover) - Sabaton            │
+│  Playlists:              │                                                        │                                                           0 ↓   │
+│    Heroes                │                                                        │                                                                 │
+╰──────────────────────────┴────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────╯
+```
 
 Keys (defined in `DASH_KEY_MAP` in `src/constants.py`):
 

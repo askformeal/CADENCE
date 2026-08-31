@@ -1195,6 +1195,49 @@ def test_lib_info_with_playlists(backend, audio_file):
     assert response['attachment'][0]['playlists'] == ['work']
 
 
+def test_lib_info_force_id(backend, audio_file):
+    database = backend.database
+    song_id, _ = database.add_song(audio_file)
+    response = _request(backend, 'lib.info', songs=[str(song_id)], force_id=True)
+    assert response['code'] == 0
+    assert 'got information of [1/1] songs' in response['msg']
+    assert response['attachment'][0]['id'] == song_id
+    assert response['failed'] == []
+
+
+def test_lib_info_force_id_not_found(backend, audio_file):
+    database = backend.database
+    database.add_song(audio_file)
+    # ID 不存在 → failed
+    response = _request(backend, 'lib.info', songs=['999'], force_id=True)
+    assert response['code'] == 1
+    assert 'got information of [0/1] songs' in response['msg']
+    assert response['attachment'] == {}
+    assert len(response['failed']) == 1
+    assert 'does not exist in library' in response['failed'][0]['msg']
+
+
+def test_lib_info_force_id_non_decimal(backend, audio_file):
+    database = backend.database
+    song_id, _ = database.add_song(audio_file)
+    database.bind_alias(song_id, 'my_song')
+    # force_id 模式不做 alias/路径解析,非数字输入直接失败
+    response = _request(backend, 'lib.info', songs=['my_song'], force_id=True)
+    assert response['code'] == 1
+    assert len(response['failed']) == 1
+    assert 'does not exist in library' in response['failed'][0]['msg']
+
+
+def test_lib_info_force_id_ignores_cwd(backend, audio_file):
+    database = backend.database
+    song_id, _ = database.add_song(audio_file)
+    # force_id 按 ID 直查,不需要 cwd(dash 的 lib.info 请求不带 cwd)
+    response = _request(backend, 'lib.info', songs=[str(song_id)], force_id=True, cwd=None)
+    assert response['code'] == 0
+    assert response['attachment'][0]['id'] == song_id
+    assert response['failed'] == []
+
+
 def test_lib_prune_dry_run_empty(backend, audio_file):
     _request(backend, 'lib.add', paths=[audio_file])
     response = _request(backend, 'lib.prune', dry_run=True)
