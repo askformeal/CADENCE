@@ -110,7 +110,7 @@ def test_get_lyric_line_returns_index_or_sentinel():
     assert get_lyric_line(lyric, 1500) == 0     # between line 1 and 2
     assert get_lyric_line(lyric, 2500) == 1
     assert get_lyric_line(lyric, 99999) == 2    # after last line -> last index
-    assert get_lyric_line([], 1000) is None     # empty
+    assert get_lyric_line([], 1000) is SENTINELS.EMPTY_LYRIC    # empty
 
 
 def test_window_list_newline_selected():

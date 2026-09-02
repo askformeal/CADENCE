@@ -224,6 +224,8 @@ See [TODO.md](TODO.md) for planned features.
 
 Icon: [Cadence icons created by Three musketeers - Flaticon](https://www.flaticon.com/free-icons/cadence)
 
+Lyric icon: [Lyrics icons created by Aranagraphics - Flaticon](https://www.flaticon.com/free-icons/lyrics)
+
 ## License
 
 MIT License, because using it is your loss.

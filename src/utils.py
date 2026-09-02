@@ -269,7 +269,7 @@ def parse_lyric(path):
 
 def get_lyric_line(lyric, pos):
     if len(lyric) == 0:
-        return None
+        return SENTINELS.EMPTY_LYRIC
     else:
         if pos < lyric[0][0]:
             return SENTINELS.BEFORE_FIRST_LYRIC

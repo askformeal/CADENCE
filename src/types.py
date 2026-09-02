@@ -1,4 +1,9 @@
 
+class IterType:
+    # can be list or tuple
+    def __init__(self, element_type):
+        self.element_type = element_type
+
 class Converter:
     def boolean(self, value):
         value = str(value)

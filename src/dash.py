@@ -272,7 +272,7 @@ class Dash:
                             if self.lyric is None:
                                 self.lyric = {'path': lyric_path}
                             if self.lyric != {}:
-                                logger.debug(f'Lyric file update: {self.lyric}')
+                                logger.debug(f'Lyric file update: {self.lyric['path']}')
 
                     if self.lib_id is not None:
                         info = self._send_dash_request('lib.info', 
@@ -281,7 +281,7 @@ class Dash:
                                                        show_playlists=True, 
                                                        force_id=True, 
                                                        silent=True)
-                        if info is not None:
+                        if info is not None and len(info) > 0:
                             info = SongOutput(info[0], prettify_none=False)
                             self.duration = info.duration
 
@@ -314,7 +314,7 @@ class Dash:
         lyric_lines = ['No Lyric']
         if isinstance(self.time, int):
             current_line = get_lyric_line(self.lyric.get('lyric', []), self.time)
-            if current_line is not None:
+            if current_line is not SENTINELS.EMPTY_LYRIC:
                 text = list(map(lambda x:x[1], self.lyric.get('lyric', [])))
                 if current_line is SENTINELS.BEFORE_FIRST_LYRIC:
                     current_line = 0
