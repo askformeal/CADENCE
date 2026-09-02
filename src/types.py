@@ -31,6 +31,13 @@ class Converter:
             raise ValueError
         else:
             return value
+
+    def non_neg_int(self, value):
+        value = int(value)
+        if value < 0:
+            raise ValueError
+        else:
+            return value
         
     def timeout(self, value):
         value = float(value)
@@ -56,4 +63,15 @@ class Converter:
         else:
             return value
 
+    def hex_color(self, value):
+        value = str(value).upper()
+        if value.startswith('#') and len(value) == 7:
+            for digit in value[1:]:
+                if digit not in ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'):
+                    break
+            else:
+                return value
+            raise ValueError
+        else:
+            raise ValueError
 CONVERTER = Converter()

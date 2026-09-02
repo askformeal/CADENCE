@@ -21,6 +21,8 @@ def start(**kwargs):
             _spawn('src.hotkey')
         if CONFIG.tray:
             _spawn('src.tray')
+        if CONFIG.lyric:
+            _spawn('src.lyric')
             
         for i in range(STARTER_RETRY):
             if test_alive():

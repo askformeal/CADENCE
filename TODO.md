@@ -43,7 +43,10 @@
   - [X] Lyrics — `lib lyric set` to bind a `.lrc` file, dashboard shows the synchronized lyric line (encoding fallback chain for GBK/Big5/Shift_JIS)
   - [X] Dashboard play-all key (`Ctrl+A`)
 - [X] Song info panel on the left of the dashboard
-- [ ] Float lyric frontend
+- [X] Float lyric frontend
+  - [ ] Show a solid background when hovered
+  - [ ] Make hover feature togglable by config option
+- [ ] GUI configure editor
 - [ ] HTTP frontend
 - [ ] Bluetooth frontend
 - [ ] Advanced library management

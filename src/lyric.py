@@ -2,17 +2,21 @@
 from threading import Thread
 import time
 import tkinter as tk
+from tkinter import font as tkfont
 
 from pystray import Icon, Menu, MenuItem
 from PIL import Image
 
 from src.client import handle_code, send_request, test_heartbeat
+from src.config import CONFIG
 from src.constants import HEARTBEAT_POLL_INTERVAL, LYRIC_LOG_PATH, LYRIC_POLL_INTERVAL, LYRIC_ICON_PATH
-from src.constants import LYRIC_TRANS_COLOR as TRANS_COLOR
+from src.constants import LYRIC_TRANS_COLOR
+from src.constants import LYRIC_TRANS_COLOR_FALLBACK
+from src.constants import LYRIC_HOVER_EXTENSION as HOVER_EXT
 from src.log import setup_logger
 from src.sentinels import SENTINELS
 from src.song_output import SongOutput
-from src.utils import get_lyric_line
+from src.utils import get_lyric_line, squeeze
 
 logger = setup_logger(__name__, LYRIC_LOG_PATH)
 
@@ -20,19 +24,46 @@ class Lyric(tk.Tk):
     def __init__(self):
         super().__init__()
 
+        font_color = CONFIG.lyric_font_color
+        if font_color == LYRIC_TRANS_COLOR:
+            trans_color = LYRIC_TRANS_COLOR_FALLBACK
+        else:
+            trans_color = LYRIC_TRANS_COLOR
+
         self.overrideredirect(True)
         self.attributes('-topmost', True)
-        self.wm_attributes("-transparentcolor", TRANS_COLOR)
-        self.config(bg=TRANS_COLOR)
+        self.attributes('-alpha', CONFIG.lyric_opacity / 100)
+        self.wm_attributes("-transparentcolor", trans_color)
+        self.config(bg=trans_color)
+
+        self.hover = False
+        self.after(100, self._check_hover)
 
         self.lyric = {}
         self.visibility = True
         self.lyric_on = True
 
+        family = CONFIG.lyric_font_family
+        if family == '':
+            family = tkfont.nametofont('TkDefaultFont').actual('family')
+
+        font_size = CONFIG.lyric_font_size
+
+        if CONFIG.lyric_font_bold:
+            font_weight = 'bold'
+        else:
+            font_weight = 'normal'
+
         self.lyric_label = tk.Label(self,
                                     text='',
-                                    fg='white',
-                                    background=TRANS_COLOR)
+                                    foreground=font_color,
+                                    background=trans_color,
+                                    font=tkfont.Font(
+                                        family=family, 
+                                        size=font_size, 
+                                        weight=font_weight,
+                                        )
+                                    )
         self.lyric_label.pack()
 
         menu = (
@@ -49,6 +80,24 @@ class Lyric(tk.Tk):
             )
 
         logger.debug(f'{__name__} initiated')
+
+    def _check_hover(self):
+        self.update_idletasks()
+        win_x_left, win_y_up = self.winfo_x(), self.winfo_y()
+        win_x_right = win_x_left + self.winfo_width()
+        win_y_down = win_y_up + self.winfo_height()
+
+        pointer_x, pointer_y = self.winfo_pointerxy()
+        if pointer_x in range(win_x_left-HOVER_EXT, win_x_right+1+HOVER_EXT) and pointer_y in range(win_y_up-HOVER_EXT, win_y_down+1+HOVER_EXT):
+            if not self.hover:
+                self.attributes('-alpha', 1)
+                self.hover = True
+        else:
+            if self.hover:
+                self.attributes('-alpha', CONFIG.lyric_opacity / 100)
+                self.hover = False
+
+        self.after(100, self._check_hover)
 
     def _toggle(self, *_):
         self.lyric_on = not self.lyric_on
@@ -74,6 +123,7 @@ class Lyric(tk.Tk):
                     status = SongOutput(status, prettify_none=False)
                     lyric_path = status.lyric_raw
                     pos = status.time_raw
+                    state = status.player_status
 
                     if self.lyric.get('path', None) != lyric_path:
                         self.lyric = self._send_dash_request('lyric')
@@ -82,7 +132,7 @@ class Lyric(tk.Tk):
                         if self.lyric != {}:
                             logger.debug(f"Lyric file update: {self.lyric['path']}")
 
-                if self.lyric_on:
+                if self.lyric_on and (state == 'playing' or (state == 'paused' and not CONFIG.pause_hide_lyric)):
                     if pos is not None and self.lyric.get('lyric', None) is not None:
                         index = get_lyric_line(self.lyric['lyric'], pos)
                         if index is SENTINELS.BEFORE_FIRST_LYRIC:
@@ -91,7 +141,9 @@ class Lyric(tk.Tk):
                             current_line = '[Lyric Empty]'
                         else:
                             current_line = self.lyric['lyric'][index][1]
-                        self.after(0, self.lyric_label.config, text=current_line)
+                        
+                        self.after(0, self._update_text, text=current_line)
+
                         self._show()
                     else:
                         self._hide()
@@ -106,6 +158,14 @@ class Lyric(tk.Tk):
                 logger.exception('An error occurred during updating lyric board')
                 self.exit()
 
+    def _update_text(self, text):
+        self.lyric_label.config(text=text)
+        self.update_idletasks()
+        x_pos = (self.winfo_screenwidth() - self.winfo_width()) // 2 + CONFIG.lyric_x_offset
+        x_pos = squeeze(x_pos, self.winfo_screenwidth())
+        y_pos = min(CONFIG.lyric_height, self.winfo_screenheight())
+        self.geometry(f'+{x_pos}-{y_pos}')
+        
     def _send_dash_request(self, action, silent=False, **kwargs):
         request = {'action': action, 'source': 'lyric', 'notify_support': False, 'silent': silent, **kwargs}
         response = send_request(**request)

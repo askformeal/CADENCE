@@ -22,6 +22,7 @@ Retrieves collections of mechanically-represented wave data from persistent stor
 - Hotkey frontend (pynput)
 - Tray icon frontend (pystray): playback controls, song/playlist switching, volume presets, now-playing tooltip and error indicator
 - Dashboard frontend (`cadence dash`): interactive TUI with live status, playlist browsing and keyboard controls
+- Lyric board frontend: floating always-on-top window showing the current lyric line, styled via config options and fading to semi-transparent until hovered
 - Socket-based backend/frontend architecture (see [docs/protocol.md](docs/protocol.md))
 
 ## Installation
@@ -116,15 +117,34 @@ Config file: `%LOCALAPPDATA%\cadence\cadence\config.toml` (Windows). Options:
 | Option | Default | Description |
 | --- | --- | --- |
 | `username` | `J. Doe` | Name shown in the welcome message |
+| `backend_token` | *(empty)* | Token the backend verifies requests with; empty disables auth |
+| `frontend_token` | *(empty)* | Token frontends send with requests |
 | `backend_host` / `backend_port` | `127.0.0.1` / `17891` | Address the backend listens on |
 | `frontend_host` / `frontend_port` | `127.0.0.1` / `17891` | Address the frontend sends requests to |
 | `ipc_timeout` | `10` | Timeout of frontend-backend communication (seconds) |
+| `hotkey` | `true` | Start the hotkey frontend with the backend |
+| `tray` | `true` | Start the tray icon frontend with the backend |
+| `lyric` | `true` | Start the lyric board frontend with the backend |
 | `default_volume` | `100` | Volume on start (0~100) |
 | `default_shuffle` | `false` | Shuffle mode on start |
 | `player_timeout` | `1` | Timeout of backend waiting for a player action (seconds) |
 | `pos_memorize_interval` | `5` | Interval of memorized position updates (seconds) |
+| `dash_volume_step` | `5` | Volume increase/decrease step on the dashboard |
+| `dash_pos_step` | `5` | Position forward/backward step on the dashboard |
+| `cli_box_style` | `rounded` | Box style of the CLI |
+| `dash_box_style` | `rounded` | Box style of the dashboard |
+| `dash_screen_buffer` | `true` | Use the terminal alt-screen buffer for the dashboard |
+| `auto_dash_height` | `true` | Size the dashboard height from the terminal height |
+| `pause_hide_lyric` | `true` | Hide the lyric board when playback is paused |
+| `lyric_height` | `70` | Height of the lyric board (pixels) |
+| `lyric_x_offset` | `0` | Horizontal offset of the lyric board from screen center (negative = left, positive = right) |
+| `lyric_font_family` | *(empty → system default)* | Font family of the lyric board |
+| `lyric_font_size` | `20` | Font size of the lyric board |
+| `lyric_font_bold` | `false` | Use a bold font on the lyric board |
+| `lyric_font_color` | `#ffffff` | Font color of the lyric board (hex) |
+| `lyric_opacity` | `20` | Lyric board opacity when not hovered (0~100, 100 = fully opaque) |
 
-Values are validated on write; invalid ones are rejected. The default value is used when an option is not set or the stored value is invalid.
+Values are validated on write; invalid ones are rejected. The default value is used when an option is not set or the stored value is invalid. Most options take effect on the next backend start; the timeout / interval / step options are read live on every use.
 
 ### Tray icon
 
@@ -192,10 +212,14 @@ Keys (defined in `DASH_KEY_MAP` in `src/constants.py`):
 | `Ctrl+L`, `F5` | Redraw the screen |
 | `q`, `Ctrl+C`, `Ctrl+Z` | Quit the dashboard |
 
+### Lyric board
+
+The lyric board is a floating always-on-top window that shows the current lyric line of the playing song. It starts with the backend (unless the `lyric` config option is off) and follows the backend's playback state (hidden while stopped, optionally hidden while paused via `pause_hide_lyric`). Its font, color, size and screen position are configurable (see the `lyric_*` options above). By default it is 20% opaque and fades to fully opaque when the mouse hovers over it (or within a 30 px ring around it), so it stays out of the way while you work and sharpens when you need it.
+
 ## Architecture
 
 - **Backend** (`src/backend.py`) — owns the VLC player and the SQLite database, listens on `127.0.0.1:17891` for JSON requests over a socket.
-- **Frontends** — `src/cli.py` (the `cadence` CLI), `src/hotkey.py` (media key hotkeys), `src/tray.py` (system tray icon), `src/dash.py` (interactive dashboard). They send action requests to the backend and format responses.
+- **Frontends** — `src/cli.py` (the `cadence` CLI), `src/hotkey.py` (media key hotkeys), `src/tray.py` (system tray icon), `src/dash.py` (interactive dashboard), `src/lyric.py` (floating lyric board). They send action requests to the backend and format responses.
 - **Protocol** — all communication is JSON over a length-prefixed socket connection. See [docs/protocol.md](docs/protocol.md).
 
 ## Data
@@ -214,7 +238,7 @@ Log file location (platform-dependent, managed by platformdirs):
 | Linux    | `$XDG_STATE_HOME/cadence/log/cadence.log`, defaults to `~/.local/state/cadence/log/cadence.log` |
 | macOS    | `~/Library/Logs/cadence/cadence.log`                                                              |
 
-Log files: `cadence.log` (backend), `cadence-socket.log` (client/connection), `cadence-hotkey.log` (hotkey frontend), `cadence-tray.log` (tray frontend), `cadence-dash.log` (dashboard frontend), plus `cadence-config.log` and `cadence-pid.log`.
+Log files: `cadence.log` (backend), `cadence-socket.log` (client/connection), `cadence-hotkey.log` (hotkey frontend), `cadence-tray.log` (tray frontend), `cadence-dash.log` (dashboard frontend), `cadence-lyric.log` (lyric board frontend), plus `cadence-config.log` and `cadence-pid.log`.
 
 ## TODO
 

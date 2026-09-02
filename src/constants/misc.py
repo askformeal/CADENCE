@@ -19,8 +19,11 @@ READABLE_TYPE_NAMES = {
     CONVERTER.boolean: 'boolean',
     CONVERTER.port: 'network port',
     CONVERTER.pos_int: 'positive integer',
+    CONVERTER.non_neg_int: 'non-negative integer',
     CONVERTER.timeout: 'positive float',
-    CONVERTER.percentage: 'percentage number'
+    CONVERTER.percentage: 'percentage number',
+    CONVERTER.hex_color: 'hex color',
+    CONVERTER.box_style: 'box style'
 }
 
 MIN_TIMEOUT = 0.01

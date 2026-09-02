@@ -66,6 +66,12 @@ CONFIG_SCHEME = {
         'default': True,
         'description': 'Whether to start system tray icon service on start backend'
     },
+    'lyric': {
+        'type': CONVERTER.boolean,
+        'section': 'service',
+        'default': True,
+        'description': 'Whether to start lyric board service on start backend'
+    },
     'default_volume': {
         'type': CONVERTER.percentage,
         'section': 'playback',
@@ -125,5 +131,54 @@ CONFIG_SCHEME = {
         'section': 'appearance',
         'default': True,
         'description': 'Whether to automatically set dashboard height depending on terminal height'
-    }
+    },
+    'pause_hide_lyric':
+    {
+        'type': CONVERTER.boolean,
+        'section': 'lyric',
+        'default': True,
+        'description': 'Whether to hide lyric board when playback is paused'
+    },
+    'lyric_height': {
+        'type': CONVERTER.non_neg_int,
+        'section': 'appearance',
+        'default': 70,
+        'description': 'Height of lyric board (pixels)'
+    },
+    'lyric_x_offset': {
+        'type': int,
+        'section': 'appearance',
+        'default': 0,
+        'description': 'Horizontal offset of lyric board from the middle of the screen (pixels, negative = left, positive = right)'
+    },
+    'lyric_font_family': {
+        'type': str,
+        'section': 'appearance',
+        'default': '', # Sentinels won't go though socket. cadence config list will fail
+        'description': 'Font family of lyric board'
+    },
+    'lyric_font_size': {
+        'type': CONVERTER.non_neg_int,
+        'section': 'appearance',
+        'default': 20,
+        'description': 'Font size of lyric board'
+    },
+    'lyric_font_bold': {
+        'type': CONVERTER.boolean,
+        'section': 'appearance',
+        'default': False,
+        'description': 'Whether to use bold font for lyric board'
+    },
+    'lyric_font_color': {
+        'type': CONVERTER.hex_color,
+        'section': 'appearance',
+        'default': '#ffffff',
+        'description': 'Font color of lyric board (hex)'
+    },
+    'lyric_opacity': {
+        'type': CONVERTER.percentage,
+        'section': 'appearance',
+        'default': 20,
+        'description': 'Lyric board opacity (0~100)'
+    },
 }

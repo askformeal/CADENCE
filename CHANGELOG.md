@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## [0.44.0] - 2026-09-02
+
+### Added
+
+- Lyric board frontend (`src/lyric.py`) — a floating always-on-top window showing the current lyric line of the playing song. Started with the backend (unless the `lyric` config option is off). Hidden while stopped, and optionally while paused via `pause_hide_lyric`.
+- New config options (all under the `lyric` feature): `lyric` (start the board with the backend), `pause_hide_lyric`, `lyric_height`, `lyric_x_offset`, `lyric_font_family` (empty → system default font), `lyric_font_size`, `lyric_font_bold`, `lyric_font_color`, `lyric_opacity`.
+- Lyric board hover behavior — semi-transparent at rest (default 20% opacity), fades to fully opaque when the mouse is over the window (or within a 30 px ring around it). Uses `winfo_pointerxy()` polling.
+- New converters: `non_neg_int`, `hex_color`; `README` config table expanded to cover all options.
+
+### Fixed
+
+- `READABLE_TYPE_NAMES` was missing the `non_neg_int` / `hex_color` / `box_style` converters — an invalid stored config value would raise `KeyError` while building the warning message instead of falling back to the default.
+- Lyric board no longer crashes with `NameError` when nothing is playing or the current song has no lyric — the update path only touches the label when a lyric line is actually available.
+- Empty lyric lists now return the `EMPTY_LYRIC` sentinel from `get_lyric_line()` instead of `None` (dash and lyric board both handled).
+
+### Changed
+
+- Lyric board text/fade logic: text changes re-fit the window before re-centering (`update_idletasks` before reading `winfo_width`), removing the horizontal jitter on every lyric change.
+
 ## [0.43.0] - 2026-08-31
 
 ### Added

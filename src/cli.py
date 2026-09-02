@@ -499,7 +499,8 @@ def _show_option_info(info):
     
     lines = [
         f'Name: {name}',
-        f'Value: {value} | from: {source}',
+        f'Value: {value}',
+        f'Source: {source}',
         f'Default Value: {default}',
         f'\n\"{description}\"'
         ]
