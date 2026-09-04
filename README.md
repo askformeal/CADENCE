@@ -27,7 +27,11 @@ Retrieves collections of mechanically-represented wave data from persistent stor
 
 ## Installation
 
-Requires Python 3.12+.
+Requires Python 3.12+ and [VLC](https://www.videolan.org/vlc/) 3.x installed. CADENCE uses `python-vlc`, which is only a binding — it needs a real VLC runtime (`libvlc.dll` + plugins) to decode audio, found via VLC's installer or registry.
+
+There are two ways to install:
+
+### Option A — pip (recommended)
 
 ```bash
 pip install .
@@ -38,6 +42,18 @@ The `cadence` command will be available after installation. For development, run
 ```bash
 python -m src
 ```
+
+**You must install [VLC](https://www.videolan.org/vlc/) yourself.** CADENCE only ships the `python-vlc` binding; it locates the actual VLC runtime through VLC's installation.
+
+### Option B — portable build (`build.sh`)
+
+```bash
+bash build.sh          # on Windows: from git-bash
+```
+
+Builds a self-contained folder (plus a `.zip`) into `dist/cadence-<version>/`, bundling a standalone CPython runtime, all dependencies, **and the VLC runtime** (a GUI-free subset — see `VLC_SRC` in `build.sh`). Launch with `cadence.cmd` in the bundle root; it can be copied to another machine and run as-is.
+
+**No VLC installation needed** — the bundle ships its own. The target machine only needs the Microsoft Visual C++ 2015+ Redistributable (`vcruntime140.dll`), which most Windows systems already have.
 
 ## Usage
 

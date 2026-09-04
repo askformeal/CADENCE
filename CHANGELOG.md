@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [Unreleased]
+
+### Added
+
+- Portable build script (`build.sh`) — produces a self-contained folder + `.zip` under `dist/cadence-<version>/`, bundling a standalone CPython runtime (Astral python-build-standalone), all runtime dependencies, and a GUI-free subset of the VLC runtime (`vlc/`, no VLC install needed on the target). Launch with `cadence.cmd` in the bundle root. `VLC_SRC` overrides the VLC install the build copies from. See the README Installation section.
+
+### Fixed
+
+- `pyproject.toml` `dependencies` was missing five runtime deps that `requirements.in` declared (`wcwidth`, `psutil`, `tomli-w`, `pystray`, `pillow`) — a `pip install .` would crash at runtime for the tray/lyric/dash frontends. Now synced with `requirements.in`.
+
 ## [0.44.0] - 2026-09-02
 
 ### Added
