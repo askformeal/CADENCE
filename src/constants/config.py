@@ -139,6 +139,12 @@ CONFIG_SCHEME = {
         'default': True,
         'description': 'Whether to hide lyric board when playback is paused'
     },
+    'lyric_trans_bg': {
+        'type': CONVERTER.boolean,
+        'section': 'appearance',
+        'default': False,
+        'description': 'Whether to use transparent background for lyric board'
+    },
     'lyric_height': {
         'type': CONVERTER.non_neg_int,
         'section': 'appearance',
@@ -172,19 +178,19 @@ CONFIG_SCHEME = {
     'lyric_font_color': {
         'type': CONVERTER.hex_color,
         'section': 'appearance',
-        'default': '#ffffff',
+        'default': "#797979",
         'description': 'Font color of lyric board (hex)'
     },
     'lyric_bg_color': {
         'type': CONVERTER.hex_color,
         'section': 'appearance',
-        'default': "#3b3b3b",
+        'default': "#111111",
         'description': 'Background color of lyric board (hex)'
     },
     'lyric_opacity': {
         'type': CONVERTER.percentage,
         'section': 'appearance',
-        'default': 20,
+        'default': 40,
         'description': 'Lyric board opacity (0~100)'
     },
 }

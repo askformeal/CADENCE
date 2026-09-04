@@ -35,7 +35,8 @@ class Lyric(tk.Tk):
         self.attributes('-alpha', CONFIG.lyric_opacity / 100)
         self.config(bg=self.trans_color)
 
-        self.wm_attributes("-transparentcolor", self.trans_color)
+        if CONFIG.lyric_trans_bg:
+            self.wm_attributes("-transparentcolor", self.trans_color)
 
         self.hover = False
         self.after(100, self._check_hover)
