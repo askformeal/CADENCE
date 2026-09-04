@@ -5,6 +5,13 @@
 ### Added
 
 - Portable build script (`build.sh`) — produces a self-contained folder + `.zip` under `dist/cadence-<version>/`, bundling a standalone CPython runtime (Astral python-build-standalone), all runtime dependencies, and a GUI-free subset of the VLC runtime (`vlc/`, no VLC install needed on the target). Launch with `cadence.cmd` in the bundle root. `VLC_SRC` overrides the VLC install the build copies from. See the README Installation section.
+- New config option `lyric_bg_color` (default `#3b3b3b`) — the solid background color shown behind the lyric text while the board is hovered.
+- Lyric board now shows a solid background (`lyric_bg_color`) with padding around the text on hover, instead of just the bare text over transparency.
+
+### Changed
+
+- The lyric board's transparent color is now picked dynamically at startup — the first color that differs from both `lyric_font_color` and `lyric_bg_color` — replacing the hardcoded `LYRIC_TRANS_COLOR` / `LYRIC_TRANS_COLOR_FALLBACK` constants. This avoids a transparent-key collision when the user picks a font or background color that equals the old hardcoded key.
+- Hover background switching now targets the lyric label (which fills the window) rather than the Tk root window, whose background was never visible behind the label.
 
 ### Fixed
 

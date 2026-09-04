@@ -279,3 +279,8 @@ def get_lyric_line(lyric, pos):
             for i, line in enumerate(lyric[:-1]):
                 if pos >= line[0] and pos < lyric[i+1][0]:
                     return i
+
+def hex_color_to_dec(color):
+    color = color.replace('#', '0x')
+    num = int(color, 16)
+    return num

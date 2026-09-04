@@ -175,6 +175,12 @@ CONFIG_SCHEME = {
         'default': '#ffffff',
         'description': 'Font color of lyric board (hex)'
     },
+    'lyric_bg_color': {
+        'type': CONVERTER.hex_color,
+        'section': 'appearance',
+        'default': "#3b3b3b",
+        'description': 'Background color of lyric board (hex)'
+    },
     'lyric_opacity': {
         'type': CONVERTER.percentage,
         'section': 'appearance',

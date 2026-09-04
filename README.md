@@ -158,6 +158,7 @@ Config file: `%LOCALAPPDATA%\cadence\cadence\config.toml` (Windows). Options:
 | `lyric_font_size` | `20` | Font size of the lyric board |
 | `lyric_font_bold` | `false` | Use a bold font on the lyric board |
 | `lyric_font_color` | `#ffffff` | Font color of the lyric board (hex) |
+| `lyric_bg_color` | `#3b3b3b` | Solid background color of the lyric board shown on hover (hex) |
 | `lyric_opacity` | `20` | Lyric board opacity when not hovered (0~100, 100 = fully opaque) |
 
 Values are validated on write; invalid ones are rejected. The default value is used when an option is not set or the stored value is invalid. Most options take effect on the next backend start; the timeout / interval / step options are read live on every use.
@@ -230,7 +231,7 @@ Keys (defined in `DASH_KEY_MAP` in `src/constants.py`):
 
 ### Lyric board
 
-The lyric board is a floating always-on-top window that shows the current lyric line of the playing song. It starts with the backend (unless the `lyric` config option is off) and follows the backend's playback state (hidden while stopped, optionally hidden while paused via `pause_hide_lyric`). Its font, color, size and screen position are configurable (see the `lyric_*` options above). By default it is 20% opaque and fades to fully opaque when the mouse hovers over it (or within a 30 px ring around it), so it stays out of the way while you work and sharpens when you need it.
+The lyric board is a floating always-on-top window that shows the current lyric line of the playing song. It starts with the backend (unless the `lyric` config option is off) and follows the backend's playback state (hidden while stopped, optionally hidden while paused via `pause_hide_lyric`). Its font, color, size and screen position are configurable (see the `lyric_*` options above). By default it is 20% opaque and, when the mouse hovers over it (or within a 30 px ring around it), fades to fully opaque and shows a solid background behind the text (`lyric_bg_color`), so it stays out of the way while you work and sharpens when you need it.
 
 ## Architecture
 

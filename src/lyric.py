@@ -10,13 +10,12 @@ from PIL import Image
 from src.client import handle_code, send_request, test_heartbeat
 from src.config import CONFIG
 from src.constants import HEARTBEAT_POLL_INTERVAL, LYRIC_LOG_PATH, LYRIC_POLL_INTERVAL, LYRIC_ICON_PATH
-from src.constants import LYRIC_TRANS_COLOR
-from src.constants import LYRIC_TRANS_COLOR_FALLBACK
 from src.constants import LYRIC_HOVER_EXTENSION as HOVER_EXT
 from src.log import setup_logger
 from src.sentinels import SENTINELS
 from src.song_output import SongOutput
 from src.utils import get_lyric_line, squeeze
+from src.utils import hex_color_to_dec as dec_hex
 
 logger = setup_logger(__name__, LYRIC_LOG_PATH)
 
@@ -24,17 +23,19 @@ class Lyric(tk.Tk):
     def __init__(self):
         super().__init__()
 
-        font_color = CONFIG.lyric_font_color
-        if font_color == LYRIC_TRANS_COLOR:
-            trans_color = LYRIC_TRANS_COLOR_FALLBACK
-        else:
-            trans_color = LYRIC_TRANS_COLOR
+        i = 0
+        while i in (dec_hex(CONFIG.lyric_font_color), dec_hex(CONFIG.lyric_bg_color)):
+            i += 1
+        
+        self.trans_color = f"#{format(i, '06X')}"
 
         self.overrideredirect(True)
         self.attributes('-topmost', True)
+
         self.attributes('-alpha', CONFIG.lyric_opacity / 100)
-        self.wm_attributes("-transparentcolor", trans_color)
-        self.config(bg=trans_color)
+        self.config(bg=self.trans_color)
+
+        self.wm_attributes("-transparentcolor", self.trans_color)
 
         self.hover = False
         self.after(100, self._check_hover)
@@ -56,8 +57,10 @@ class Lyric(tk.Tk):
 
         self.lyric_label = tk.Label(self,
                                     text='',
-                                    foreground=font_color,
-                                    background=trans_color,
+                                    padx=15,
+                                    pady=7,
+                                    foreground=CONFIG.lyric_font_color,
+                                    background=self.trans_color,
                                     font=tkfont.Font(
                                         family=family, 
                                         size=font_size, 
@@ -91,10 +94,12 @@ class Lyric(tk.Tk):
         if pointer_x in range(win_x_left-HOVER_EXT, win_x_right+1+HOVER_EXT) and pointer_y in range(win_y_up-HOVER_EXT, win_y_down+1+HOVER_EXT):
             if not self.hover:
                 self.attributes('-alpha', 1)
+                self.lyric_label.config(bg=CONFIG.lyric_bg_color)
                 self.hover = True
         else:
             if self.hover:
                 self.attributes('-alpha', CONFIG.lyric_opacity / 100)
+                self.lyric_label.config(bg=self.trans_color)
                 self.hover = False
 
         self.after(100, self._check_hover)
