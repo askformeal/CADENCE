@@ -139,6 +139,13 @@ CONFIG_SCHEME = {
         'default': True,
         'description': 'Whether to hide lyric board when playback is paused'
     },
+    'lyric_hover_solid':
+    {   
+        'type': CONVERTER.boolean,
+        'section': 'appearance',
+        'default': True,
+        'description': 'Whether to solidify lyric board on hover'
+    },
     'lyric_trans_bg': {
         'type': CONVERTER.boolean,
         'section': 'appearance',

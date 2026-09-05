@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## [0.46.0] - 2026-09-05
+
+### Added
+
+- New config option `lyric_trans_bg` (default `false`) — controls whether the lyric board uses a fully transparent (keyed-out) window background instead of a plain opaque backdrop. Previously the transparent background was always on.
+- New config option `lyric_hover_solid` (default `true`) — makes the hover solidification (fully opaque + solid `lyric_bg_color` background on hover) togglable.
+
+### Changed
+
+- Tuned the lyric board defaults: resting opacity 20% → 40%, font color `#ffffff` → `#797979`, background color `#3b3b3b` → `#111111`.
+
+### Fixed
+
+- Turning `lyric_hover_solid` off at runtime no longer leaves an already-solidified board stuck opaque — the hover state now resets back to translucent even when the feature is disabled.
+
 ## [0.45.0] - 2026-09-04
 
 ### Added

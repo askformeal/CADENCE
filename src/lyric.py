@@ -92,7 +92,7 @@ class Lyric(tk.Tk):
         win_y_down = win_y_up + self.winfo_height()
 
         pointer_x, pointer_y = self.winfo_pointerxy()
-        if pointer_x in range(win_x_left-HOVER_EXT, win_x_right+1+HOVER_EXT) and pointer_y in range(win_y_up-HOVER_EXT, win_y_down+1+HOVER_EXT):
+        if pointer_x in range(win_x_left-HOVER_EXT, win_x_right+1+HOVER_EXT) and pointer_y in range(win_y_up-HOVER_EXT, win_y_down+1+HOVER_EXT) and CONFIG.lyric_hover_solid:
             if not self.hover:
                 self.attributes('-alpha', 1)
                 self.lyric_label.config(bg=CONFIG.lyric_bg_color)

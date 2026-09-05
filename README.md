@@ -152,14 +152,16 @@ Config file: `%LOCALAPPDATA%\cadence\cadence\config.toml` (Windows). Options:
 | `dash_screen_buffer` | `true` | Use the terminal alt-screen buffer for the dashboard |
 | `auto_dash_height` | `true` | Size the dashboard height from the terminal height |
 | `pause_hide_lyric` | `true` | Hide the lyric board when playback is paused |
+| `lyric_trans_bg` | `false` | Use a fully transparent window background (keyed out) instead of an opaque backdrop on the lyric board |
+| `lyric_hover_solid` | `true` | Turn the lyric board fully opaque with a solid background when hovered (can be turned off) |
 | `lyric_height` | `70` | Height of the lyric board (pixels) |
 | `lyric_x_offset` | `0` | Horizontal offset of the lyric board from screen center (negative = left, positive = right) |
 | `lyric_font_family` | *(empty → system default)* | Font family of the lyric board |
 | `lyric_font_size` | `20` | Font size of the lyric board |
 | `lyric_font_bold` | `false` | Use a bold font on the lyric board |
-| `lyric_font_color` | `#ffffff` | Font color of the lyric board (hex) |
-| `lyric_bg_color` | `#3b3b3b` | Solid background color of the lyric board shown on hover (hex) |
-| `lyric_opacity` | `20` | Lyric board opacity when not hovered (0~100, 100 = fully opaque) |
+| `lyric_font_color` | `#797979` | Font color of the lyric board (hex) |
+| `lyric_bg_color` | `#111111` | Solid background color of the lyric board shown on hover (hex) |
+| `lyric_opacity` | `40` | Lyric board opacity when not hovered (0~100, 100 = fully opaque) |
 
 Values are validated on write; invalid ones are rejected. The default value is used when an option is not set or the stored value is invalid. Most options take effect on the next backend start; the timeout / interval / step options are read live on every use.
 
@@ -231,7 +233,7 @@ Keys (defined in `DASH_KEY_MAP` in `src/constants.py`):
 
 ### Lyric board
 
-The lyric board is a floating always-on-top window that shows the current lyric line of the playing song. It starts with the backend (unless the `lyric` config option is off) and follows the backend's playback state (hidden while stopped, optionally hidden while paused via `pause_hide_lyric`). Its font, color, size and screen position are configurable (see the `lyric_*` options above). By default it is 20% opaque and, when the mouse hovers over it (or within a 30 px ring around it), fades to fully opaque and shows a solid background behind the text (`lyric_bg_color`), so it stays out of the way while you work and sharpens when you need it.
+The lyric board is a floating always-on-top window that shows the current lyric line of the playing song. It starts with the backend (unless the `lyric` config option is off) and follows the backend's playback state (hidden while stopped, optionally hidden while paused via `pause_hide_lyric`). Its font, color, size and screen position are configurable (see the `lyric_*` options above). By default it rests at 40% opacity on a plain opaque backdrop and, when the mouse hovers over it (or within a 30 px ring around it), turns fully opaque with a solid background behind the text (`lyric_bg_color`), so it stays out of the way while you work and sharpens when you need it. Both the hover solidification (`lyric_hover_solid`) and the transparent backdrop (`lyric_trans_bg`) can be turned off.
 
 ## Architecture
 

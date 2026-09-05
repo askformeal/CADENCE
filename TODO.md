@@ -44,12 +44,15 @@
   - [X] Dashboard play-all key (`Ctrl+A`)
 - [X] Song info panel on the left of the dashboard
 - [X] Float lyric frontend
-  - [ ] Show a solid background when hovered
-  - [ ] Make hover feature togglable by config option
+  - [X] Show a solid background when hovered
+  - [X] Make hover feature togglable by config option
+- [ ] Download lyrics from online source via LRCLIB
 - [ ] GUI configure editor
 - [ ] HTTP frontend
 - [ ] Bluetooth frontend
 - [ ] Advanced library management
   - [ ] Regex matching (not now)
   - [ ] Interactive management (not now)
+- [ ] Rewrite the floating lyric board in Qt (proper per-pixel transparency, text stroke/shadow, sub-glyph alpha — overcomes tkinter's no-outline limitation)
+- [ ] Rewrite the dashboard TUI with Textual
 - [ ] Auto play song depend on the user's mood
