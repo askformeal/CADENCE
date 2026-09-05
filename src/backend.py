@@ -460,11 +460,11 @@ class Backend:
                     info = self.current_song_info[self.current_song_num]
                     lyric_path = info.get('lyric', None)
                     if lyric_path is None:
-                        response = gen_response.Success('this song does not have a lyric file set')
+                        response = gen_response.LyricNotExist()
                     else:
                         lyric = parse_lyric(lyric_path)
                         if lyric is SENTINELS.FILE_IO_FAILED:
-                            response = gen_response.Failed(f'can not open lyric file \"{lyric_path}\"')
+                            response = gen_response.FileIOFailed('open lyric file', lyric_path)
                         else:
                             attachment = {'path': lyric_path, 'lyric': lyric}
                             response = gen_response.Success('lyric of current song obtained', attachment=attachment)
@@ -809,6 +809,27 @@ class Backend:
                         path = SENTINELS.CLEAR_META
                     self.database.set_song_meta(song_id, 'lyric', path)
                     response = gen_response.Success(f'set lyric file of \"{song}\"')
+
+            elif action == 'lib.lyric.show':
+                song = request['song']
+                song_id = self._get_song(song, cwd)
+                if song_id is SENTINELS.MISSING_CWD:
+                    response = gen_response.MissingCWD('lib.lyric.show')
+                elif song_id is SENTINELS.NOT_IN_LIB:
+                    response = gen_response.SongNotExist(f'show lyric of \"{song}\"')
+                else:
+                    song_info = self.database.get_song_info(song_id)[0]
+                    lyric_path = song_info.get('lyric', None)
+
+                    if lyric_path is None:
+                        response = gen_response.LyricNotExist()
+                    else:
+                        lyric = parse_lyric(lyric_path)
+                        if lyric is SENTINELS.FILE_IO_FAILED:
+                            response = gen_response.FileIOFailed('open lyric file', lyric_path)
+                        else:
+                            attachment = {'path': lyric_path, 'lyric': lyric}
+                            response = gen_response.Success('lyric obtained', attachment=attachment)
 
             elif action == 'lib.playlist.list':
                 response = gen_response.Success('obtained list of playlist in library')

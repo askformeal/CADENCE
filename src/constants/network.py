@@ -124,6 +124,10 @@ ACTION_KEYS = {
         'song': (str, True),
         'path': (str, True)
     },
+    'lib.lyric.show':
+    {
+        'song': (str, True)
+    },
     'lib.playlist.list': {
         'playlist': (str, False, None),
         'show_aliases': (bool, False, False),
@@ -175,6 +179,7 @@ ATTACHMENT_REQUIRED_ACTIONS = [
     'lib.prune',
     'lib.scan',
     'lib.alias.list',
+    'lib.lyric.show',
     'lib.playlist.list',
     'config.list',
     'config.show',

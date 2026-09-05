@@ -12,7 +12,7 @@ from src.process import start, kill
 from src.constants import RESTART_NUM, RESTART_POLL_INTERVAL, ATTACHMENT_REQUIRED_ACTIONS
 from src.config_manager import CONFIG_MANAGER
 from src.song_output import SongOutput
-from src.utils import box
+from src.utils import box, format_time
 
 def _path(val):
     return str(Path(val).absolute())
@@ -171,6 +171,9 @@ def main():
     lyric_set_parser = lyric_sub.add_parser('set', help='Set lyric file of a song. Using empty string (\"\") to unset')
     lyric_set_parser.add_argument('song', type=str, help='Song to set lyric file')
     lyric_set_parser.add_argument('path', type=_path, help='Path of lyric file')
+
+    lyric_set_parser = lyric_sub.add_parser('show', help='Show lyric of a song')
+    lyric_set_parser.add_argument('song', type=str, help='Song to show lyric')
 
     playlist_parser = lib_sub.add_parser('playlist', help='Manage playlists')
     playlist_sub = playlist_parser.add_subparsers(dest='playlist_action', required=True)
@@ -405,6 +408,13 @@ def main():
                             print(f'  {"\n  ".join(attachment)}')
                         else:
                             print('No aliases are bound to this song')
+
+                    elif action == 'lib.lyric.show':
+                        lines = [f"Path: {attachment.get('path', '?')}", '']
+                        for timestamp, text in attachment.get('lyric', []):
+                            lines.append(f"[{format_time(timestamp)}] {text.strip().replace('\n', ' \\ ')}")
+
+                        print(_cli_box('\n'.join(lines)))
 
                     elif action == 'lib.playlist.list':
                         if args['playlist'] is not None:

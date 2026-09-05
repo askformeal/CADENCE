@@ -6,6 +6,14 @@
 #
 --index-url https://pypi.tuna.tsinghua.edu.cn/simple
 
+beautifulsoup4==4.15.0
+    # via syncedlyrics
+certifi==2026.7.22
+    # via requests
+charset-normalizer==3.5.1
+    # via requests
+idna==3.19
+    # via requests
 mutagen==1.48.1
     # via -r requirements.in
 pillow==12.3.0
@@ -22,13 +30,25 @@ pystray==0.19.5
     # via -r requirements.in
 python-vlc==3.0.21203
     # via -r requirements.in
+rapidfuzz==3.14.6
+    # via syncedlyrics
 readchar==4.2.2
     # via -r requirements.in
+requests==2.34.2
+    # via syncedlyrics
 six==1.17.0
     # via
     #   pynput
     #   pystray
+soupsieve==2.9.2
+    # via beautifulsoup4
+syncedlyrics==1.0.1
+    # via -r requirements.in
 tomli-w==1.2.0
     # via -r requirements.in
+typing-extensions==4.16.0
+    # via beautifulsoup4
+urllib3==2.7.0
+    # via requests
 wcwidth==0.8.2
     # via -r requirements.in

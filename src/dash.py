@@ -268,11 +268,12 @@ class Dash:
                             self.player_status = f'[{self.player_status.capitalize()}]'
 
                         if self.lyric.get('path', None) != lyric_path:
-                            self.lyric = self._send_dash_request('lyric')
-                            if self.lyric is None:
+                            self.lyric = self._send_dash_request('lyric', expect_fail=True)
+                            if self.lyric in (None, {}):
+                                logger.debug('Tried to update lyric, but failed')
                                 self.lyric = {'path': lyric_path}
-                            if self.lyric != {}:
-                                logger.debug(f'Lyric file update: {self.lyric['path']}')
+                            else:
+                                logger.debug(f"Lyric file update: {self.lyric['path']}")
 
                     if self.lib_id is not None:
                         info = self._send_dash_request('lib.info', 
@@ -455,10 +456,10 @@ class Dash:
 
         return text
 
-    def _send_dash_request(self, action, silent=False, **kwargs):
+    def _send_dash_request(self, action, silent=False, expect_fail=False, **kwargs):
         request = {'action': action, 'source': 'dash', 'notify_support': False, 'silent': silent, **kwargs}
         response = send_request(**request)
-        if response.get('code', None) != 0:
+        if response.get('code', None) != 0 and not expect_fail:
             self._toast(f"[Failed] {response.get('msg', 'No message')}")
         if not silent:
             logger.info(f'Sent request: {request}, response received: {response}')

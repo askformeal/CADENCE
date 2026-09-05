@@ -150,6 +150,14 @@ class OptionNotExist(Failed):
     def __init__(self, action, attachment=None, failed=None):
         super().__init__(f'can not {action} because the option does not exist', attachment, failed)
 
+class LyricNotExist(Failed):
+    def __init__(self, attachment=None, failed=None):
+        super().__init__('this song does not have a lyric file set', attachment, failed)
+
+class FileIOFailed(Failed):
+    def __init__(self, action, path, attachment=None, failed=None):
+        super().__init__(f'can not {action} of path \"{path}\"', attachment, failed)
+
 def merge(*responses: Response, joiner='|', attachment=None, failed=None):
     messages = []
     codes = []

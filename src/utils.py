@@ -238,18 +238,19 @@ def window_list(lines, window_len, selected, current=None, filter='', newline_se
 
     return result
 
-def parse_lyric(path):
+def parse_lyric(path, content=None):
     timestamp = re.compile(r'\[(\d+):(\d+)(?:\.(\d+))?\]')
-    for encoding in ENCODING_CHAIN:
-        try:
-            with open(path, 'r', encoding=encoding) as f:
-                content = f.read()
-        except (OSError, UnicodeDecodeError):
-            continue
+    if content is None:
+        for encoding in ENCODING_CHAIN:
+            try:
+                with open(path, 'r', encoding=encoding) as f:
+                    content = f.read()
+            except (OSError, UnicodeDecodeError):
+                continue
+            else:
+                break
         else:
-            break
-    else:
-        return SENTINELS.FILE_IO_FAILED
+            return SENTINELS.FILE_IO_FAILED
     result = []
     lines = content.splitlines()
     for line in lines:
