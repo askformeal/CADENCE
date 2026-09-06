@@ -18,7 +18,10 @@ from src.frontend.client import test_heartbeat, handle_code, send_request
 
 from src.sentinels import SENTINELS
 from src.song_output import SongOutput
-from src.utils import box, center, get_lyric_line, progress_bar, align, format_time, window_list, squeeze, wrap_text
+from src.utils.misc import squeeze
+from src.utils.time_ import format_time
+from src.utils.lyric import get_lyric_line
+from src.utils.tui import box, center, progress_bar, align, window_list, wrap_text
 
 logger = setup_logger(__name__, DASH_LOG_PATH, add_console=False)
 

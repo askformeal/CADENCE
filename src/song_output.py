@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from src.utils import format_time
+from src.utils.time_ import format_time
 
 class SongOutput:
     # generate outputs of from song info

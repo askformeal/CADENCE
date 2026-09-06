@@ -2,7 +2,7 @@ from src.config import CONFIG
 from src.constants import CONFIG_SCHEME, CONFIG_PATH
 from src.sentinels import SENTINELS
 from src import gen_response
-from src.utils import open_file
+from src.utils.misc import open_file
 
 class ConfigManager:
 

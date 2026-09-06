@@ -199,8 +199,8 @@ def test_dice_skips_current_song(backend, audio_file, tmp_path, monkeypatch):
     def fake_choice(seq):
         pool_seen.extend(seq)
         return seq[0]
-    monkeypatch.setattr('src.backend.handlers.playback.random.choice', fake_choice)
-
+    from src.backend.handlers.playback import sequence
+    monkeypatch.setattr(sequence.random, 'choice', fake_choice)
     response = _request(backend, 'dice')
     assert response['code'] == 0
     assert pool_seen == [1, 2]  # current song (0) excluded from the pool
@@ -1024,7 +1024,7 @@ def test_seek_pos_too_late(backend, audio_file):
 
 def test_seek_hours_parsed_correctly(backend):
     """1:02:03 must resolve to 1h2m3s (the 3600000 fix), verified without a player."""
-    from src.utils import parse_time, format_time
+    from src.utils.time_ import parse_time, format_time
     assert format_time(parse_time('1:02:03')) == '01:02:03'
 
 
@@ -1305,7 +1305,8 @@ def test_shuffle_next_uses_order_and_reshuffles(backend, audio_file, tmp_path, m
     backend.playback.shuffle_order = [1, 0]  # current (0) sits at the tail: next wraps and reshuffles
 
     reshuffled = []
-    monkeypatch.setattr('src.backend.handlers.playback.random.shuffle', lambda lst: reshuffled.append(list(lst)))
+    from src.backend.handlers.playback import helpers
+    monkeypatch.setattr(helpers.random, 'shuffle', lambda lst: reshuffled.append(list(lst)))
 
     response = _request(backend, 'next')
     assert response['code'] == 0
@@ -1321,7 +1322,8 @@ def test_shuffle_prev_wraps_without_reshuffle(backend, audio_file, tmp_path, mon
     backend.playback.current_song_num = 1  # second song, at position 0 of the order
 
     reshuffled = []
-    monkeypatch.setattr('src.backend.handlers.playback.random.shuffle', lambda lst: reshuffled.append(list(lst)))
+    from src.backend.handlers.playback import helpers
+    monkeypatch.setattr(helpers.random, 'shuffle', lambda lst: reshuffled.append(list(lst)))
 
     response = _request(backend, 'prev')
     assert response['code'] == 0

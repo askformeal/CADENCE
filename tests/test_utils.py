@@ -2,7 +2,8 @@ import os
 
 import pytest
 
-from src.utils import verify_path_format, box, center
+from src.utils.misc import verify_path_format
+from src.utils.tui import box, center
 
 
 @pytest.mark.parametrize('raw,expected', [
@@ -97,7 +98,7 @@ def test_center_pads_evenly():
 
 
 def test_get_lyric_line_returns_index_or_sentinel():
-    from src.utils import get_lyric_line, parse_lyric
+    from src.utils.lyric import get_lyric_line, parse_lyric
     from src.sentinels import SENTINELS
     import tempfile, os
     lrc = '[00:01.00]one\n[00:02.00]two\n[00:03.00]three\n'
@@ -114,7 +115,7 @@ def test_get_lyric_line_returns_index_or_sentinel():
 
 
 def test_window_list_newline_selected():
-    from src.utils import window_list
+    from src.utils.tui import window_list
     lines = ['a', 'b', 'c', 'd', 'e']
     result = window_list(lines, 3, 2, newline_selected=True, mark_unshown=False, left_align=False)
     joined = '\n'.join(result)
@@ -123,7 +124,7 @@ def test_window_list_newline_selected():
 
 
 def test_window_list_mark_unshown_counts():
-    from src.utils import window_list
+    from src.utils.tui import window_list
     lines = [str(i) for i in range(20)]
     result = window_list(lines, 5, 10)         # defaults: mark_unshown=True, left_align=True
     joined = '\n'.join(result)

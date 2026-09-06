@@ -12,7 +12,8 @@ from src.process import start, kill
 from src.constants import RESTART_NUM, RESTART_POLL_INTERVAL, ATTACHMENT_REQUIRED_ACTIONS
 from src.config_manager import CONFIG_MANAGER
 from src.song_output import SongOutput
-from src.utils import box, format_time
+from src.utils.tui import box
+from src.utils.time_ import format_time
 
 def _path(val):
     return str(Path(val).absolute())

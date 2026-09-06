@@ -4,7 +4,7 @@ from src.log import setup_logger
 from src.constants import BACKEND_LOG_PATH
 from src.config import CONFIG
 from src.sentinels import SENTINELS
-from src.utils import get_song_display_name
+from src.utils.misc import get_song_display_name
 
 logger = setup_logger(__name__, BACKEND_LOG_PATH)
 

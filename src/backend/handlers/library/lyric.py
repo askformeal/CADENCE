@@ -8,8 +8,9 @@ from src.constants import BACKEND_LOG_PATH
 from src.constants import ENCODING, LYRIC_FETCH_MAX_WORKERS
 from src.sentinels import SENTINELS
 from src import gen_response
-from src.utils import get_song_display_name, parse_lyric
-from .library import get_song
+from src.utils.misc import get_song_display_name
+from src.utils.lyric import parse_lyric
+from .helpers import get_song
 
 logger = setup_logger(__name__, BACKEND_LOG_PATH)
 
