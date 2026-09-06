@@ -13,7 +13,7 @@ from src.constants import HEARTBEAT_POLL_INTERVAL, LYRIC_LOG_PATH, LYRIC_POLL_IN
 from src.constants import LYRIC_HOVER_EXTENSION as HOVER_EXT
 from src.log import setup_logger
 from src.sentinels import SENTINELS
-from src.song_output import SongOutput
+from src.frontend.song_output import SongOutput
 from src.utils.lyric import get_lyric_line
 from src.utils.misc import squeeze
 from src.utils.misc import hex_color_to_dec as dec_hex

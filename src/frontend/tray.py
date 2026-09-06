@@ -11,7 +11,7 @@ from src.constants import ICON_PATH, ERROR_ICON_PATH, HEARTBEAT_POLL_INTERVAL, T
 from src.constants import AUDIO_FILE_TYPES
 from src.constants import TRAY_LOG_PATH
 from src.frontend.client import send_request, test_heartbeat, handle_code
-from src.song_output import SongOutput
+from src.frontend.song_output import SongOutput
 
 logger = setup_logger(__name__, TRAY_LOG_PATH)
 

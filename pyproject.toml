@@ -24,7 +24,7 @@ dependencies = [
 ]
 
 [project.scripts]
-cadence = "src.cli:main"
+cadence = "src.frontend.cli.core:main"
 
 [tool.setuptools.packages.find]
 include = ["src*", "res*"]

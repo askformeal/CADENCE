@@ -17,7 +17,7 @@ from src.config import CONFIG
 from src.frontend.client import test_heartbeat, handle_code, send_request
 
 from src.sentinels import SENTINELS
-from src.song_output import SongOutput
+from src.frontend.song_output import SongOutput
 from src.utils.misc import squeeze
 from src.utils.time_ import format_time
 from src.utils.lyric import get_lyric_line
