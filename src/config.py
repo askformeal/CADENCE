@@ -6,7 +6,6 @@ from src.log import setup_logger
 from src.constants import CONFIG_PATH, CONFIG_SCHEME, READABLE_TYPE_NAMES
 from src.constants import CONFIG_LOG_PATH
 from src.sentinels import SENTINELS
-from src.utils import count_dict
 
 logger = setup_logger(__name__, CONFIG_LOG_PATH)
 

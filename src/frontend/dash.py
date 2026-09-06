@@ -14,7 +14,7 @@ from src.constants import DASH_MAX_SHOW_SONG, DASH_VOL_BAR_LEN, DASH_TOAST_TIME
 from src.constants import DASH_KEY_MAP as KEY_MAP
 from src.constants import BOX_STYLES
 from src.config import CONFIG
-from src.client import test_heartbeat, handle_code, send_request
+from src.frontend.client import test_heartbeat, handle_code, send_request
 
 from src.sentinels import SENTINELS
 from src.song_output import SongOutput

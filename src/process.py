@@ -6,7 +6,7 @@ from pathlib import Path
 
 import psutil
 
-from src.client import test_alive
+from src.frontend.client import test_alive
 from src.constants import STARTER_RETRY, STARTER_CHECK_INTERVAL, TERMINATE_TIMEOUT
 from src.config import CONFIG
 from src.sentinels import SENTINELS
@@ -16,13 +16,13 @@ def start(**kwargs):
     if test_alive():
         return SENTINELS.BACKEND_ALREADY_RUNNING
     else:
-        _spawn('src.backend', **kwargs)
+        _spawn('src.backend.core', **kwargs)
         if CONFIG.hotkey:
-            _spawn('src.hotkey')
+            _spawn('src.frontend.hotkey')
         if CONFIG.tray:
-            _spawn('src.tray')
+            _spawn('src.frontend.tray')
         if CONFIG.lyric:
-            _spawn('src.lyric')
+            _spawn('src.frontend.lyric')
             
         for i in range(STARTER_RETRY):
             if test_alive():

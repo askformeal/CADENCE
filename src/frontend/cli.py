@@ -7,7 +7,7 @@ from time import sleep
 from src import version
 from src.config import CONFIG
 from src.sentinels import SENTINELS
-from src.client import send_request, test_alive
+from src.frontend.client import send_request, test_alive
 from src.process import start, kill
 from src.constants import RESTART_NUM, RESTART_POLL_INTERVAL, ATTACHMENT_REQUIRED_ACTIONS
 from src.config_manager import CONFIG_MANAGER
@@ -248,7 +248,7 @@ def main():
             print(f' PID {pid}: {msg}')
 
     elif args['action'] == 'dash':
-        from src.dash import Dash
+        from src.frontend.dash import Dash
         Dash().run()
 
     else:

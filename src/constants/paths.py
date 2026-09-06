@@ -22,6 +22,7 @@ LYRIC_LOG_PATH = LOG_DIR / 'cadence-lyric.log'
 DASH_LOG_PATH = LOG_DIR / 'cadence-dash.log'
 CONFIG_LOG_PATH = LOG_DIR / 'cadence-config.log'
 PID_LOG_PATH = LOG_DIR / 'cadence-pid.log'
+UTIL_LOG_PATH = LOG_DIR / 'cadence-util.log'
 
 DATABASE_PATH = DATA_DIR / 'cadence.db'
 DATABASE_DEV_PATH = DATA_DIR / 'cadence-dev.db'

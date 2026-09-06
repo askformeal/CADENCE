@@ -7,7 +7,7 @@ from tkinter import font as tkfont
 from pystray import Icon, Menu, MenuItem
 from PIL import Image
 
-from src.client import handle_code, send_request, test_heartbeat
+from src.frontend.client import handle_code, send_request, test_heartbeat
 from src.config import CONFIG
 from src.constants import HEARTBEAT_POLL_INTERVAL, LYRIC_LOG_PATH, LYRIC_POLL_INTERVAL, LYRIC_ICON_PATH
 from src.constants import LYRIC_HOVER_EXTENSION as HOVER_EXT

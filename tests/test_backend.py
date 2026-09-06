@@ -113,13 +113,13 @@ def test_switch_to_number(backend, audio_file, tmp_path):
     first, second = _open_two_song_playlist(backend, audio_file, tmp_path)
     response = _request(backend, 'switch', number=1)
     assert response['code'] == 0
-    assert backend.current_song_num == 0
+    assert backend.playback.current_song_num == 0
     status = _request(backend, 'status')
     assert status['attachment']['path'] == first
 
     response = _request(backend, 'switch', number=2)
     assert response['code'] == 0
-    assert backend.current_song_num == 1
+    assert backend.playback.current_song_num == 1
     status = _request(backend, 'status')
     assert status['attachment']['path'] == second
 
@@ -128,7 +128,7 @@ def test_switch_zero_means_first(backend, audio_file, tmp_path):
     first, _ = _open_two_song_playlist(backend, audio_file, tmp_path)
     response = _request(backend, 'switch', number=0)
     assert response['code'] == 0
-    assert backend.current_song_num == 0
+    assert backend.playback.current_song_num == 0
     status = _request(backend, 'status')
     assert status['attachment']['path'] == first
 
@@ -137,7 +137,7 @@ def test_switch_too_large_goes_to_last(backend, audio_file, tmp_path):
     _, second = _open_two_song_playlist(backend, audio_file, tmp_path)
     response = _request(backend, 'switch', number=999999)
     assert response['code'] == 0
-    assert backend.current_song_num == 1
+    assert backend.playback.current_song_num == 1
     status = _request(backend, 'status')
     assert status['attachment']['path'] == second
 
@@ -147,13 +147,13 @@ def test_switch_negative_counts_from_last(backend, audio_file, tmp_path):
 
     response = _request(backend, 'switch', number=-1)
     assert response['code'] == 0
-    assert backend.current_song_num == 1
+    assert backend.playback.current_song_num == 1
     status = _request(backend, 'status')
     assert status['attachment']['path'] == second
 
     response = _request(backend, 'switch', number=-2)
     assert response['code'] == 0
-    assert backend.current_song_num == 0
+    assert backend.playback.current_song_num == 0
     status = _request(backend, 'status')
     assert status['attachment']['path'] == first
 
@@ -162,7 +162,7 @@ def test_switch_negative_too_large_goes_to_first(backend, audio_file, tmp_path):
     first, _ = _open_two_song_playlist(backend, audio_file, tmp_path)
     response = _request(backend, 'switch', number=-999)
     assert response['code'] == 0
-    assert backend.current_song_num == 0
+    assert backend.playback.current_song_num == 0
     status = _request(backend, 'status')
     assert status['attachment']['path'] == first
 
@@ -193,18 +193,18 @@ def _open_three_song_playlist(backend, audio_file, tmp_path):
 
 def test_dice_skips_current_song(backend, audio_file, tmp_path, monkeypatch):
     _, second, _ = _open_three_song_playlist(backend, audio_file, tmp_path)
-    assert backend.current_song_num == 0
+    assert backend.playback.current_song_num == 0
 
     pool_seen = []
     def fake_choice(seq):
         pool_seen.extend(seq)
         return seq[0]
-    monkeypatch.setattr('src.backend.random.choice', fake_choice)
+    monkeypatch.setattr('src.backend.handlers.playback.random.choice', fake_choice)
 
     response = _request(backend, 'dice')
     assert response['code'] == 0
     assert pool_seen == [1, 2]  # current song (0) excluded from the pool
-    assert backend.current_song_num == 1
+    assert backend.playback.current_song_num == 1
     status = _request(backend, 'status')
     assert status['attachment']['path'] == second
 
@@ -212,7 +212,7 @@ def test_dice_skips_current_song(backend, audio_file, tmp_path, monkeypatch):
 def test_open_raw_path(backend, audio_file):
     response = _request(backend, 'open', song=audio_file)
     assert response['code'] == 0
-    assert backend.current_song_in_lib is False
+    assert backend.playback.current_song_in_lib is False
     status = _request(backend, 'status')
     assert status['attachment']['path'] == audio_file
 
@@ -236,7 +236,7 @@ def test_open_via_library_path(backend, audio_file):
     database.add_song(audio_file)
     response = _request(backend, 'open', song=audio_file)
     assert response['code'] == 0
-    assert backend.current_song_in_lib is True
+    assert backend.playback.current_song_in_lib is True
 
 
 def test_open_via_alias(backend, audio_file):
@@ -245,8 +245,8 @@ def test_open_via_alias(backend, audio_file):
     database.bind_alias(song_id, 'test_alias')
     response = _request(backend, 'open', song='test_alias')
     assert response['code'] == 0
-    assert backend.current_song_in_lib is True
-    assert backend.current_song_info[0]['path'] == audio_file
+    assert backend.playback.current_song_in_lib is True
+    assert backend.playback.current_song_info[0]['path'] == audio_file
 
 
 def test_open_alias_priority_over_path(backend, audio_file, tmp_path):
@@ -256,7 +256,7 @@ def test_open_alias_priority_over_path(backend, audio_file, tmp_path):
     database.bind_alias(song_id, 'test_alias')
     response = _request(backend, 'open', song='test_alias')
     assert response['code'] == 0
-    assert backend.current_song_info[0]['id'] == song_id
+    assert backend.playback.current_song_info[0]['id'] == song_id
 
 
 def test_open_via_song_id(backend, audio_file):
@@ -265,7 +265,7 @@ def test_open_via_song_id(backend, audio_file):
     song_id, _ = database.add_song(audio_file)
     response = _request(backend, 'open', song=str(song_id))
     assert response['code'] == 0
-    assert backend.current_song_info[0]['id'] == song_id
+    assert backend.playback.current_song_info[0]['id'] == song_id
 
 
 def test_open_song_id_not_found_falls_back_to_path(backend, audio_file):
@@ -295,7 +295,7 @@ def test_open_alias_priority_over_song_id(backend, audio_file, tmp_path):
     database.bind_alias(second_id, str(first_id))
     response = _request(backend, 'open', song=str(first_id))
     assert response['code'] == 0
-    assert backend.current_song_info[0]['id'] == second_id
+    assert backend.playback.current_song_info[0]['id'] == second_id
 
 
 def test_lib_del_by_id(backend, audio_file):
@@ -492,12 +492,12 @@ def test_lib_del_current_song_resets_state(backend, audio_file):
     """Deleting the currently-open lib song must flip in_library back to False."""
     _request(backend, 'lib.add', paths=[audio_file])
     _request(backend, 'open', song=audio_file)
-    assert backend.current_song_in_lib is True
+    assert backend.playback.current_song_in_lib is True
 
     response = _request(backend, 'lib.del', songs=[audio_file])
     assert response['code'] == 0
-    assert backend.current_song_in_lib is False
-    assert backend.current_song_info[0] == {'path': audio_file}
+    assert backend.playback.current_song_in_lib is False
+    assert backend.playback.current_song_info[0] == {'path': audio_file}
 
 
 def test_lib_del_cascades_alias(backend, audio_file):
@@ -1275,14 +1275,14 @@ def test_lib_prune_removes_from_current_playlist(backend, audio_file, tmp_path):
     second = str(tmp_path / 'test_b.wav')
     _make_wav(second)
     _open_playlist_with_songs(backend, [audio_file, second], 'pair')
-    assert backend.current_song_info is not None
-    assert len(backend.current_song_info) == 2
+    assert backend.playback.current_song_info is not None
+    assert len(backend.playback.current_song_info) == 2
 
     os.remove(second)  # file goes missing after the playlist was opened
     response = _request(backend, 'lib.prune')
     assert response['code'] == 0
     assert len(backend.database.get_all_song_info()) == 1
-    paths = [s['path'] for s in backend.current_song_info]
+    paths = [s['path'] for s in backend.playback.current_song_info]
     assert second not in paths
     assert audio_file in paths
 
@@ -1291,21 +1291,21 @@ def test_shuffle_toggle_on_off(backend):
     response = _request(backend, 'shuffle')
     assert response['code'] == 0
     assert 'on' in response['msg']
-    assert backend.shuffle is True
+    assert backend.playback.shuffle is True
 
     response = _request(backend, 'shuffle')
     assert response['code'] == 0
     assert 'off' in response['msg']
-    assert backend.shuffle is False
+    assert backend.playback.shuffle is False
 
 
 def test_shuffle_next_uses_order_and_reshuffles(backend, audio_file, tmp_path, monkeypatch):
     _, second = _open_two_song_playlist(backend, audio_file, tmp_path)
-    backend.shuffle = True
-    backend.shuffle_order = [1, 0]  # current (0) sits at the tail: next wraps and reshuffles
+    backend.playback.shuffle = True
+    backend.playback.shuffle_order = [1, 0]  # current (0) sits at the tail: next wraps and reshuffles
 
     reshuffled = []
-    monkeypatch.setattr('src.backend.random.shuffle', lambda lst: reshuffled.append(list(lst)))
+    monkeypatch.setattr('src.backend.handlers.playback.random.shuffle', lambda lst: reshuffled.append(list(lst)))
 
     response = _request(backend, 'next')
     assert response['code'] == 0
@@ -1316,12 +1316,12 @@ def test_shuffle_next_uses_order_and_reshuffles(backend, audio_file, tmp_path, m
 
 def test_shuffle_prev_wraps_without_reshuffle(backend, audio_file, tmp_path, monkeypatch):
     first, _ = _open_two_song_playlist(backend, audio_file, tmp_path)
-    backend.shuffle = True
-    backend.shuffle_order = [1, 0]
-    backend.current_song_num = 1  # second song, at position 0 of the order
+    backend.playback.shuffle = True
+    backend.playback.shuffle_order = [1, 0]
+    backend.playback.current_song_num = 1  # second song, at position 0 of the order
 
     reshuffled = []
-    monkeypatch.setattr('src.backend.random.shuffle', lambda lst: reshuffled.append(list(lst)))
+    monkeypatch.setattr('src.backend.handlers.playback.random.shuffle', lambda lst: reshuffled.append(list(lst)))
 
     response = _request(backend, 'prev')
     assert response['code'] == 0
@@ -1331,40 +1331,40 @@ def test_shuffle_prev_wraps_without_reshuffle(backend, audio_file, tmp_path, mon
 
 
 def test_shuffle_next_without_songs(backend):
-    backend.shuffle = True
+    backend.playback.shuffle = True
     response = _request(backend, 'next')
     assert response['code'] == 1
     assert 'no songs are being played' in response['msg']
 
 
 def test_shuffle_order_rebuilt_on_open(backend, audio_file, tmp_path, monkeypatch):
-    backend.shuffle = True
+    backend.playback.shuffle = True
     reshuffled = []
-    monkeypatch.setattr('src.backend.random.shuffle', lambda lst: reshuffled.append(list(lst)))
+    monkeypatch.setattr('src.backend.playback.random.shuffle', lambda lst: reshuffled.append(list(lst)))
     _open_two_song_playlist(backend, audio_file, tmp_path)
-    assert len(backend.shuffle_order) == 2
+    assert len(backend.playback.shuffle_order) == 2
 
 
 def test_loop_toggle_on_off(backend):
     response = _request(backend, 'loop')
     assert response['code'] == 0
     assert 'on' in response['msg']
-    assert backend.loop is True
+    assert backend.playback.loop is True
 
     response = _request(backend, 'loop')
     assert response['code'] == 0
     assert 'off' in response['msg']
-    assert backend.loop is False
+    assert backend.playback.loop is False
 
 
 def test_loop_next_on_end_replays_current(backend, audio_file, tmp_path):
     first, _ = _open_two_song_playlist(backend, audio_file, tmp_path)
-    backend.loop = True
+    backend.playback.loop = True
 
     response = _request(backend, 'next', on_end=True)
     assert response['code'] == 0
     assert 'replayed' in response['msg']
-    assert backend.current_song_num == 0  # stays on the same song
+    assert backend.playback.current_song_num == 0  # stays on the same song
     status = _request(backend, 'status')
     assert status['attachment']['path'] == first
 
@@ -1373,18 +1373,18 @@ def test_loop_next_on_end_without_loop_advances(backend, audio_file, tmp_path):
     _, second = _open_two_song_playlist(backend, audio_file, tmp_path)
     response = _request(backend, 'next', on_end=True)
     assert response['code'] == 0
-    assert backend.current_song_num == 1
+    assert backend.playback.current_song_num == 1
     status = _request(backend, 'status')
     assert status['attachment']['path'] == second
 
 
 def test_loop_manual_next_still_advances(backend, audio_file, tmp_path):
     _, second = _open_two_song_playlist(backend, audio_file, tmp_path)
-    backend.loop = True
+    backend.playback.loop = True
 
     response = _request(backend, 'next')
     assert response['code'] == 0
-    assert backend.current_song_num == 1
+    assert backend.playback.current_song_num == 1
     status = _request(backend, 'status')
     assert status['attachment']['path'] == second
 
@@ -1469,8 +1469,8 @@ def test_play_all_two_songs(backend, audio_file, tmp_path):
 
     response = _request(backend, 'play-all')
     assert response['code'] == 0
-    assert backend.current_playlist is SENTINELS.PLAY_ALL
-    assert backend.current_song_num == 0
+    assert backend.playback.current_playlist is SENTINELS.PLAY_ALL
+    assert backend.playback.current_song_num == 0
     status = _request(backend, 'status')
     assert status['attachment']['path'] == audio_file
 
@@ -1484,12 +1484,12 @@ def test_play_all_restores_last_num(backend, audio_file, tmp_path):
 
     _request(backend, 'play-all')
     _request(backend, 'switch', number=2)
-    assert backend.current_song_num == 1
+    assert backend.playback.current_song_num == 1
 
     response = _request(backend, 'play-all')
     assert response['code'] == 0
     assert 'last played number detected' in response['msg']
-    assert backend.current_song_num == 1
+    assert backend.playback.current_song_num == 1
     status = _request(backend, 'status')
     assert status['attachment']['path'] == second
 
@@ -1504,7 +1504,7 @@ def test_play_all_restores_zero_when_never_played(backend, audio_file, tmp_path)
     assert response['code'] == 0
     # 从未播过 → 从 0 开始,不应有 'last played number detected'
     assert 'last played number detected' not in response['msg']
-    assert backend.current_song_num == 0
+    assert backend.playback.current_song_num == 0
 
 
 def test_continue_last_no_last_song(backend):
@@ -1522,7 +1522,7 @@ def test_continue_last_opens_last_song(backend, audio_file):
 
     response = _request(backend, 'continue_last')
     assert response['code'] == 0
-    assert backend.current_song_num == 0
+    assert backend.playback.current_song_num == 0
     status = _request(backend, 'status')
     assert status['attachment']['path'] == audio_file
 
@@ -1540,7 +1540,7 @@ def test_continue_last_play_all_mode(backend, audio_file, tmp_path):
 
     response = _request(backend, 'continue_last')
     assert response['code'] == 0
-    assert backend.current_playlist is SENTINELS.PLAY_ALL
+    assert backend.playback.current_playlist is SENTINELS.PLAY_ALL
 
 
 def test_continue_last_ignores_num_setting(backend, audio_file):
@@ -1554,16 +1554,16 @@ def test_continue_last_ignores_num_setting(backend, audio_file):
 
     response = _request(backend, 'continue_last')
     assert response['code'] == 0
-    assert backend.current_song_num == 0
+    assert backend.playback.current_song_num == 0
 
 
 def test_open_playlist_restores_last_num(backend, audio_file, tmp_path):
     first, second = _open_two_song_playlist(backend, audio_file, tmp_path)
-    assert backend.current_song_num == 0
+    assert backend.playback.current_song_num == 0
 
     # 切到第二首 → last_num 应写入该 playlist
     _request(backend, 'switch', number=2)
-    assert backend.current_song_num == 1
+    assert backend.playback.current_song_num == 1
     playlist_id = backend.database.get_playlist_via_name('pair')
     assert backend.database.get_playlist_last_num(playlist_id) == 1
 
@@ -1571,7 +1571,7 @@ def test_open_playlist_restores_last_num(backend, audio_file, tmp_path):
     response = _request(backend, 'open', song='pair')
     assert response['code'] == 0
     assert 'last played number detected' in response['msg']
-    assert backend.current_song_num == 1
+    assert backend.playback.current_song_num == 1
     status = _request(backend, 'status')
     assert status['attachment']['path'] == second
 
@@ -1579,7 +1579,7 @@ def test_open_playlist_restores_last_num(backend, audio_file, tmp_path):
 def test_open_playlist_first_time_starts_at_zero(backend, audio_file, tmp_path):
     first, _ = _open_two_song_playlist(backend, audio_file, tmp_path)
     # 首次打开:last_num 不存在 → 走 else 分支,写 0 并从头播,无恢复消息
-    assert backend.current_song_num == 0
+    assert backend.playback.current_song_num == 0
     playlist_id = backend.database.get_playlist_via_name('pair')
     assert backend.database.get_playlist_last_num(playlist_id) == 0
 
