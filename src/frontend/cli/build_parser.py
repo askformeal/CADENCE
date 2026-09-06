@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from src import version
+from src import __version__
 
 def _path(val):
     return str(Path(val).absolute())
@@ -18,7 +18,7 @@ def _percent(val):
             return val
 
 def build_parser():
-    parser = argparse.ArgumentParser(prog=f'CADENCE {version}', epilog='CADENCE stands for Command-line Audio Decoding Engine with Navigation and Continuous Execution')
+    parser = argparse.ArgumentParser(prog=f'CADENCE {__version__}', epilog='CADENCE stands for Command-line Audio Decoding Engine with Navigation and Continuous Execution')
 
     command_sub = parser.add_subparsers(dest='action', required=True)
 
@@ -213,3 +213,5 @@ def build_parser():
     exit_parser = command_sub.add_parser('exit', help='Exit CADENCE backend')
 
     kill_parser = command_sub.add_parser('kill', help='Kill all CADENCE backend processes. May cause unpredictable error')
+
+    return parser

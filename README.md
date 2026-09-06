@@ -212,7 +212,7 @@ Screenshot:
 ╰──────────────────────────┴────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────╯
 ```
 
-Keys (defined in `DASH_KEY_MAP` in `src/constants.py`):
+Keys (defined in `DASH_KEY_MAP` in `src/constants/`):
 
 | Key | Action |
 | --- | --- |
@@ -244,15 +244,15 @@ The lyric board is a floating always-on-top window that shows the current lyric 
 
 ## Architecture
 
-- **Backend** (`src/backend.py`) — owns the VLC player and the SQLite database, listens on `127.0.0.1:17891` for JSON requests over a socket.
-- **Frontends** — `src/cli.py` (the `cadence` CLI), `src/hotkey.py` (media key hotkeys), `src/tray.py` (system tray icon), `src/dash.py` (interactive dashboard), `src/lyric.py` (floating lyric board). They send action requests to the backend and format responses.
+- **Backend** (`src/backend/`) — owns the VLC player (`vlc_player.py`) and the SQLite database (`database/`, split into per-domain mixins), listens on `127.0.0.1:17891` for JSON requests over a socket. Action handlers live in `handlers/` and dispatch through a `ROUTER` table keyed by action name; playback state is held in the `Playback` class and injected into handlers via a `Context`.
+- **Frontends** (`src/frontend/`) — `cli/` (the `cadence` CLI), `hotkey.py` (media key hotkeys), `tray.py` (system tray icon), `dash/` (interactive dashboard), `lyric.py` (floating lyric board). They send action requests to the backend and format responses. All frontends share `client.py` and `song_output.py`.
 - **Protocol** — all communication is JSON over a length-prefixed socket connection. See [docs/protocol.md](docs/protocol.md).
 
 ## Data
 
 - Database: `%LOCALAPPDATA%\cadence\cadence\cadence.db` (Windows) — managed by platformdirs
 - Dev database: `%LOCALAPPDATA%\cadence\cadence\cadence-dev.db` (Windows) — used when the backend is started with `--dev`
-- Audio formats: FLAC, MP3, WAV, and other common formats (see `AUDIO_EXTENSIONS` in `src/constants.py`)
+- Audio formats: FLAC, MP3, WAV, and other common formats (see `AUDIO_EXTENSIONS` in `src/constants/`)
 
 ## Logs
 

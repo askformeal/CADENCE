@@ -8,7 +8,7 @@ import time
 
 import vlc
 
-from src import version
+from src import __version__
 from src.log import setup_logger
 from src.constants import BACKEND_LOG_PATH, SILENT_LOG_LEVEL
 from src.constants import DATABASE_PATH, DATABASE_DEV_PATH
@@ -84,7 +84,7 @@ class Backend:
 
     def run(self):
         if self.running:
-            logger.info(f'Command-line Audio Decoding Engine with Navigation and Continuous Execution {version} started, PID: {self.pid}')
+            logger.info(f'Command-line Audio Decoding Engine with Navigation and Continuous Execution {__version__} started, PID: {self.pid}')
 
             Thread(target=self._listen, daemon=True).start()
             Thread(target=self._memorize_pos, daemon=True).start()
