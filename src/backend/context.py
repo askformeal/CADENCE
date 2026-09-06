@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Callable
 
-from src.backend.database import Database
+from src.backend.database.core import Database
 from src.backend.vlc_player import Player
 from src.backend.playback import Playback
 

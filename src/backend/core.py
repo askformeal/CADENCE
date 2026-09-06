@@ -18,7 +18,7 @@ from src.config import CONFIG
 from src.sentinels import SENTINELS
 from src.connection import recv_json, send_json
 from src import gen_response
-from src.backend.database import Database
+from src.backend.database.core import Database
 from src.backend.vlc_player import Player
 from src.backend.playback import Playback
 from src.backend.context import Context

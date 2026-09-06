@@ -28,7 +28,7 @@ def audio_file(tmp_path):
 @pytest.fixture
 def database(tmp_path):
     """Database isolated in a temp file, never touching the real user DB."""
-    from src.backend.database import Database
+    from src.backend.database.core import Database
 
     db = Database(tmp_path / 'test.db')
     yield db
