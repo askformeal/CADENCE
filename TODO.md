@@ -46,7 +46,9 @@
 - [X] Float lyric frontend
   - [X] Show a solid background when hovered
   - [X] Make hover feature togglable by config option
-- [ ] Download lyrics from online source via LRCLIB
+- [ ] Download lyrics from online source
+- [ ] Backend complete refactor: context + handler + router
+- [ ] Improve IPC protocol: backend replies an immediate "ack" on request receipt, then sends the full response when execution finishes. Split the timeout into a short connect/ack timeout and a long execution timeout (so long actions like `lib.lyric.fetch` don't trip the frontend socket timeout).
 - [ ] GUI configure editor
 - [ ] HTTP frontend
 - [ ] Bluetooth frontend

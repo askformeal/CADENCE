@@ -8,16 +8,19 @@ import queue
 from time import sleep
 from time import time
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
+
 import vlc
 import mutagen
+import syncedlyrics
 
 from src import version
 from src.log import setup_logger
 from src.constants import BACKEND_LOG_PATH, SILENT_LOG_LEVEL
 from src.constants import DATABASE_PATH, DATABASE_DEV_PATH
 from src.constants import BACKLOG, ACTION_KEYS, NON_ACTION_KEYS, IterType, SERVER_TIMEOUT
-from src.constants import LOOP_INTERVAL, METADATA, FILE_META
-from src.constants import PLAY_DEAD_TIME
+from src.constants import LOOP_INTERVAL, METADATA, FILE_META, ENCODING
+from src.constants import PLAY_DEAD_TIME, LYRIC_FETCH_MAX_WORKERS
 from src.constants import AUDIO_EXTENSIONS, SOURCES, READABLE_TYPE_NAMES, SEARCH_META
 from src.config import CONFIG
 from src.config_manager import CONFIG_MANAGER
@@ -70,7 +73,20 @@ class Backend:
             self.running = False
         else:
             self.player = Player(self.buffer_request)
-            self.notifies.append(f'Welcome to CADENCE, {CONFIG.username}')
+            self.notifies.append(f'Welcome to CADENCE, {CONFIG.username}') # just for fun
+
+            if CONFIG.proxy != '':
+                os.environ['HTTP_PROXY'] = CONFIG.proxy
+                os.environ['HTTPS_PROXY'] = CONFIG.proxy
+
+            logger.debug(f'HTTP proxy: {os.environ.get('HTTP_PROXY', '(empty)')}')
+            logger.debug(f'HTTPS proxy: {os.environ.get('HTTPS_PROXY', '(empty)')}')
+
+            if CONFIG.netease_skip_proxy:
+                os.environ['NO_PROXY'] = ', '.join((os.environ.get('NO_PROXY', ''), '163.com'))
+
+            logger.debug(f'Proxy whitelist: {os.environ.get('NO_PROXY', '(empty)')}')
+
             logger.debug(f'{__name__} initiated')
 
     def run(self):
@@ -313,7 +329,7 @@ class Backend:
                         self._set_current_num(self.player.number)
 
                     response = {
-                        SENTINELS.SUCCESS: gen_response.Success(f'diced to the {num+1}nd song in current playlist: {self._get_output_current_name()}'),
+                        SENTINELS.SUCCESS: gen_response.Success(f'diced to the {num+1}nd song in current playlist: {self._get_current_display_name()}'),
                         SENTINELS.PLAYER_EMPTY: gen_response.PlayerEmpty(f'switch to the {num+1}nd song in current playlist'),
                         SENTINELS.VLC_ERROR: gen_response.VLCError(f'switch to the {num+1}nd song in current playlist'),
                         SENTINELS.PLAYER_TIMEOUT: gen_response.PlayerTimeout(f'switch to the {num+1}nd song in current playlist'),
@@ -338,7 +354,7 @@ class Backend:
                     self._set_current_num(self.player.number)
 
                 response = {
-                    SENTINELS.SUCCESS: gen_response.Success(f'switched to previous song: {self._get_output_current_name()}'),
+                    SENTINELS.SUCCESS: gen_response.Success(f'switched to previous song: {self._get_current_display_name()}'),
                     SENTINELS.PLAYER_EMPTY: gen_response.PlayerEmpty('switch to previous song'),
                     SENTINELS.VLC_ERROR: gen_response.VLCError('switch to previous song'),
                     SENTINELS.PLAYER_TIMEOUT: gen_response.PlayerTimeout('switch to previous song')
@@ -368,7 +384,7 @@ class Backend:
                         self._set_current_num(self.player.number)
 
                     response = {
-                        SENTINELS.SUCCESS: gen_response.Success(f'switched to next song: {self._get_output_current_name()}'),
+                        SENTINELS.SUCCESS: gen_response.Success(f'switched to next song: {self._get_current_display_name()}'),
                         SENTINELS.PLAYER_EMPTY: gen_response.PlayerEmpty('switch to next song'),
                         SENTINELS.VLC_ERROR: gen_response.VLCError('switch to next song'),
                         SENTINELS.PLAYER_TIMEOUT: gen_response.PlayerTimeout('switch to next song')
@@ -831,6 +847,52 @@ class Backend:
                             attachment = {'path': lyric_path, 'lyric': lyric}
                             response = gen_response.Success('lyric obtained', attachment=attachment)
 
+            elif action == 'lib.lyric.fetch':
+                songs = request['songs']
+
+                failed = []
+                paths = {}
+                names = {}
+                search_terms = []
+
+                for song in songs:
+                    song_id = self._get_song(song, cwd)
+                    if song_id is SENTINELS.MISSING_CWD:
+                        failed.append(gen_response.MissingCWD('lib.lyric.fetch'))
+                    elif song_id is SENTINELS.NOT_IN_LIB:
+                        failed.append(gen_response.SongNotExist(f'fetch lyric of {song}'))
+                    else:
+                        names[song_id] = song
+                        info = self.database.get_song_info(song_id)[0]
+
+                        path = str(Path(info['path']).with_suffix('.lrc'))
+                        paths[song_id] = path
+
+                        name = self._get_song_display_name(info)
+                        artist = info.get('artist', None)
+                        if artist is None:
+                            artist = ''
+
+                        search_terms.append((song_id, f'{name} {artist}'.strip()))
+
+                with ThreadPoolExecutor(max_workers=LYRIC_FETCH_MAX_WORKERS) as pool:
+                    results = list(pool.map(self._fetch_lyric, search_terms))
+
+                for song_id, lrc in results:
+                    if lrc is None:
+                        failed.append(gen_response.Failed(f'can not find lyric of {names[song_id]}'))
+                    else:
+                        path = paths[song_id]
+                        try:
+                            with open(path, 'w', encoding=ENCODING) as f:
+                                f.write(lrc)
+                        except OSError as e:
+                            failed.append(gen_response.FileIOFailed('write lyric file', path, e))
+                        else:
+                            self.database.set_song_meta(song_id, 'lyric', path)
+
+                response = gen_response.BatchAuto('Lyric fetched', len(failed), len(songs), failed=failed)
+
             elif action == 'lib.playlist.list':
                 response = gen_response.Success('obtained list of playlist in library')
 
@@ -1160,7 +1222,7 @@ class Backend:
             self._set_current_num(self.player.number)
 
         response = {
-            SENTINELS.SUCCESS: gen_response.Success(f'switched to the {num+1}nd song in current playlist: {self._get_output_current_name()}'),
+            SENTINELS.SUCCESS: gen_response.Success(f'switched to the {num+1}nd song in current playlist: {self._get_current_display_name()}'),
             SENTINELS.PLAYER_EMPTY: gen_response.PlayerEmpty(f'switch to the {num+1}nd song in current playlist'),
             SENTINELS.VLC_ERROR: gen_response.VLCError(f'switch to the {num+1}nd song in current playlist'),
             SENTINELS.PLAYER_TIMEOUT: gen_response.PlayerTimeout(f'switch to the {num+1}nd song in current playlist'),
@@ -1279,13 +1341,13 @@ class Backend:
         else:
             return SENTINELS.MISSING_CWD
 
-    def _get_output_current_name(self):
+    def _get_current_display_name(self):
         if self.current_song_info is None or self.current_song_num >= len(self.current_song_info):
             return 'no song playing'
         else:
-            return self._get_output_song_name(self.current_song_info[self.current_song_num])
+            return self._get_song_display_name(self.current_song_info[self.current_song_num])
 
-    def _get_output_song_name(self, info):
+    def _get_song_display_name(self, info):
         name = info.get('name', None)
         if name is None:
             name = Path(info['path']).stem
@@ -1451,6 +1513,14 @@ class Backend:
                 pos = self.player.get_progress()['time']
                 self.database.set_pos(path, pos, log=False)
             sleep(CONFIG.pos_memorize_interval)
+
+    def _fetch_lyric(self, song):
+        song_id, search_term = song
+        lrc = syncedlyrics.search(
+            search_term,
+            synced_only=True,
+        )
+        return song_id, lrc
 
     def _listen(self):
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

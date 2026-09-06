@@ -128,6 +128,10 @@ ACTION_KEYS = {
     {
         'song': (str, True)
     },
+    'lib.lyric.fetch':
+    {
+        'songs': (IterType(str), True)
+    },
     'lib.playlist.list': {
         'playlist': (str, False, None),
         'show_aliases': (bool, False, False),

@@ -54,6 +54,18 @@ CONFIG_SCHEME = {
         'default': 10,
         'description': 'Timeout of frontend-backend communication (seconds). May cause error if not enough higher than player timeout'
     },
+    'proxy': {
+        'type': str,
+        'section': 'network',
+        'default': '',
+        'description': 'Proxy to use. Set to empty (\"\") to use system default'
+    },
+    'netease_skip_proxy': {
+        'type': CONVERTER.boolean,
+        'section': 'network',
+        'default': False,
+        'description': 'Whether to connect to NetEase lyric source directly regardless of the set proxy'
+    },
     'hotkey': {
         'type': CONVERTER.boolean,
         'section': 'service',

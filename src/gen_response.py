@@ -155,8 +155,11 @@ class LyricNotExist(Failed):
         super().__init__('this song does not have a lyric file set', attachment, failed)
 
 class FileIOFailed(Failed):
-    def __init__(self, action, path, attachment=None, failed=None):
-        super().__init__(f'can not {action} of path \"{path}\"', attachment, failed)
+    def __init__(self, action, path, error=None, attachment=None, failed=None):
+        msg = f'can not {action} of path \"{path}\"'
+        if error is not None:
+            msg += f': {error}'
+        super().__init__(msg, attachment, failed)
 
 def merge(*responses: Response, joiner='|', attachment=None, failed=None):
     messages = []

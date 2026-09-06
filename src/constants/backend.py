@@ -3,6 +3,8 @@ PLAY_DEAD_TIME = 5
 
 PLAYER_POLL_INTERVAL = 0.05
 
+LYRIC_FETCH_MAX_WORKERS = 4
+
 METADATA = ['name', 'artist', 'album', 'duration', 'bitrate', 'sample_rate', 'channels', 'lyric']
 SEARCH_META = ['name', 'artist', 'album'] # metadata that can be used for searching
 

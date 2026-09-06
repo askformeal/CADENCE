@@ -172,8 +172,11 @@ def main():
     lyric_set_parser.add_argument('song', type=str, help='Song to set lyric file')
     lyric_set_parser.add_argument('path', type=_path, help='Path of lyric file')
 
-    lyric_set_parser = lyric_sub.add_parser('show', help='Show lyric of a song')
-    lyric_set_parser.add_argument('song', type=str, help='Song to show lyric')
+    lyric_show_parser = lyric_sub.add_parser('show', help='Show lyric of a song')
+    lyric_show_parser.add_argument('song', type=str, help='Song to show lyric')
+
+    lyric_fetch_parser = lyric_sub.add_parser('fetch', help='Fetch lyric of songs from online sources')
+    lyric_fetch_parser.add_argument('songs', type=str, nargs='+', help='Songs to fetch lyric')
 
     playlist_parser = lib_sub.add_parser('playlist', help='Manage playlists')
     playlist_sub = playlist_parser.add_subparsers(dest='playlist_action', required=True)
