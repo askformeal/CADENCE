@@ -1,3 +1,7 @@
+ACK = {
+    'msg': 'Copy that'
+}
+
 LOOP_INTERVAL = 0.05
 PLAY_DEAD_TIME = 5
 

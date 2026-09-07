@@ -48,11 +48,17 @@ CONFIG_SCHEME = {
         'default': '127.0.0.1',
         'description': 'Host for frontend to send requests to'
     },
-    'ipc_timeout': {
+    'connection_timeout': {
         'type': CONVERTER.timeout,
         'section': 'network',
-        'default': 10,
-        'description': 'Timeout of frontend-backend communication (seconds). May cause error if not enough higher than player timeout'
+        'default': 3,
+        'description': 'Timeout of frontend-wait for backend\'s acknowledge (seconds)'
+    },
+    'execution_timeout': {
+        'type': CONVERTER.timeout,
+        'section': 'network',
+        'default': 30,
+        'description': 'Timeout of frontend-wait for backend\'s response (seconds). May cause error if not enough higher than player timeout'
     },
     'proxy': {
         'type': str,

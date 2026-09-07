@@ -12,7 +12,7 @@ from src import __version__
 from src.log import setup_logger
 from src.constants import BACKEND_LOG_PATH, SILENT_LOG_LEVEL
 from src.constants import DATABASE_PATH, DATABASE_DEV_PATH
-from src.constants import BACKLOG, ACTION_KEYS, NON_ACTION_KEYS, IterType, SERVER_TIMEOUT
+from src.constants import BACKLOG, ACTION_KEYS, NON_ACTION_KEYS, IterType, SERVER_TIMEOUT, ACK
 from src.constants import LOOP_INTERVAL, PLAY_DEAD_TIME, SOURCES, READABLE_TYPE_NAMES
 from src.config import CONFIG
 from src.sentinels import SENTINELS
@@ -280,7 +280,10 @@ class Backend:
 
     def _handle_connection(self, connection, address):
         request = recv_json(connection)
-        if request is not None:
+        if request is None:
+            connection.close()
+        else:
+            send_json(connection, ACK)
             self.buffer_request(request, connection, address)
 
     def _play_dead(self): # give some time for daemon-like frontend to exit

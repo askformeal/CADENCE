@@ -14,6 +14,10 @@ All communications between frontend and backend are sent in the format of JSON v
 - `notify_support` Optional. When true, the backend attaches any pending notifies to this request's response and clears them. Only frontends that consume notifies should set it (the CLI does; the tray and hotkey explicitly don't).
 - Other keys depending on the action. A list of keys for each action can be seen at constants.py:ACTION_KEYS
 
+### Acknowledge (ACK)
+
+On receiving a request, the backend immediately replies with an ACK (`{"msg": "Copy that"}`) before running the action, then sends the actual `Response` when the action finishes. The ACK carries no `code`; it is only a liveness signal, letting the frontend distinguish "backend is still processing" from "backend died or never got the request". This lets long actions (e.g. `lib.lyric.fetch`) acknowledge quickly and take their time producing the response.
+
 ## Response
 
 ### Response code
@@ -63,7 +67,8 @@ Read and modify the configuration file. These actions operate on the options def
 | `backend_host` | string | network | `127.0.0.1` | Host for backend to listen on |
 | `frontend_port` | port (int > 0) | network | `17891` | Port for frontend to send requests to |
 | `frontend_host` | string | network | `127.0.0.1` | Host for frontend to send requests to |
-| `ipc_timeout` | positive float | network | `10` | Timeout of frontend-backend communication (seconds) |
+| `connection_timeout` | positive float | network | `3` | Timeout of frontend waiting for the backend's acknowledge (seconds) |
+| `execution_timeout` | positive float | network | `30` | Timeout of frontend waiting for the backend's response (seconds) |
 | `hotkey` | boolean | service | `true` | Whether to start the hotkey service on backend start |
 | `tray` | boolean | service | `true` | Whether to start the system tray icon service on backend start |
 | `default_volume` | percentage (0~100) | playback | `100` | Volume on start |
@@ -77,7 +82,7 @@ Read and modify the configuration file. These actions operate on the options def
 
 The default value does not go through the type converter; values from the file are validated against the option type and fall back to the default if invalid.
 
-Effective timing differs per option. `host` and `port` are read when the backend binds its socket; `default_volume`, `default_shuffle` and `username` are read at backend construction — changes to these need a backend restart. `ipc_timeout` is read on every connection, `player_timeout` on every player action, and `pos_memorize_interval` on every loop iteration — changes take effect without restart.
+Effective timing differs per option. `host` and `port` are read when the backend binds its socket; `default_volume`, `default_shuffle` and `username` are read at backend construction — changes to these need a backend restart. `connection_timeout` (waiting for the ACK) and `execution_timeout` (waiting for the response) are read on every request, `player_timeout` on every player action, and `pos_memorize_interval` on every loop iteration — changes take effect without restart.
 
 #### config.list
 

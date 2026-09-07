@@ -114,7 +114,7 @@ Note: a negative seek time starts with `-`, which the command-line parser treats
 | `cadence lib alias ...`     | List/bind/unbind aliases (`bind <song> <alias>...`, `unbind <alias>...`) |
 | `cadence lib playlist ...`  | List/create/add/kick/delete playlists (`lib playlist list` supports `-a`/`-p`/`-t`) |
 
-`cadence lib lyric fetch` downloads each song's lyric from an online source. Fetching several songs at once is slow and can exceed the frontend timeout (`ipc_timeout`) — note that even if the request times out, the backend keeps downloading in the background and still writes the files. If you hit timeouts, raise `ipc_timeout`; and keep to at most 4 songs per call, since downloads run with 4-way parallelism — beyond 4 they queue up instead of completing together.
+`cadence lib lyric fetch` downloads each song's lyric from an online source. Fetching several songs at once is slow and can exceed the frontend execution timeout (`execution_timeout`) — note that even if the request times out, the backend keeps downloading in the background and still writes the files. If you hit timeouts, raise `execution_timeout`; and keep to at most 4 songs per call, since downloads run with 4-way parallelism — beyond 4 they queue up instead of completing together.
 
 `open` accepts a song alias, a library song name, a playlist name, or a file path.
 
@@ -140,7 +140,8 @@ Config file: `%LOCALAPPDATA%\cadence\cadence\config.toml` (Windows). Options:
 | `frontend_token` | *(empty)* | Token frontends send with requests |
 | `backend_host` / `backend_port` | `127.0.0.1` / `17891` | Address the backend listens on |
 | `frontend_host` / `frontend_port` | `127.0.0.1` / `17891` | Address the frontend sends requests to |
-| `ipc_timeout` | `10` | Timeout of frontend-backend communication (seconds) |
+| `connection_timeout` | `3` | Timeout of frontend waiting for the backend's acknowledge (seconds) |
+| `execution_timeout` | `30` | Timeout of frontend waiting for the backend's response (seconds) |
 | `proxy` | *(empty)* | Proxy used when fetching lyrics online; empty uses the system default |
 | `netease_skip_proxy` | `false` | Connect to the NetEase lyric source directly, ignoring `proxy` |
 | `hotkey` | `true` | Start the hotkey frontend with the backend |

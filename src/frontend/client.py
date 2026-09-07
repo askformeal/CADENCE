@@ -13,19 +13,24 @@ def send_request(expect_reset=False, **kwargs):
     try:
         kwargs['token'] = CONFIG.frontend_token
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(CONFIG.ipc_timeout)
+        sock.settimeout(CONFIG.connection_timeout)
         sock.connect((CONFIG.frontend_host, CONFIG.frontend_port))
         if send_json(sock, kwargs, expect_reset=expect_reset):
-            response = recv_json(sock, expect_reset=expect_reset)
-            if response is not None:
+            ack = recv_json(sock, expect_reset=expect_reset)
+            if ack is None:
+                logger.error('IPC failure during connection')
                 sock.close()
-                return response
+                return {'code': 2, 'msg': 'IPC failure during connection', 'attachment': {}} 
             else:
+                sock.settimeout(CONFIG.execution_timeout)
+                response = recv_json(sock, expect_reset=expect_reset)
                 sock.close()
-                if not expect_reset:
-                    logger.error('Failed to receive response from CADENCE backend')
-                return {'code': 2, 'msg': 'failed receive response from CADENCE backend', 'attachment': {}} 
-            # code 0: everything's ok. code 1: backend failed to complete this action. code 2: can not connect to backend
+                if response is None:
+                    if not expect_reset:
+                        logger.error('IPC failure during execution')
+                    return {'code': 2, 'msg': 'IPC failure during execution', 'attachment': {}} 
+                else:
+                    return response
         else:
             sock.close()
             if not expect_reset:
