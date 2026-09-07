@@ -48,8 +48,9 @@
   - [X] Make hover feature togglable by config option
 - [X] Download lyrics from online source
 - [X] Backend complete refactor: context + handler + router
-- [ ] Improve IPC protocol: backend replies an immediate "ack" on request receipt, then sends the full response when execution finishes. Split the timeout into a short connect/ack timeout and a long execution timeout (so long actions like `lib.lyric.fetch` don't trip the frontend socket timeout).
-- [ ] Online lyric mode
+- [X] Improve IPC protocol: backend replies an immediate "ack" on request receipt, then sends the full response when execution finishes. Split the timeout into a short connect/ack timeout and a long execution timeout (so long actions like `lib.lyric.fetch` don't trip the frontend socket timeout).
+- [X] Online lyric mode
+  - [ ] Show "Loading" when online lyric is being loaded
 - [ ] GUI configure editor
 - [ ] HTTP frontend
 - [ ] Bluetooth frontend

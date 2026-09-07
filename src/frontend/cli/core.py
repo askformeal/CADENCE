@@ -158,6 +158,7 @@ def main():
                                         f'Mute: {output.mute}',
                                         f'\nShuffle: {output.shuffle}',
                                         f'Loop: {output.loop}',
+                                        f'Online Lyric: {output.online_lyric}',
                                         f'\nCADENCE backend has been running for {output.run_time}',
                         ))
 

@@ -13,9 +13,9 @@ from src.utils.tui import align, center, progress_bar, window_list, wrap_text
 def gen_main_text(snapshot, toast, box):
     lyric_lines = ['No Lyric']
     if isinstance(snapshot.time, int):
-        current_line = get_lyric_line(snapshot.lyric.get('lyric', []), snapshot.time)
+        current_line = get_lyric_line(snapshot.lyric, snapshot.time)
         if current_line is not SENTINELS.EMPTY_LYRIC:
-            text = list(map(lambda x:x[1], snapshot.lyric.get('lyric', [])))
+            text = list(map(lambda x:x[1], snapshot.lyric))
             if current_line is SENTINELS.BEFORE_FIRST_LYRIC:
                 current_line = 0
                 text = ['...'] + text
@@ -63,7 +63,7 @@ def gen_main_text(snapshot, toast, box):
         vol_num += ' [MUTE]'
     volume = f'{bar} [{vol_num}]'
     
-    state = align(max_len, volume, f"{snapshot.shuffle}{snapshot.loop}{snapshot.player_status}")
+    state = align(max_len, volume, f"{snapshot.online_lyric}{snapshot.shuffle}{snapshot.loop}{snapshot.player_status}")
 
     toast = wrap_text(toast, max_len)
     

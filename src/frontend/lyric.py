@@ -122,32 +122,32 @@ class Lyric(tk.Tk):
     def _update_lyric(self):
         while True:
             try:
-                lyric_path = None
                 pos = None
 
-                status = self._send_dash_request('status', silent=True)
+                status = self._send_lyric_request('status', silent=True)
                 if status is not None:
                     status = SongOutput(status, prettify_none=False)
-                    lyric_path = status.lyric_raw
                     pos = status.time_raw
                     state = status.player_status
 
-                    if self.lyric.get('path', None) != lyric_path:
-                        self.lyric = self._send_dash_request('lyric')
-                        if self.lyric is None:
-                            self.lyric = {'path': lyric_path}
-                        if self.lyric != {}:
-                            logger.debug(f"Lyric file update: {self.lyric['path']}")
+                    lyric = self._send_lyric_request('get_lyric', silent=True)
+                    if lyric is not None:
+                        if lyric.get('loading', False):
+                            self.lyric = []
+                        else:
+                            self.lyric = lyric.get('lyric', None)
+                            if self.lyric is None:
+                                self.lyric = []
 
                 if self.lyric_on and (state == 'playing' or (state == 'paused' and not CONFIG.pause_hide_lyric)):
-                    if pos is not None and self.lyric.get('lyric', None) is not None:
-                        index = get_lyric_line(self.lyric['lyric'], pos)
+                    if pos is not None and len(self.lyric) > 0:
+                        index = get_lyric_line(self.lyric, pos)
                         if index is SENTINELS.BEFORE_FIRST_LYRIC:
                             current_line = '...'
                         elif index is SENTINELS.EMPTY_LYRIC:
                             current_line = '[Lyric Empty]'
                         else:
-                            current_line = self.lyric['lyric'][index][1]
+                            current_line = self.lyric[index][1]
                         
                         self.after(0, self._update_text, text=current_line)
 
@@ -173,7 +173,7 @@ class Lyric(tk.Tk):
         y_pos = min(CONFIG.lyric_height, self.winfo_screenheight())
         self.geometry(f'+{x_pos}-{y_pos}')
         
-    def _send_dash_request(self, action, silent=False, **kwargs):
+    def _send_lyric_request(self, action, silent=False, **kwargs):
         request = {'action': action, 'source': 'lyric', 'notify_support': False, 'silent': silent, **kwargs}
         response = send_request(**request)
         if not silent:

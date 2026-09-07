@@ -40,6 +40,7 @@ def status(ctx, request):
         'mute': ctx.player.mute,
         'shuffle': ctx.playback.shuffle,
         'loop': ctx.playback.loop,
+        'online_lyric': ctx.playback.online_lyric,
         'playlist_len': playlist_len,
         'current_num': current_num,
         'run_time': time.time() - ctx.start_time
@@ -138,18 +139,11 @@ def mute(ctx, request):
     return gen_response.Success(f'turned mute mode {mode}')
 
 def lyric(ctx, request):
-    if ctx.playback.current_song_info is None:
-        return gen_response.PlayerEmpty('get lyric of current song')
-    else:
-        info = ctx.playback.get_playing_info()
-        lyric_path = info.get('lyric', None)
-        if lyric_path is None:
-            return gen_response.LyricNotExist()
-        else:
-            lyric = parse_lyric(lyric_path)
-            if lyric is SENTINELS.FILE_IO_FAILED:
-                return gen_response.FileIOFailed('open lyric file', lyric_path)
-            else:
-                attachment = {'path': lyric_path, 'lyric': lyric}
-                return gen_response.Success('lyric of current song obtained', attachment=attachment)
-            
+    ctx.playback.online_lyric = not ctx.playback.online_lyric
+    ctx.playback.update_lyric()
+    mode = {True: 'on', False: 'off'}[ctx.playback.online_lyric]
+    return gen_response.Success(f'online lyric mode turned {mode}')
+
+def get_lyric(ctx, request):
+    ctx.playback.update_lyric()
+    return gen_response.Success(f'lyric obtained', attachment=ctx.playback.lyric)

@@ -52,6 +52,7 @@ class Snapshot:
             self.mute = status.mute_raw
             self.shuffle = {True: '[Shuffle] ', False: '', None: '?'}[status.shuffle_raw]
             self.loop = {True: '[Loop] ', False: '', None: '?'}[status.loop_raw]
+            self.online_lyric = {True: '[Ol Lyric] ', False: '', None: '?'}[status.online_lyric_raw] # why Ol and not Online? I need to make this as narrow as possible things won't get messy in small terminal windows
             self.current_num = status.current_num
             if isinstance(self.current_num, int):
                 self.current_num -= 1
@@ -61,22 +62,14 @@ class Snapshot:
                 self.player_status = 'N/A'
             else:
                 self.player_status = f'[{self.player_status.capitalize()}]'
-        
-        if self.lyric.get('path', None) != lyric_path:
-            self.lyric = self.request('lyric', expect_fail=True)
-            if self.lyric in (None, {}):
-                logger.debug('Tried to update lyric, but failed')
-                self.lyric = {'path': lyric_path}
-            else:
-                logger.debug(f"Lyric file update: {self.lyric['path']}")
 
         if self.lib_id is not None:
             info = self.request('lib.info', 
-                                            songs=[str(self.lib_id)], 
-                                            show_aliases=True, 
-                                            show_playlists=True, 
-                                            force_id=True, 
-                                            silent=True)
+                                songs=[str(self.lib_id)], 
+                                show_aliases=True, 
+                                show_playlists=True, 
+                                force_id=True, 
+                                silent=True)
             if info is not None and len(info) > 0:
                 info = SongOutput(info[0], prettify_none=False)
                 self.duration = info.duration
@@ -87,6 +80,15 @@ class Snapshot:
 
                 self.aliases = info.aliases_raw
                 self.added_playlists = info.playlists_raw
+
+            lyric = self.request('get_lyric', silent=True)
+            if lyric is not None:
+                if lyric.get('loading', False):
+                    self.lyric = []
+                else:
+                    self.lyric = lyric.get('lyric', None)
+                    if self.lyric is None:
+                        self.lyric = []
 
         songs = self.request('list', silent=True)
         if songs is not None:

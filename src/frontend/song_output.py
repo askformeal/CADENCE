@@ -80,6 +80,9 @@ class SongOutput:
         self.loop = {True: 'On', False: 'Off', '?': '?'}[info.get('loop', '?')]
         self.loop_raw = info.get('loop', None)
 
+        self.online_lyric = {True: 'On', False: 'Off', '?': '?'}[info.get('online_lyric', '?')]
+        self.online_lyric_raw = info.get('online_lyric', None)
+
         self.playlist_len = info.get('playlist_len', '?')
 
         self.current_num = info.get('current_num', '?')

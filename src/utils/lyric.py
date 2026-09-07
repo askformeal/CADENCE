@@ -3,7 +3,7 @@ import re
 from src.constants import ENCODING_CHAIN
 from src.sentinels import SENTINELS
 
-def parse_lyric(path, content=None):
+def parse_lyric(path='', content=None):
     timestamp = re.compile(r'\[(\d+):(\d+)(?:\.(\d+))?\]')
     if content is None:
         for encoding in ENCODING_CHAIN:

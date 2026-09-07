@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import syncedlyrics
+
 from src.log import setup_logger
 from src.constants import BACKEND_LOG_PATH
 from src import gen_response
@@ -144,3 +146,11 @@ def add_song(ctx, path, set_meta=True, bind_alias=True, set_lyric=True, alias=No
         return song_id, response
     else:
         return response
+
+def fetch_lyric(song):
+    song_id, search_term = song
+    lrc = syncedlyrics.search(
+        search_term,
+        synced_only=True,
+    )
+    return song_id, lrc

@@ -75,6 +75,8 @@ def build_parser():
 
     mute_parser = command_sub.add_parser('mute', help='Toggle mute')
 
+    lyric_parser = command_sub.add_parser('lyric', help='Switch between lyric sources [local/online]')
+
     lib_parser = command_sub.add_parser('lib', help='Manage library')
 
     lib_sub = lib_parser.add_subparsers(dest='lib_action', required=True)

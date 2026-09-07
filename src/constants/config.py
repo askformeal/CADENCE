@@ -102,6 +102,12 @@ CONFIG_SCHEME = {
         'default': False,
         'description': 'Shuffle mode on start'
     },
+    'default_online_lyric': {
+        'type': CONVERTER.boolean,
+        'section': 'playback',
+        'default': False,
+        'description': 'Whether to use online lyric source on start'
+    },
     'pos_memorize_interval': {
         'type': CONVERTER.timeout,
         'section': 'playback',

@@ -29,6 +29,7 @@ ROUTER = {
     'volume': play_core.volume,
     'mute': play_core.mute,
     'lyric': play_core.lyric,
+    'get_lyric': play_core.get_lyric,
 
     'lib.info': lib_core.info,
     'lib.list': lib_core.list_,

@@ -88,5 +88,6 @@ class Sentinels:
         self.NO_OPENER = Sentinel('No Available File Opener Found')
         self.BEFORE_FIRST_LYRIC = Sentinel('Position Before First Lyric Line')
         self.EMPTY_LYRIC = Sentinel('Lyric is Empty')
+        self.LYRIC_NOT_FOUND = Sentinel('Lyric Not Found')
 
 SENTINELS = Sentinels()

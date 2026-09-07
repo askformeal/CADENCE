@@ -1,8 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-import syncedlyrics
-
 from src.log import setup_logger
 from src.constants import BACKEND_LOG_PATH
 from src.constants import ENCODING, LYRIC_FETCH_MAX_WORKERS
@@ -10,7 +8,7 @@ from src.sentinels import SENTINELS
 from src import gen_response
 from src.utils.misc import get_song_display_name
 from src.utils.lyric import parse_lyric
-from .helpers import get_song
+from .helpers import get_song, fetch_lyric
 
 logger = setup_logger(__name__, BACKEND_LOG_PATH)
 
@@ -86,7 +84,7 @@ def fetch(ctx, request):
                 search_terms.append((song_id, f'{name} {artist}'.strip()))
 
         with ThreadPoolExecutor(max_workers=LYRIC_FETCH_MAX_WORKERS) as pool:
-            results = list(pool.map(_fetch_lyric, search_terms))
+            results = list(pool.map(fetch_lyric, search_terms))
 
         for song_id, lrc in results:
             if lrc is None:
@@ -102,11 +100,3 @@ def fetch(ctx, request):
                     ctx.database.set_song_meta(song_id, 'lyric', path)
 
         return gen_response.BatchAuto('Lyric fetched', len(failed), len(songs), failed=failed)
-
-def _fetch_lyric(song):
-    song_id, search_term = song
-    lrc = syncedlyrics.search(
-        search_term,
-        synced_only=True,
-    )
-    return song_id, lrc
