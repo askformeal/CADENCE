@@ -86,6 +86,7 @@ Builds a self-contained folder (plus a `.zip`) into `dist/cadence-<version>/`, b
 | `cadence dice`         | Switch to a random song in current playlist            |
 | `cadence shuffle`      | Toggle shuffle mode                                    |
 | `cadence loop`         | Toggle loop mode                                       |
+| `cadence lyric`        | Toggle lyric source (local `.lrc` / online)            |
 | `cadence switch <num>` | Switch to a song in current playlist via number        |
 | `cadence seek <time>`  | Jump to a specific time, or seek relative to the current position with a `+`/`-` prefix (e.g. `seek +10` forward, `seek -10` backward) |
 | `cadence jump <pct>`   | Jump to progress of the current song (percentage)      |
@@ -149,6 +150,7 @@ Config file: `%LOCALAPPDATA%\cadence\cadence\config.toml` (Windows). Options:
 | `lyric` | `true` | Start the lyric board frontend with the backend |
 | `default_volume` | `100` | Volume on start (0~100) |
 | `default_shuffle` | `false` | Shuffle mode on start |
+| `default_online_lyric` | `false` | Use the online lyric source on start |
 | `player_timeout` | `1` | Timeout of backend waiting for a player action (seconds) |
 | `pos_memorize_interval` | `5` | Interval of memorized position updates (seconds) |
 | `dash_volume_step` | `5` | Volume increase/decrease step on the dashboard |
@@ -173,6 +175,8 @@ Values are validated on write; invalid ones are rejected. The default value is u
 
 > **Note for users on mainland China networks:** when fetching lyrics online, it is recommended to enable `netease_skip_proxy`. The NetEase source is reachable directly from China, while proxy-only sources (LRCLIB, Musixmatch, etc.) sit behind the wall — so let NetEase connect directly and route the rest through `proxy`.
 
+Besides downloading lyrics with `lib lyric fetch`, you can play with **live online lyrics**: toggle the lyric source to online (`cadence lyric`, or `z` in the dashboard) and, whenever the song being played has no local `.lrc`, its lyrics are fetched on the fly from online sources and shown as it plays — a `[Loading ...]` placeholder appears while a fetch is in flight. Live online lyrics are keyed by the song's path, so they work for non-library songs too, and are shown on both the floating lyric board and the dashboard. The startup source is controlled by `default_online_lyric`.
+
 ### Tray icon
 
 The tray icon starts with the backend (unless the `tray` config option is off) and offers:
@@ -187,7 +191,7 @@ The tray icon starts with the backend (unless the `tray` config option is off) a
 
 ### Dashboard
 
-The dashboard (`cadence dash`) is an interactive terminal UI. It shows the current song, a progress bar with elapsed/total time, volume bar and playback state, the current lyric line (if the song has a lyric file set via `cadence lib lyric set`), the playlist (with the playing song and your selection highlighted), and is controlled entirely from the keyboard. A left column shows library information for the current song (duration, metadata, tech fields, aliases and playlists). It starts its own frontend process and uses the same socket protocol as the other frontends.
+The dashboard (`cadence dash`) is an interactive terminal UI. It shows the current song, a progress bar with elapsed/total time, volume bar and playback state, the current lyric line (the song's local lyric if one is set via `cadence lib lyric set`, or its live online lyric in online mode), the playlist (with the playing song and your selection highlighted), and is controlled entirely from the keyboard. A left column shows library information for the current song (duration, metadata, tech fields, aliases and playlists). It starts its own frontend process and uses the same socket protocol as the other frontends.
 
 Screenshot:
 
@@ -230,6 +234,7 @@ Keys (defined in `DASH_KEY_MAP` in `src/constants/`):
 | `Enter` | Play the selected song |
 | `x` / `d` | Stop / random song jump |
 | `s` / `r` | Toggle shuffle / loop |
+| `z` | Toggle the lyric source (local `.lrc` / online) |
 | `=` / `-` | Volume up / down (step from `dash_volume_step`) |
 | `m` | Mute |
 | `,` / `h`, `←` | Jump backward (step from `dash_pos_step`) |

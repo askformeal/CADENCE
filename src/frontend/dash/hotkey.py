@@ -42,6 +42,8 @@ class HotkeyMixin:
                     self._send_dash_request('shuffle')
                 elif key in KEY_MAP.loop:
                     self._send_dash_request('loop')
+                elif key in KEY_MAP.lyric:
+                    self._send_dash_request('lyric')
 
                 elif key in KEY_MAP.prev:
                     self._send_dash_request('prev')

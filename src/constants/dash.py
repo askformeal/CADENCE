@@ -48,6 +48,7 @@ class DashKeyMap: # why not a dict? because this works better with my IDE's sugg
 
         self.shuffle = Bind('s', name='Toggle Shuffle')
         self.loop = Bind('r', name='Toggle Loop')
+        self.lyric = Bind('z', name='Toggle Online Lyric')
 
         self.vol_up = Bind('=', name='Volume Up')
         self.vol_down = Bind('-', name='Volume Down')

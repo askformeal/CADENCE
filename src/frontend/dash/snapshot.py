@@ -1,9 +1,15 @@
+from src.sentinels import SENTINELS
+
 from .logger import logger
 from src.frontend.song_output import SongOutput
 
 class Snapshot:
     def __init__(self, requester):
         self.request = requester
+        self.filter = ''
+        self._reset()
+
+    def _reset(self):
         self.lib_id = None
         self.display_name = '[MISSING]'
         self.meta_name = '[MISSING]'
@@ -34,9 +40,9 @@ class Snapshot:
         self.added_playlists = ['[MISSING]']
         self.lyric = {}
         self.songs_nums = [] # to prevent selected_song -> actual number in playlist mismatch when filter is applied
-        self.filter = ''
 
     def poll(self):
+        self._reset()
         status = self.request('status', silent=True)
         if status is not None:
             status = SongOutput(status, prettify_none=False)
@@ -45,7 +51,6 @@ class Snapshot:
             self.meta_name = status.name
             self.artist = status.artist
             self.album = status.album
-            lyric_path = status.lyric_raw
             self.time = status.time_raw
             self.length = status.length_raw
             self.volume = status.volume
@@ -81,10 +86,11 @@ class Snapshot:
                 self.aliases = info.aliases_raw
                 self.added_playlists = info.playlists_raw
 
+        if self.player_status != 'N/A':
             lyric = self.request('get_lyric', silent=True)
             if lyric is not None:
                 if lyric.get('loading', False):
-                    self.lyric = []
+                    self.lyric = SENTINELS.LYRIC_LOADING
                 else:
                     self.lyric = lyric.get('lyric', None)
                     if self.lyric is None:

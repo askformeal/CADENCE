@@ -1,5 +1,28 @@
 # CHANGELOG
 
+## [0.47.0] - 2026-09-08
+
+> **⚠️ Breaking Changes**
+> - The single `ipc_timeout` config option is removed. The frontend's socket wait is now split in two: `connection_timeout` (waiting for the backend's acknowledge, default `3`) and `execution_timeout` (waiting for the full response, default `30`). Any `ipc_timeout` you set is no longer read.
+
+### Added
+
+- **Online lyric mode.** When the song being played has no local `.lrc` bound, lyrics can now be fetched live from online sources (LRCLIB, NetEase, Musixmatch, etc., via `syncedlyrics`) and shown while it plays. Toggle it at runtime with `cadence lyric` (or the dashboard's `z` key); set the startup state with the new `default_online_lyric` config option. Online lyrics are keyed by the song's path, so they work for non-library songs too, and are shown on both the floating lyric board and the dashboard. Fetches run in a background thread so playback is never blocked.
+- The dashboard and lyric board now distinguish *loading* (shows `[Loading ...]`) from *no lyric*, instead of collapsing both into "no lyric".
+- New `lib lyric show <song>` command to print a song's parsed lyric.
+- New config options `proxy` (proxy used for online lyric requests; empty = system default) and `netease_skip_proxy` (connect to the NetEase source directly regardless of `proxy`).
+- IPC acknowledge handshake — the backend answers every request with an immediate ACK and the frontend reads the ACK under `connection_timeout` before switching to `execution_timeout` for the response, so long-running actions (e.g. a bulk lyric fetch) are no longer cut off by one shared short timeout.
+
+### Changed
+
+- `status` now reports the online-lyric state; a new `get_lyric` action fronts frontend lyric polling.
+- Internal restructuring: the single-file backend, database and frontends were split into per-domain packages and modules (no user-facing behavior change).
+
+### Fixed
+
+- Lyric board: a transient failed status poll no longer kills the board (player state is pre-initialized), and the loading state is shown while an online lyric is being fetched.
+- Tray: the Open file dialog now behaves reliably (the tray keeps a persistent hidden Tk window), and heartbeat monitoring moved onto its own thread so the tray main loop stays responsive.
+
 ## [0.46.0] - 2026-09-05
 
 ### Added

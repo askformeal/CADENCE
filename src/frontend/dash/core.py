@@ -113,11 +113,16 @@ class Dash(HotkeyMixin):
                         self.playlist_height = DASH_MAX_SHOW_SONG
 
                     main_text = gen_main_text(self.snapshot, toast, self._dash_box)
-                    # logger.debug(f'x: {self.song_selected}')/
+                    logger.debug(f'x: {self.snapshot.lyric}')
                     playlist_text = gen_playlist_text(self.snapshot, self.playlist_height, self.song_selected)
                     info_text = gen_info_text(self.snapshot)
 
-                text = self._dash_box(info_text, main_text, playlist_text, l_pad=2, r_pad=2)
+                width = shutil.get_terminal_size((-1, -1)).columns
+                merged = self._dash_box(info_text, main_text, playlist_text, l_pad=2, r_pad=2)
+                text = ''
+                for line in merged.splitlines():
+                    if width != -1:
+                        text += line[:width] + '\n'
 
                 if (text != self.old_text or self.redraw) and not self.paused:
                     if self.old_text != '':

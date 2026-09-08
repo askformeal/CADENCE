@@ -2,6 +2,7 @@ from threading import Thread
 from time import sleep, time
 from pathlib import Path
 from tkinter import filedialog
+import tkinter as tk
 
 from pystray import Icon, Menu, MenuItem
 from PIL import Image
@@ -21,6 +22,8 @@ class Label(MenuItem):
 class Tray(Icon):
     def __init__(self):
         self.running = True
+        self.tk_window = tk.Tk() # file dialog will act weird without this
+        self.tk_window.withdraw()
         self.ok_icon = Image.open(Path(ICON_PATH).open('rb'))
         self.error_icon = Image.open(Path(ERROR_ICON_PATH).open('rb'))
 
@@ -154,16 +157,20 @@ class Tray(Icon):
         handle_code(response.get('code', None), self.exit)
         return response.get('attachment', None)
 
+    def _monitor_heartbeat(self):
+        while self.running:
+            sleep(HEARTBEAT_POLL_INTERVAL)
+            code = test_heartbeat()
+            handle_code(code, self.exit)
+        
+
     def start(self):
         Thread(target=self.run, daemon=True).start()
         Thread(target=self._update, daemon=True).start()
+        Thread(target=self._monitor_heartbeat, daemon=True).start()
         logger.info('Tray icon running')
         try:
-            while self.running:
-                sleep(HEARTBEAT_POLL_INTERVAL)
-                code = test_heartbeat()
-                handle_code(code, self.exit)
-
+            self.tk_window.mainloop()
         except KeyboardInterrupt:
             ...
 

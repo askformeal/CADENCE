@@ -60,17 +60,17 @@ class Playback:
     def update_lyric(self):
         if self.current_song_info is not None:
             info = self.get_playing_info()
-            song_id = info.get('id', None)
-            if self.lyric.get('id', None) != song_id or self.lyric.get('online', None) != self.online_lyric:
+            song_path = info.get('path', None)
+            if self.lyric.get('path', None) != song_path or self.lyric.get('online', None) != self.online_lyric:
                 if self.online_lyric:
-                    self.lyric = {'id': song_id, 'online': True, 'loading': True, 'lyric': None}
+                    self.lyric = {'path': song_path, 'online': True, 'loading': True, 'lyric': None}
                     name = get_song_display_name(info)
                     artist = info.get('artist', None)
                     if artist is None:
                         artist = ''
-                    Thread(target=self._fetch_lyric, args=(song_id, f'{name} {artist}'.strip())).start()
+                    Thread(target=self._fetch_lyric, args=(song_path, f'{name} {artist}'.strip())).start()
                 else:
-                    self.lyric = {'id': song_id, 'online': False, 'lyric': None}
+                    self.lyric = {'path': song_path, 'online': False, 'lyric': None}
                     lyric_path = info.get('lyric', None)
                     if lyric_path is not None:
                         lyric = parse_lyric(lyric_path)
@@ -78,7 +78,7 @@ class Playback:
                             self.lyric['lyric'] = lyric
                     
 
-    def _fetch_lyric(self, song_id, search_term):
+    def _fetch_lyric(self, song_path, search_term):
         try:
             result = syncedlyrics.search(
                 search_term,
@@ -87,7 +87,7 @@ class Playback:
         except Exception:
             result = None
 
-        if song_id == self.lyric.get('id') and self.lyric.get('online', False):
+        if song_path == self.lyric.get('path') and self.lyric.get('online', False):
             self.lyric['loading'] = False
             if result is not None:
                 lrc = parse_lyric(content=result)

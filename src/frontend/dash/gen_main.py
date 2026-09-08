@@ -13,13 +13,16 @@ from src.utils.tui import align, center, progress_bar, window_list, wrap_text
 def gen_main_text(snapshot, toast, box):
     lyric_lines = ['No Lyric']
     if isinstance(snapshot.time, int):
-        current_line = get_lyric_line(snapshot.lyric, snapshot.time)
-        if current_line is not SENTINELS.EMPTY_LYRIC:
-            text = list(map(lambda x:x[1], snapshot.lyric))
-            if current_line is SENTINELS.BEFORE_FIRST_LYRIC:
-                current_line = 0
-                text = ['...'] + text
-            lyric_lines = window_list(text, DASH_MAX_SHOW_LYRIC, current_line, newline_selected=True, mark_unshown=False, left_align=False)
+        if snapshot.lyric is SENTINELS.LYRIC_LOADING:
+            lyric_lines = ['[Loading ...]']
+        else:
+            current_line = get_lyric_line(snapshot.lyric, snapshot.time)
+            if current_line is not SENTINELS.EMPTY_LYRIC:
+                text = list(map(lambda x:x[1], snapshot.lyric))
+                if current_line is SENTINELS.BEFORE_FIRST_LYRIC:
+                    current_line = 0
+                    text = ['...'] + text
+                lyric_lines = window_list(text, DASH_MAX_SHOW_LYRIC, current_line, newline_selected=True, mark_unshown=False, left_align=False)
 
     lines = [
         '{title}'

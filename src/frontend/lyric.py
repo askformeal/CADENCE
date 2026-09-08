@@ -123,6 +123,7 @@ class Lyric(tk.Tk):
         while True:
             try:
                 pos = None
+                state = None
 
                 status = self._send_lyric_request('status', silent=True)
                 if status is not None:
@@ -133,25 +134,31 @@ class Lyric(tk.Tk):
                     lyric = self._send_lyric_request('get_lyric', silent=True)
                     if lyric is not None:
                         if lyric.get('loading', False):
-                            self.lyric = []
+                            self.lyric = SENTINELS.LYRIC_LOADING
                         else:
                             self.lyric = lyric.get('lyric', None)
                             if self.lyric is None:
                                 self.lyric = []
 
                 if self.lyric_on and (state == 'playing' or (state == 'paused' and not CONFIG.pause_hide_lyric)):
-                    if pos is not None and len(self.lyric) > 0:
+                    if self.lyric is SENTINELS.LYRIC_LOADING:
+                        self.after(0, self._update_text, text='[Loading ...]')
+                        self._show()
+
+                    elif pos is not None and len(self.lyric) > 0:
                         index = get_lyric_line(self.lyric, pos)
                         if index is SENTINELS.BEFORE_FIRST_LYRIC:
                             current_line = '...'
                         elif index is SENTINELS.EMPTY_LYRIC:
                             current_line = '[Lyric Empty]'
                         else:
-                            current_line = self.lyric[index][1]
-                        
-                        self.after(0, self._update_text, text=current_line)
+                            current_line = self.lyric[index][1].strip()
 
-                        self._show()
+                        if current_line != '':
+                            self.after(0, self._update_text, text=current_line)
+                            self._show()
+                        else:
+                            self._hide()
                     else:
                         self._hide()
 
