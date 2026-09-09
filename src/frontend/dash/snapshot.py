@@ -39,6 +39,7 @@ class Snapshot:
         self.added_playlists = ['[MISSING]']
         self.lyric = {}
         self.lyric_offset = 0
+        self.offset_overlay = 0
         self.songs_nums = [] # to prevent selected_song -> actual number in playlist mismatch when filter is applied
 
     def poll(self):
@@ -96,6 +97,7 @@ class Snapshot:
                     if self.lyric is None:
                         self.lyric = []
                     self.lyric_offset = lyric.get('offset', 0)
+                    self.offset_overlay = lyric.get('offset_overlay', 0)
 
         songs = self.request('list', silent=True)
         if songs is not None:

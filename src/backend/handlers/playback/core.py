@@ -146,4 +146,16 @@ def lyric(ctx, request):
 
 def get_lyric(ctx, request):
     ctx.playback.update_lyric()
-    return gen_response.Success(f'lyric obtained', attachment=ctx.playback.lyric)
+    lyric = ctx.playback.lyric
+    lyric['offset_overlay'] = ctx.playback.offset_overlay
+    return gen_response.Success(f'lyric obtained', attachment=lyric)
+
+def set_offset_overlay(ctx, request):
+    offset = request['offset']
+    if request['autoincrement']:
+        ctx.playback.offset_overlay += offset
+    else:
+        ctx.playback.offset_overlay = offset
+    ctx.playback.update_lyric()
+    return gen_response.Success(f'lyric offset overlay set to {ctx.playback.offset_overlay}')
+    

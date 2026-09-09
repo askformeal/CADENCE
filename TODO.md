@@ -52,6 +52,7 @@
 - [X] Online lyric mode
   - [X] Show "Loading" when online lyric is being loaded
 - [ ] Lyric offset
+- [ ] Make floating lyric board draggable
 - [ ] Colored TUI
 - [ ] GUI configure editor
 - [ ] HTTP frontend

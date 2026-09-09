@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## [0.48.0] - 2026-09-09
+
+### Added
+
+- **Lyric offset.** If a song's lyric is out of sync with the audio, you can now shift it in time. `cadence lib lyric offset <song> <ms>` persists a per-song offset in the library (positive delays the lyric line, negative brings it earlier). On the dashboard, `]` / `[` nudge a temporary *overlay* for the current song by `100ms` and `\` resets it — useful to find the right value live before committing it, since the persisted offset and the live overlay stack. Both the dashboard and the floating lyric board apply the offset when picking the current line.
+- The backend now owns the offset overlay (`set_offset_overlay` action, with an `autoincrement` option to accumulate or set), so it survives a dashboard restart and is shared across frontends instead of being a dashboard-local variable.
+- New action-level tests for `get_lyric` / `set_offset_overlay` (overlay served in `get_lyric`, autoincrement accumulate/overwrite, missing-key validation).
+
+### Changed
+
+- `get_lyric`'s attachment now includes the current `offset_overlay` along with the existing `offset`, so frontends read both from one place.
+- The `DASH_*` constants were renamed to bare names (`POLL_INTERVAL`, `MAX_SHOW_SONG`, etc.).
+
+### Fixed
+
+- `lib.meta.set` crashed with `KeyError: 'offset'` after `offset` was added to the metadata columns — its key contract is now in sync (the recurring metadata-field-add trap).
+- `get_lyric` referenced a non-existent `lyric_overlay` attribute and failed on every call; it now reads the real `offset_overlay`.
+
 ## [0.47.0] - 2026-09-08
 
 > **⚠️ Breaking Changes**

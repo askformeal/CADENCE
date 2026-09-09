@@ -8,13 +8,13 @@ from src.utils.time_ import format_time
 from src.utils.tui import align, center, progress_bar, window_list, wrap_text
 
 
-def gen_main_text(snapshot, toast, offset_overlay, box):
+def gen_main_text(snapshot, toast, box):
     lyric_lines = ['No Lyric']
     if isinstance(snapshot.time, int):
         if snapshot.lyric is SENTINELS.LYRIC_LOADING:
             lyric_lines = ['[Loading ...]']
         else:
-            current_line = get_lyric_line(snapshot.lyric, snapshot.time, snapshot.lyric_offset + offset_overlay)
+            current_line = get_lyric_line(snapshot.lyric, snapshot.time, snapshot.lyric_offset + snapshot.offset_overlay)
             if current_line is not SENTINELS.EMPTY_LYRIC:
                 text = list(map(lambda x:x[1], snapshot.lyric))
                 if current_line is SENTINELS.BEFORE_FIRST_LYRIC:
@@ -29,13 +29,13 @@ def gen_main_text(snapshot, toast, offset_overlay, box):
         '{pos}\n\n',
         '{state}\n',
         ]
-    if snapshot.lyric_offset != 0 or offset_overlay != 0:
+    if snapshot.lyric_offset != 0 or snapshot.offset_overlay != 0:
         lines += [f'Offset: {snapshot.lyric_offset}']
-        if offset_overlay != 0:
-            if offset_overlay > 0:
-                offset_overlay_display = f'+{offset_overlay}'
+        if snapshot.offset_overlay != 0:
+            if snapshot.offset_overlay > 0:
+                offset_overlay_display = f'+{snapshot.offset_overlay}'
             else:
-                offset_overlay_display = str(offset_overlay)
+                offset_overlay_display = str(snapshot.offset_overlay)
             lines[-1] += f' ({offset_overlay_display})'
 
     lines += [

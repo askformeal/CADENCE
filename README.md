@@ -111,6 +111,7 @@ Note: a negative seek time starts with `-`, which the command-line parser treats
 | `cadence lib meta set`      | Set metadata of a song (use `""` to clear)         |
 | `cadence lib meta read-file`| Set metadata of a song from its file tags (`--all` for every field) |
 | `cadence lib lyric set`     | Set the lyric file of a song (use `""` to unset)   |
+| `cadence lib lyric offset <song> <ms>` | Set a per-song lyric time offset in milliseconds (positive delays the lyric, negative brings it earlier) |
 | `cadence lib lyric fetch <song>...` | Fetch lyrics for songs from online sources (see `proxy` / `netease_skip_proxy` below) |
 | `cadence lib alias ...`     | List/bind/unbind aliases (`bind <song> <alias>...`, `unbind <alias>...`) |
 | `cadence lib playlist ...`  | List/create/add/kick/delete playlists (`lib playlist list` supports `-a`/`-p`/`-t`) |
@@ -118,6 +119,8 @@ Note: a negative seek time starts with `-`, which the command-line parser treats
 `cadence lib lyric fetch` downloads each song's lyric from an online source. Fetching several songs at once is slow and can exceed the frontend execution timeout (`execution_timeout`) — note that even if the request times out, the backend keeps downloading in the background and still writes the files. If you hit timeouts, raise `execution_timeout`; and keep to at most 4 songs per call, since downloads run with 4-way parallelism — beyond 4 they queue up instead of completing together.
 
 `open` accepts a song alias, a library song name, a playlist name, or a file path.
+
+If a song's lyric is slightly out of sync with the audio, you can shift it with a **lyric offset**. `cadence lib lyric offset <song> <ms>` persists a per-song offset in the library: a positive value delays the lyric line, a negative one brings it earlier. The dashboard also lets you nudge the *current* song live without persisting anything — `]` / `[` step a temporary overlay by `100ms` and `\` resets it, handy for finding the right value before committing it with `lib lyric offset`. The persisted offset and the live overlay stack.
 
 ### Configuration
 
@@ -235,6 +238,8 @@ Keys (defined in `DASH_KEY_MAP` in `src/constants/`):
 | `x` / `d` | Stop / random song jump |
 | `s` / `r` | Toggle shuffle / loop |
 | `z` | Toggle the lyric source (local `.lrc` / online) |
+| `]` / `[` | Nudge the current lyric later / earlier (live overlay, step `100ms`; not persisted) |
+| `\` | Reset the live lyric offset overlay |
 | `=` / `-` | Volume up / down (step from `dash_volume_step`) |
 | `m` | Mute |
 | `,` / `h`, `←` | Jump backward (step from `dash_pos_step`) |

@@ -45,6 +45,10 @@ ACTION_KEYS = {
     'volume': {
         'volume': (str, True)
     },
+    'set_offset_overlay': {
+        'offset': (int, True),
+        'autoincrement': (bool, False, False)
+    },
     'lib.info':
     {
         'songs': (IterType(str), True),

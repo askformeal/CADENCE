@@ -34,8 +34,6 @@ class Dash(HotkeyMixin):
         self.select_end = False
         self.select_current = False
 
-        self.offset_overlay = 0
-
         self.playlist_height = 0
 
         self.paused = False
@@ -114,7 +112,7 @@ class Dash(HotkeyMixin):
                     else:
                         self.playlist_height = MAX_SHOW_SONG
 
-                    main_text = gen_main_text(self.snapshot, toast, self.offset_overlay, self._dash_box)
+                    main_text = gen_main_text(self.snapshot, toast, self._dash_box)
                     playlist_text = gen_playlist_text(self.snapshot, self.playlist_height, self.song_selected)
                     info_text = gen_info_text(self.snapshot)
 
