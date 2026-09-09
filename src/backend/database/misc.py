@@ -53,6 +53,7 @@ class MiscMixin:
     
             'ALTER TABLE playlists ADD COLUMN last_num INTEGER',
             'ALTER TABLE songs ADD COLUMN lyric TEXT',
+            'ALTER TABLE songs ADD COLUMN offset INTEGER',
         ]
         version = self.execute('PRAGMA user_version').fetchone()[0]
         for i, sql in enumerate(INIT_DATABASE):

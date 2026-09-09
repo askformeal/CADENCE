@@ -61,16 +61,19 @@ class Playback:
         if self.current_song_info is not None:
             info = self.get_playing_info()
             song_path = info.get('path', None)
+            offset = info.get('offset', None)
+            if offset is None:
+                offset = 0
             if self.lyric.get('path', None) != song_path or self.lyric.get('online', None) != self.online_lyric:
                 if self.online_lyric:
-                    self.lyric = {'path': song_path, 'online': True, 'loading': True, 'lyric': None}
+                    self.lyric = {'path': song_path, 'online': True, 'loading': True, 'offset': offset, 'lyric': None}
                     name = get_song_display_name(info)
                     artist = info.get('artist', None)
                     if artist is None:
                         artist = ''
                     Thread(target=self._fetch_lyric, args=(song_path, f'{name} {artist}'.strip())).start()
                 else:
-                    self.lyric = {'path': song_path, 'online': False, 'lyric': None}
+                    self.lyric = {'path': song_path, 'online': False, 'offset': offset, 'lyric': None}
                     lyric_path = info.get('lyric', None)
                     if lyric_path is not None:
                         lyric = parse_lyric(lyric_path)

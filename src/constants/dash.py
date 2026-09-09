@@ -1,13 +1,14 @@
 import readchar
 
-DASH_POLL_INTERVAL = 0.1
+POLL_INTERVAL = 0.1
 
-DASH_MIN_WIDTH = 50
-DASH_MAX_SHOW_SONG = 30
-DASH_MAX_SHOW_LYRIC = 3
-DASH_MAX_SHOW_BIND = 25
-DASH_VOL_BAR_LEN = 20
-DASH_TOAST_TIME = 5
+MIN_WIDTH = 50
+MAX_SHOW_SONG = 30
+MAX_SHOW_LYRIC = 3
+MAX_SHOW_BIND = 25
+VOL_BAR_LEN = 20
+TOAST_TIME = 5
+OFFSET_OVERLAY_STEP = 100
 
 CHAR_TO_NAME = {}
 
@@ -49,6 +50,10 @@ class DashKeyMap: # why not a dict? because this works better with my IDE's sugg
         self.shuffle = Bind('s', name='Toggle Shuffle')
         self.loop = Bind('r', name='Toggle Loop')
         self.lyric = Bind('z', name='Toggle Online Lyric')
+
+        self.offset_increase = Bind(']', name='Increase lyric offset')
+        self.offset_decrease = Bind('[', name='Decrease lyric offset')
+        self.reset_offset = Bind('\\', name='Reset lyric offset')
 
         self.vol_up = Bind('=', name='Volume Up')
         self.vol_down = Bind('-', name='Volume Down')

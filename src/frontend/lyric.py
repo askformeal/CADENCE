@@ -124,6 +124,7 @@ class Lyric(tk.Tk):
             try:
                 pos = None
                 state = None
+                offset = 0
 
                 status = self._send_lyric_request('status', silent=True)
                 if status is not None:
@@ -139,6 +140,7 @@ class Lyric(tk.Tk):
                             self.lyric = lyric.get('lyric', None)
                             if self.lyric is None:
                                 self.lyric = []
+                            offset = lyric.get('offset', 0)
 
                 if self.lyric_on and (state == 'playing' or (state == 'paused' and not CONFIG.pause_hide_lyric)):
                     if self.lyric is SENTINELS.LYRIC_LOADING:
@@ -146,7 +148,7 @@ class Lyric(tk.Tk):
                         self._show()
 
                     elif pos is not None and len(self.lyric) > 0:
-                        index = get_lyric_line(self.lyric, pos)
+                        index = get_lyric_line(self.lyric, pos, offset)
                         if index is SENTINELS.BEFORE_FIRST_LYRIC:
                             current_line = '...'
                         elif index is SENTINELS.EMPTY_LYRIC:

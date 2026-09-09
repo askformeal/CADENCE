@@ -1,28 +1,26 @@
-
-
 from wcwidth import wcswidth
 
 from src import __version__
-from src.constants import DASH_MAX_SHOW_LYRIC, DASH_MIN_WIDTH, DASH_VOL_BAR_LEN
+from src.constants import MAX_SHOW_LYRIC, MIN_WIDTH, VOL_BAR_LEN
 from src.sentinels import SENTINELS
 from src.utils.lyric import get_lyric_line
 from src.utils.time_ import format_time
 from src.utils.tui import align, center, progress_bar, window_list, wrap_text
 
 
-def gen_main_text(snapshot, toast, box):
+def gen_main_text(snapshot, toast, offset_overlay, box):
     lyric_lines = ['No Lyric']
     if isinstance(snapshot.time, int):
         if snapshot.lyric is SENTINELS.LYRIC_LOADING:
             lyric_lines = ['[Loading ...]']
         else:
-            current_line = get_lyric_line(snapshot.lyric, snapshot.time)
+            current_line = get_lyric_line(snapshot.lyric, snapshot.time, snapshot.lyric_offset + offset_overlay)
             if current_line is not SENTINELS.EMPTY_LYRIC:
                 text = list(map(lambda x:x[1], snapshot.lyric))
                 if current_line is SENTINELS.BEFORE_FIRST_LYRIC:
                     current_line = 0
                     text = ['...'] + text
-                lyric_lines = window_list(text, DASH_MAX_SHOW_LYRIC, current_line, newline_selected=True, mark_unshown=False, left_align=False)
+                lyric_lines = window_list(text, MAX_SHOW_LYRIC, current_line, newline_selected=True, mark_unshown=False, left_align=False)
 
     lines = [
         '{title}'
@@ -30,11 +28,22 @@ def gen_main_text(snapshot, toast, box):
         '{song_info}\n',
         '{pos}\n\n',
         '{state}\n',
+        ]
+    if snapshot.lyric_offset != 0 or offset_overlay != 0:
+        lines += [f'Offset: {snapshot.lyric_offset}']
+        if offset_overlay != 0:
+            if offset_overlay > 0:
+                offset_overlay_display = f'+{offset_overlay}'
+            else:
+                offset_overlay_display = str(offset_overlay)
+            lines[-1] += f' ({offset_overlay_display})'
+
+    lines += [
         '{lyric}',
         '{toast}'
         ]
 
-    max_len = max(max(map(wcswidth, lines)), DASH_MIN_WIDTH)
+    max_len = max(max(map(wcswidth, lines)), MIN_WIDTH)
 
     title = center(f'CADENCE {__version__} Dashboard', max_len)
     separator = '='*max_len
@@ -57,10 +66,10 @@ def gen_main_text(snapshot, toast, box):
     lyric = box(center('\n'.join(lyric_lines), max_len-4))
 
     if not isinstance(snapshot.volume, int):
-        bar = progress_bar(0, DASH_VOL_BAR_LEN)
+        bar = progress_bar(0, VOL_BAR_LEN)
         vol_num = '?%'
     else:
-        bar = progress_bar(DASH_VOL_BAR_LEN*snapshot.volume/100, DASH_VOL_BAR_LEN)
+        bar = progress_bar(VOL_BAR_LEN*snapshot.volume/100, VOL_BAR_LEN)
         vol_num = f'{snapshot.volume}%'
     if snapshot.mute:
         vol_num += ' [MUTE]'

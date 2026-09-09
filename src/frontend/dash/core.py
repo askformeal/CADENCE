@@ -7,10 +7,10 @@ from threading import Thread
 from src import __version__
 
 from .logger import logger
-from src.constants import DASH_MAX_SHOW_BIND
-from src.constants import HEARTBEAT_POLL_INTERVAL, DASH_POLL_INTERVAL
+from src.constants import MAX_SHOW_BIND
+from src.constants import HEARTBEAT_POLL_INTERVAL, POLL_INTERVAL
 from src.constants import DASH_KEY_MAP as KEY_MAP
-from src.constants import DASH_MAX_SHOW_SONG, DASH_TOAST_TIME
+from src.constants import MAX_SHOW_SONG, TOAST_TIME
 from src.constants import BOX_STYLES
 from src.config import CONFIG
 from src.frontend.client import test_heartbeat, handle_code, send_request
@@ -33,6 +33,8 @@ class Dash(HotkeyMixin):
         self.bind_selected = 0 # 0-based!
         self.select_end = False
         self.select_current = False
+
+        self.offset_overlay = 0
 
         self.playlist_height = 0
 
@@ -81,7 +83,7 @@ class Dash(HotkeyMixin):
                     else:
                         self.bind_selected = squeeze(self.bind_selected, len(bind_lines)-1)
                     
-                    bind_lines = window_list(bind_lines, DASH_MAX_SHOW_BIND, self.bind_selected)
+                    bind_lines = window_list(bind_lines, MAX_SHOW_BIND, self.bind_selected)
                     bind_lines = self._dash_box('\n'.join(bind_lines)).split('\n')
                     lines += bind_lines
                     text = '\n'.join(lines)
@@ -102,18 +104,17 @@ class Dash(HotkeyMixin):
                     else:                                
                         self.song_selected = squeeze(self.song_selected, len(self.snapshot.current_songs)-1)
 
-                    if (time.time() - self.toast_time) <= DASH_TOAST_TIME:
+                    if (time.time() - self.toast_time) <= TOAST_TIME:
                         toast = self.toast_text
                     else:
                         toast = ''
 
                     if CONFIG.auto_dash_height:
-                        self.playlist_height = max(shutil.get_terminal_size((0, DASH_MAX_SHOW_SONG+12)).lines-12, 1)
+                        self.playlist_height = max(shutil.get_terminal_size((0, MAX_SHOW_SONG+12)).lines-12, 1)
                     else:
-                        self.playlist_height = DASH_MAX_SHOW_SONG
+                        self.playlist_height = MAX_SHOW_SONG
 
-                    main_text = gen_main_text(self.snapshot, toast, self._dash_box)
-                    logger.debug(f'x: {self.snapshot.lyric}')
+                    main_text = gen_main_text(self.snapshot, toast, self.offset_overlay, self._dash_box)
                     playlist_text = gen_playlist_text(self.snapshot, self.playlist_height, self.song_selected)
                     info_text = gen_info_text(self.snapshot)
 
@@ -130,7 +131,7 @@ class Dash(HotkeyMixin):
                     print(text)
                     self.old_text = text
                     self.redraw = False
-                time.sleep(DASH_POLL_INTERVAL)
+                time.sleep(POLL_INTERVAL)
 
             except Exception as e:
                 logger.exception('An error occurred during updating dashboard')

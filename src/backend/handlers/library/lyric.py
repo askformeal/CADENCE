@@ -28,6 +28,20 @@ def set_(ctx, request):
         ctx.database.set_song_meta(song_id, 'lyric', path)
         return gen_response.Success(f'set lyric file of \"{song}\"')
 
+def offset(ctx, request):
+    song = request['song']
+    offset = request['offset']
+    cwd = request.get('cwd', None)
+    
+    song_id = get_song(ctx, song, cwd)
+    if song_id is SENTINELS.MISSING_CWD:
+        return gen_response.MissingCWD('lib.lyric.offset')
+    elif song_id is SENTINELS.NOT_IN_LIB:
+        return gen_response.SongNotExist(f'set lyric offset of \"{song}\"')
+    else:
+        ctx.database.set_song_meta(song_id, 'offset', offset)
+        return gen_response.Success(f'set lyric offset of \"{song}\"')
+
 def show(ctx, request):
     song = request['song']
     cwd = request.get('cwd', None)

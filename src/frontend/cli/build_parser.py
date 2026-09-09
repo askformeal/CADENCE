@@ -167,6 +167,11 @@ def build_parser():
     lyric_fetch_parser = lyric_sub.add_parser('fetch', help='Fetch lyric of songs from online sources')
     lyric_fetch_parser.add_argument('songs', type=str, nargs='+', help='Songs to fetch lyric')
 
+    lyric_offset_parser = lyric_sub.add_parser('offset', help='Set lyric offset of song')
+    lyric_offset_parser.add_argument('song', type=str, help='Song to set offset')
+    lyric_offset_parser.add_argument('offset', type=int, help='Offset to set (ms)')
+
+
     playlist_parser = lib_sub.add_parser('playlist', help='Manage playlists')
     playlist_sub = playlist_parser.add_subparsers(dest='playlist_action', required=True)
 

@@ -1,6 +1,5 @@
 from src.sentinels import SENTINELS
 
-from .logger import logger
 from src.frontend.song_output import SongOutput
 
 class Snapshot:
@@ -39,6 +38,7 @@ class Snapshot:
         self.aliases = ['[MISSING]']
         self.added_playlists = ['[MISSING]']
         self.lyric = {}
+        self.lyric_offset = 0
         self.songs_nums = [] # to prevent selected_song -> actual number in playlist mismatch when filter is applied
 
     def poll(self):
@@ -95,6 +95,7 @@ class Snapshot:
                     self.lyric = lyric.get('lyric', None)
                     if self.lyric is None:
                         self.lyric = []
+                    self.lyric_offset = lyric.get('offset', 0)
 
         songs = self.request('list', silent=True)
         if songs is not None:

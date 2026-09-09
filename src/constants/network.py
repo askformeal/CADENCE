@@ -95,6 +95,7 @@ ACTION_KEYS = {
         'sample_rate': (int, False, None),
         'channels': (int, False, None),
         'lyric': (str, False, None),
+        'offset': (int, False, None),
     },
 
     'lib.meta.read-file': {
@@ -131,6 +132,11 @@ ACTION_KEYS = {
     'lib.lyric.fetch':
     {
         'songs': (IterType(str), True)
+    },
+    'lib.lyric.offset':
+    {
+        'song': (str, True),
+        'offset': (int, True)
     },
     'lib.playlist.list': {
         'playlist': (str, False, None),

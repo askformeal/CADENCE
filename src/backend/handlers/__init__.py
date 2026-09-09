@@ -50,6 +50,7 @@ ROUTER = {
     'lib.lyric.set': lyric.set_,
     'lib.lyric.show': lyric.show,
     'lib.lyric.fetch': lyric.fetch,
+    'lib.lyric.offset': lyric.offset,
 
     'lib.playlist.list': playlist.list_,
     'lib.playlist.create': playlist.create,

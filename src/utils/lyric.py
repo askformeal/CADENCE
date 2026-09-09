@@ -33,7 +33,8 @@ def parse_lyric(path='', content=None):
                     
     return result
 
-def get_lyric_line(lyric, pos):
+def get_lyric_line(lyric, pos, offset=0):
+    pos -= offset
     if len(lyric) == 0:
         return SENTINELS.EMPTY_LYRIC
     else:

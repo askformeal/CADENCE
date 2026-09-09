@@ -50,7 +50,9 @@
 - [X] Backend complete refactor: context + handler + router
 - [X] Improve IPC protocol: backend replies an immediate "ack" on request receipt, then sends the full response when execution finishes. Split the timeout into a short connect/ack timeout and a long execution timeout (so long actions like `lib.lyric.fetch` don't trip the frontend socket timeout).
 - [X] Online lyric mode
-  - [ ] Show "Loading" when online lyric is being loaded
+  - [X] Show "Loading" when online lyric is being loaded
+- [ ] Lyric offset
+- [ ] Colored TUI
 - [ ] GUI configure editor
 - [ ] HTTP frontend
 - [ ] Bluetooth frontend

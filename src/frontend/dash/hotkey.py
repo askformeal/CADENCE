@@ -3,7 +3,7 @@ from .logger import logger
 import readchar
 
 from src.constants import DASH_KEY_MAP as KEY_MAP
-from src.constants import DASH_MAX_SHOW_BIND
+from src.constants import MAX_SHOW_BIND, OFFSET_OVERLAY_STEP
 from src.config import CONFIG
 
 class HotkeyMixin:
@@ -45,6 +45,13 @@ class HotkeyMixin:
                 elif key in KEY_MAP.lyric:
                     self._send_dash_request('lyric')
 
+                elif key in KEY_MAP.offset_increase:
+                    self.offset_overlay += OFFSET_OVERLAY_STEP
+                elif key in KEY_MAP.offset_decrease:
+                    self.offset_overlay -= OFFSET_OVERLAY_STEP
+                elif key in KEY_MAP.reset_offset:
+                    self.offset_overlay = 0
+
                 elif key in KEY_MAP.prev:
                     self._send_dash_request('prev')
                 elif key in KEY_MAP.next:
@@ -73,12 +80,12 @@ class HotkeyMixin:
 
                 elif key in KEY_MAP.page_up:
                     if self.show_help:
-                        self.bind_selected -= DASH_MAX_SHOW_BIND
+                        self.bind_selected -= MAX_SHOW_BIND
                     else:
                         self.song_selected -= self.playlist_height
                 elif key in KEY_MAP.page_down:
                     if self.show_help:
-                        self.bind_selected += DASH_MAX_SHOW_BIND
+                        self.bind_selected += MAX_SHOW_BIND
                     else:
                         self.song_selected += self.playlist_height
 
