@@ -66,7 +66,7 @@ class Backend:
                 dev=self.dev
             )
 
-            self.notifies.append(f'Welcome to CADENCE, {CONFIG.username}') # just for fun
+            self.notifies.append(f'{CONFIG.username}, welcome to Command-line Audio Decoding Engine with Navigation and Continuous Execution') # just for fun
 
             if CONFIG.proxy != '':
                 os.environ['HTTP_PROXY'] = CONFIG.proxy

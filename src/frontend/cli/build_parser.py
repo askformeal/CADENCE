@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 
 from src import __version__
+from src.constants import REPO_LINK
 
 def _path(val):
     return str(Path(val).absolute())
@@ -18,7 +19,7 @@ def _percent(val):
             return val
 
 def build_parser():
-    parser = argparse.ArgumentParser(prog=f'CADENCE {__version__}', epilog='CADENCE stands for Command-line Audio Decoding Engine with Navigation and Continuous Execution')
+    parser = argparse.ArgumentParser(prog=f'CADENCE {__version__}', epilog=f'GitHub Repository: {REPO_LINK}')
 
     command_sub = parser.add_subparsers(dest='action', required=True)
 

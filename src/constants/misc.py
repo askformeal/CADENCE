@@ -2,6 +2,8 @@ from src.types import CONVERTER, IterType
 
 import logging
 
+REPO_LINK = 'https://github.com/askformeal/CADENCE'
+
 ENCODING = 'utf-8'
 ENCODING_CHAIN = ('utf-8', 'gb18030', 'big5', 'shift_jis', 'utf-16')
 
