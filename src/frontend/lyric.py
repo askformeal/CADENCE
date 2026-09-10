@@ -16,6 +16,7 @@ from src.sentinels import SENTINELS
 from src.frontend.song_output import SongOutput
 from src.utils.lyric import get_lyric_line
 from src.utils.misc import squeeze
+from src.utils.tray import Label
 from src.utils.misc import hex_color_to_dec as dec_hex
 
 logger = setup_logger(__name__, LYRIC_LOG_PATH)
@@ -30,11 +31,21 @@ class Lyric(tk.Tk):
         
         self.trans_color = f"#{format(i, '06X')}"
 
+        self._reset_geo()
+
         self.overrideredirect(True)
         self.attributes('-topmost', True)
 
         self.attributes('-alpha', CONFIG.lyric_opacity / 100)
         self.config(bg=self.trans_color)
+
+        self.bind('<ButtonPress-1>', self._start_move)
+        self.bind('<ButtonRelease-1>', lambda *_: self.icon.update_menu())
+        self.bind('<Double-Button-1>', self._reset_geo)
+        self.bind('<B1-Motion>', self._move)
+
+        self.x = 0
+        self.y = 0
 
         if CONFIG.lyric_trans_bg:
             self.wm_attributes("-transparentcolor", self.trans_color)
@@ -73,6 +84,8 @@ class Lyric(tk.Tk):
 
         menu = (
             MenuItem('Show/Hide', lambda *_: self._toggle(), default=True),
+            Label(lambda *_: f'Height: {self.height}'),
+            Label(lambda *_: f'X offset: {self.x_offset}'),
             Menu.SEPARATOR,
             MenuItem('Quit', lambda *_: self.exit())
         )
@@ -178,10 +191,29 @@ class Lyric(tk.Tk):
     def _update_text(self, text):
         self.lyric_label.config(text=text)
         self.update_idletasks()
-        x_pos = (self.winfo_screenwidth() - self.winfo_width()) // 2 + CONFIG.lyric_x_offset
+        self._update_geo()
+
+    def _update_geo(self):
+        x_pos = (self.winfo_screenwidth() - self.winfo_width()) // 2 + self.x_offset
         x_pos = squeeze(x_pos, self.winfo_screenwidth())
-        y_pos = min(CONFIG.lyric_height, self.winfo_screenheight())
+        y_pos = min(self.height, self.winfo_screenheight())
         self.geometry(f'+{x_pos}-{y_pos}')
+
+    def _start_move(self, event):
+        self.x = event.x
+        self.y = event.y
+
+    def _move(self, event):
+        x = event.x_root-self.x
+        y = event.y_root-self.y
+        self.geometry(f'+{x}+{y}')
+        self.x_offset = x - (self.winfo_screenwidth() - self.winfo_width()) // 2
+        self.height = self.winfo_screenheight() - y - self.winfo_height()
+
+    def _reset_geo(self, *_):
+        self.height = CONFIG.lyric_height
+        self.x_offset = CONFIG.lyric_x_offset
+        self._update_geo()
         
     def _send_lyric_request(self, action, silent=False, **kwargs):
         request = {'action': action, 'source': 'lyric', 'notify_support': False, 'silent': silent, **kwargs}

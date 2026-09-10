@@ -13,12 +13,10 @@ from src.constants import AUDIO_FILE_TYPES
 from src.constants import TRAY_LOG_PATH
 from src.frontend.client import send_request, test_heartbeat, handle_code
 from src.frontend.song_output import SongOutput
+from src.utils.tray import Label
 
 logger = setup_logger(__name__, TRAY_LOG_PATH)
 
-class Label(MenuItem):
-    def __init__(self, text):
-        super().__init__(text, None, enabled=False)
 class Tray(Icon):
     def __init__(self):
         self.running = True

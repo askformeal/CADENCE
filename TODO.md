@@ -51,8 +51,8 @@
 - [X] Improve IPC protocol: backend replies an immediate "ack" on request receipt, then sends the full response when execution finishes. Split the timeout into a short connect/ack timeout and a long execution timeout (so long actions like `lib.lyric.fetch` don't trip the frontend socket timeout).
 - [X] Online lyric mode
   - [X] Show "Loading" when online lyric is being loaded
-- [ ] Lyric offset
-- [ ] Make floating lyric board draggable
+- [X] Lyric offset
+- [X] Make floating lyric board draggable
 - [ ] Colored TUI
 - [ ] GUI configure editor
 - [ ] HTTP frontend
@@ -62,4 +62,5 @@
   - [ ] Interactive management (not now)
 - [ ] Rewrite the floating lyric board in Qt (proper per-pixel transparency, text stroke/shadow, sub-glyph alpha — overcomes tkinter's no-outline limitation)
 - [ ] Rewrite the dashboard TUI with Textual
+- [ ] Streaming from online sources
 - [ ] Auto play song depend on the user's mood
