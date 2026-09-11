@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [Unreleased]
+
+### Added
+
+- **ANSI colors.** The CLI now colors its `[Succeeded]` / `[Failed]` markers and the failed-action list, and the dashboard colors its `[MISSING]` placeholders and its toast. A new `escape_char` config option (default `true`) turns every escape code off, for terminals or logs that cannot handle them.
+
+### Fixed
+
+- Dashboard lines were truncated by raw character count, so a cut could land in the middle of an escape sequence (leaving half a sequence in the output) or leave a line wider than the terminal and wrap the layout. Lines are now truncated by display width (wide characters counted as two columns) and a whole trailing sequence is dropped instead of being split.
+
 ## [0.48.0] - 2026-09-09
 
 ### Added

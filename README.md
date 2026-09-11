@@ -158,6 +158,7 @@ Config file: `%LOCALAPPDATA%\cadence\cadence\config.toml` (Windows). Options:
 | `pos_memorize_interval` | `5` | Interval of memorized position updates (seconds) |
 | `dash_volume_step` | `5` | Volume increase/decrease step on the dashboard |
 | `dash_pos_step` | `5` | Position forward/backward step on the dashboard |
+| `escape_char` | `true` | Use ANSI escape codes (colors) in the CLI and dashboard output |
 | `cli_box_style` | `rounded` | Box style of the CLI |
 | `dash_box_style` | `rounded` | Box style of the dashboard |
 | `dash_screen_buffer` | `true` | Use the terminal alt-screen buffer for the dashboard |

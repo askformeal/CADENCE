@@ -77,6 +77,7 @@ Read and modify the configuration file. These actions operate on the options def
 | `player_timeout` | positive float | playback | `1` | Timeout of backend waiting for a player action (seconds) |
 | `dash_volume_step` | positive int | dash | `5` | Step of volume increase/decrease on dashboard |
 | `dash_pos_step` | positive int | dash | `5` | Step of position forward/backward on dashboard |
+| `escape_char` | boolean | appearance | `true` | Whether the CLI and dashboard output uses ANSI escape codes (colors) |
 | `cli_box_style` | box style | appearance | `rounded` | Box style of CLI (`ascii`, `at`, `rounded`, `square`, `double-corner`, `heavy-corner`, `double`, `heavy`) |
 | `dash_box_style` | box style | appearance | `rounded` | Box style of dashboard |
 
