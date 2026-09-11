@@ -1,11 +1,10 @@
-from wcwidth import wcswidth
-
 from src import __version__
 from src.constants import MAX_SHOW_LYRIC, MIN_WIDTH, VOL_BAR_LEN
 from src.sentinels import SENTINELS
 from src.utils.lyric import get_lyric_line
+from src.frontend.escape_code import ESCAPE_CODE as EC
 from src.utils.time_ import format_time
-from src.utils.tui import align, center, progress_bar, window_list, wrap_text
+from src.utils.tui import strlen, align, center, progress_bar, window_list, wrap_text
 
 
 def gen_main_text(snapshot, toast, box):
@@ -43,9 +42,9 @@ def gen_main_text(snapshot, toast, box):
         '{toast}'
         ]
 
-    max_len = max(max(map(wcswidth, lines)), MIN_WIDTH)
+    max_len = max(max(map(strlen, lines)), MIN_WIDTH)
 
-    title = center(f'CADENCE {__version__} Dashboard', max_len)
+    title = center(f'{EC.bold}{EC.cyan}CADENCE {__version__} Dashboard{EC.rs}', max_len)
     separator = '='*max_len
     current = snapshot.current_num
     if isinstance(current, int):

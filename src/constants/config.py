@@ -132,6 +132,12 @@ CONFIG_SCHEME = {
         'default': 5,
         'description': 'Step of position forward/backward on dashboard'
     },
+    'escape_char': {
+        'type': CONVERTER.boolean,
+        'section': 'appearance',
+        'default': True,
+        'description': 'Whether to use escape characters'
+    },
     'cli_box_style': {
         'type': CONVERTER.box_style,
         'section': 'appearance',

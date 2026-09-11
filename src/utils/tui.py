@@ -1,6 +1,13 @@
 import math
+import re
+
 from wcwidth import wcswidth
 from src.constants import BOX_STYLES
+
+ESCAPE_PATTERN = re.compile(r'\x1b\[[0-?]*[ -/]*[@-~]')
+
+def strlen(text):
+    return wcswidth(ESCAPE_PATTERN.sub('', text))
 
 def box(*texts: str, l_pad=2, r_pad=2, style='ascii'):
     style = str(style)
@@ -16,7 +23,7 @@ def box(*texts: str, l_pad=2, r_pad=2, style='ascii'):
 
     max_width = []
     for text_lines in lines:
-        max_width.append(max(map(wcswidth, text_lines)))
+        max_width.append(max(map(strlen, text_lines)))
 
     top_line = ''
     for length in max_width:
@@ -36,7 +43,7 @@ def box(*texts: str, l_pad=2, r_pad=2, style='ascii'):
                 text = text_lines[i]
             else:
                 text = ''
-            pad = ' ' * (max_width[j] - wcswidth(text))
+            pad = ' ' * (max_width[j] - strlen(text))
             line.append(f'{text}{pad}')
 
         line = f'{r_space}{vertical}{l_space}'.join(line)
@@ -48,14 +55,14 @@ def box(*texts: str, l_pad=2, r_pad=2, style='ascii'):
 def center(text, width):
     result = []
     for line in text.splitlines():
-        l_pad = ' ' * math.ceil((width - wcswidth(line)) / 2)
-        r_pad = ' ' * math.floor((width - wcswidth(line)) / 2)
+        l_pad = ' ' * math.ceil((width - strlen(line)) / 2)
+        r_pad = ' ' * math.floor((width - strlen(line)) / 2)
         result.append(f'{l_pad}{line}{r_pad}')
     return '\n'.join(result)
 
 def align(width, left='', right=''):
-    l_len = wcswidth(left)
-    r_len = wcswidth(right)
+    l_len = strlen(left)
+    r_len = strlen(right)
     if l_len + r_len > width:
         return f'{left}{right}'
     else:
@@ -69,7 +76,7 @@ def wrap_text(text, max_len):
     lines = ['']
     words = text.split(' ')
     for word in words:
-        if wcswidth(lines[-1]) + wcswidth(word) + 1 <= max_len:
+        if strlen(lines[-1]) + strlen(word) + 1 <= max_len:
             if lines[-1] != '':
                 lines[-1] += ' '
             lines[-1] += word
@@ -95,7 +102,7 @@ def window_list(lines, window_len, selected, current=None, filter='', newline_se
         upper_index -= lower_index - length + 1
         lower_index = length - 1
 
-    max_len = max(map(wcswidth, lines)) + 10
+    max_len = max(map(strlen, lines)) + 10
 
     for i, line in enumerate(lines):
         line = line.strip()
@@ -119,7 +126,7 @@ def window_list(lines, window_len, selected, current=None, filter='', newline_se
 
     for i, line in enumerate(result):
         if left_align:
-            pad = ' ' * (max_len - wcswidth(line))
+            pad = ' ' * (max_len - strlen(line))
         else:
             pad = ''
         result[i] = f'{line}{pad}{end_of_line_char}'

@@ -1,3 +1,4 @@
+import re
 import shutil
 import time
 import os
@@ -14,8 +15,9 @@ from src.constants import MAX_SHOW_SONG, TOAST_TIME
 from src.constants import BOX_STYLES
 from src.config import CONFIG
 from src.frontend.client import test_heartbeat, handle_code, send_request
+from src.frontend.escape_code import ESCAPE_CODE as EC
 from src.utils.misc import squeeze
-from src.utils.tui import box, window_list
+from src.utils.tui import strlen, box, window_list
 from .hotkey import HotkeyMixin
 from .snapshot import Snapshot
 from .gen_main import gen_main_text
@@ -68,6 +70,10 @@ class Dash(HotkeyMixin):
     def _update(self):
         while self.running:
             try:
+                main_text = ''
+                playlist_text = ''
+                info_text = ''
+
                 if self.show_help:
                     lines = ['Key Map\n']
                     bind_lines = []
@@ -116,17 +122,28 @@ class Dash(HotkeyMixin):
                     playlist_text = gen_playlist_text(self.snapshot, self.playlist_height, self.song_selected)
                     info_text = gen_info_text(self.snapshot)
 
+                    text = self._dash_box(info_text, main_text, playlist_text, l_pad=2, r_pad=2)
+
                 width = shutil.get_terminal_size((-1, -1)).columns
-                merged = self._dash_box(info_text, main_text, playlist_text, l_pad=2, r_pad=2)
+                text_lines = text.splitlines()
                 text = ''
-                for line in merged.splitlines():
+                for line in text_lines:
                     if width != -1:
-                        text += line[:width] + '\n'
+                        while strlen(line) > width:
+                            last_escape = re.findall(r'\x1b\[[0-?]*[ -/]*[@-~]$', line)
+                            if len(last_escape) > 0:
+                                last_escape = last_escape[0]
+                                line = line[:-len(last_escape)]
+                            else:
+                                line = line[:-1]
+
+                    text += f'{line}{EC.rs}\n'
 
                 if (text != self.old_text or self.redraw) and not self.paused:
                     if self.old_text != '':
                         print(f'\033[2J\033[H', end='')
                     print(text)
+
                     self.old_text = text
                     self.redraw = False
                 time.sleep(POLL_INTERVAL)
@@ -139,7 +156,7 @@ class Dash(HotkeyMixin):
         request = {'action': action, 'source': 'dash', 'notify_support': False, 'silent': silent, **kwargs}
         response = send_request(**request)
         if response.get('code', None) != 0 and not expect_fail:
-            self._toast(f"[Failed] {response.get('msg', 'No message')}")
+            self._toast(f"{EC.red}{EC.bold}[Failed]{EC.rs} {response.get('msg', 'No message')}")
         if not silent:
             logger.info(f'Sent request: {request}, response received: {response}')
         handle_code(response.get('code', None), self.exit)

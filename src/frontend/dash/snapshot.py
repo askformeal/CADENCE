@@ -1,6 +1,8 @@
 from src.sentinels import SENTINELS
 
 from src.frontend.song_output import SongOutput
+from src.frontend.escape_code import ESCAPE_CODE as EC
+
 
 class Snapshot:
     def __init__(self, requester):
@@ -9,34 +11,35 @@ class Snapshot:
         self._reset()
 
     def _reset(self):
+        missing = f'{EC.yellow}{EC.bold}{EC.dim}[MISSING]{EC.rs}'
         self.lib_id = None
-        self.display_name = '[MISSING]'
-        self.meta_name = '[MISSING]'
-        self.artist = '[MISSING]'
-        self.album = '[MISSING]'
+        self.display_name = missing
+        self.meta_name = missing
+        self.artist = missing
+        self.album = missing
         
-        self.time = '[MISSING]'
-        self.length = '[MISSING]'
+        self.time = missing
+        self.length = missing
         
-        self.volume = '[MISSING]'
-        self.mute = '[MISSING]'
+        self.volume = missing
+        self.mute = missing
         
-        self.shuffle = '[MISSING]'
-        self.loop = '[MISSING]'
+        self.shuffle = missing
+        self.loop = missing
         
-        self.current_num = '[MISSING]' # 0-based!
-        self.playlist_len = '[MISSING]'
-        self.current_songs = ['[MISSING]']
+        self.current_num = missing # 0-based!
+        self.playlist_len = missing
+        self.current_songs = [missing]
         
-        self.player_status = '[MISSING]'
+        self.player_status = missing
         
-        self.duration = '[MISSING]'
-        self.bitrate = '[MISSING]'
-        self.sample_rate = '[MISSING]'
-        self.channels = '[MISSING]'
+        self.duration = missing
+        self.bitrate = missing
+        self.sample_rate = missing
+        self.channels = missing
         
-        self.aliases = ['[MISSING]']
-        self.added_playlists = ['[MISSING]']
+        self.aliases = [missing]
+        self.added_playlists = [missing]
         self.lyric = {}
         self.lyric_offset = 0
         self.offset_overlay = 0

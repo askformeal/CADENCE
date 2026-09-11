@@ -10,6 +10,7 @@ from src.process import start, kill
 from src.constants import RESTART_NUM, RESTART_POLL_INTERVAL, ATTACHMENT_REQUIRED_ACTIONS
 from src.config_manager import CONFIG_MANAGER
 from src.frontend.song_output import SongOutput
+from src.frontend.escape_code import ESCAPE_CODE as EC
 from src.utils.tui import box
 from src.utils.time_ import format_time
 from .build_parser import build_parser
@@ -116,7 +117,7 @@ def main():
             print('[Failed]: Invalid response received from CADENCE backend')
 
         elif code == 0:
-            print(_cli_box(f'[Succeeded]: {response['msg']}'))
+            print(_cli_box(f'{EC.bold}{EC.green}[Succeeded]{EC.rs}: {response['msg']}'))
 
             if action == 'exit' and is_reboot:
                 print('Waiting for backend to fully exit...')
@@ -236,27 +237,27 @@ def main():
                         print(_cli_box(attachment))
 
         elif code == 1:
-            print(_cli_box(f'[Failed]: {response['msg']}'))
+            print(_cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs}: {response['msg']}'))
             if is_reboot:
                 print('Failed to exit backend, rebooting aborted')
 
         elif code == 2:
-            print(_cli_box('Failed to connect to CADENCE backend. You can try to use the start subcommand to start it'))
+            print(_cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs} Failed to connect to CADENCE backend. You can try to use the start subcommand to start it'))
 
         elif code == 3:
-            print(_cli_box('[Failed]: received an unexpected default response code from CADENCE backend which is not to be used under any circumstances. Please report this error'))
+            print(_cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs}: received an unexpected default response code from CADENCE backend which is not to be used under any circumstances. Please report this error'))
 
         elif code == 4:
-            print(_cli_box('[Failed]: CADENCE backend is exiting'))
+            print(_cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs}: CADENCE backend is exiting'))
 
         elif code == 5:
-            print(_cli_box('[Failed]: Token rejected, authorization failed'))
+            print(_cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs}: Token rejected, authorization failed'))
 
         else:
-            print(_cli_box(f'[Failed]: Unknown response code \"{code}\"'))
+            print(_cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs}: Unknown response code \"{code}\"'))
 
         if len(failed) > 0:
-            lines = [f'There are failed actions ({len(failed)}):\n']
+            lines = [f'{EC.red}There are failed actions ({len(failed)}):{EC.rs}\n']
             lines += list(map(lambda x: f'  {x['msg']}', failed))
             print(_cli_box('\n'.join(lines)))
 
