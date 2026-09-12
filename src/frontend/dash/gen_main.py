@@ -73,8 +73,15 @@ def gen_main_text(snapshot, toast, box):
     if snapshot.mute:
         vol_num += ' [MUTE]'
     volume = f'{bar} [{vol_num}]'
-    
-    state = align(max_len, volume, f"{snapshot.online_lyric}{snapshot.shuffle}{snapshot.loop}{snapshot.player_status}")
+
+    online_lyric = {True: '[Ol Lyric] ', False: '', None: '?'}[snapshot.online_lyric]
+    shuffle = {True: '[Shuffle] ', False: '', None: '?'}[snapshot.shuffle]
+    loop = {True: '[Loop] ', False: '', None: '?'}[snapshot.loop]
+    if snapshot.player_status is None:
+        player_status = 'N/A'
+    else:
+        player_status = f'[{snapshot.player_status.capitalize()}]'
+    state = align(max_len, volume, f"{online_lyric}{shuffle}{loop}{player_status}")
 
     toast = wrap_text(toast, max_len)
     

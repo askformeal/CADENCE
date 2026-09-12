@@ -53,7 +53,7 @@
   - [X] Show "Loading" when online lyric is being loaded
 - [X] Lyric offset
 - [X] Make floating lyric board draggable
-- [ ] Colored TUI
+- [X] Colored TUI
 - [ ] GUI configure editor
 - [ ] HTTP frontend
 - [ ] Bluetooth frontend

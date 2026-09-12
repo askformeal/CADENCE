@@ -13,7 +13,7 @@ from src.constants import HEARTBEAT_POLL_INTERVAL, LYRIC_LOG_PATH, LYRIC_POLL_IN
 from src.constants import LYRIC_HOVER_EXTENSION as HOVER_EXT
 from src.log import setup_logger
 from src.sentinels import SENTINELS
-from src.frontend.song_output import SongOutput
+from src.frontend.snapshot import Snapshot
 from src.utils.lyric import get_lyric_line
 from src.utils.misc import squeeze
 from src.utils.tray import Label
@@ -24,6 +24,12 @@ logger = setup_logger(__name__, LYRIC_LOG_PATH)
 class Lyric(tk.Tk):
     def __init__(self):
         super().__init__()
+
+        self.snapshot = Snapshot(
+            self._send_lyric_request,
+            status=True,
+            lyric=True
+            )
 
         i = 0
         while i in (dec_hex(CONFIG.lyric_font_color), dec_hex(CONFIG.lyric_bg_color)):
@@ -135,40 +141,24 @@ class Lyric(tk.Tk):
     def _update_lyric(self):
         while True:
             try:
-                pos = None
-                state = None
-                offset = 0
+                self.snapshot.poll()                
 
-                status = self._send_lyric_request('status', silent=True)
-                if status is not None:
-                    status = SongOutput(status, prettify_none=False)
-                    pos = status.time_raw
-                    state = status.player_status
-
-                    lyric = self._send_lyric_request('get_lyric', silent=True)
-                    if lyric is not None:
-                        if lyric.get('loading', False):
-                            self.lyric = SENTINELS.LYRIC_LOADING
-                        else:
-                            self.lyric = lyric.get('lyric', None)
-                            if self.lyric is None:
-                                self.lyric = []
-                            offset = lyric.get('offset', 0)
-                            offset_overlay = lyric.get('offset_overlay', 0)
-
-                if self.lyric_on and (state == 'playing' or (state == 'paused' and not CONFIG.pause_hide_lyric)):
-                    if self.lyric is SENTINELS.LYRIC_LOADING:
+                if self.lyric_on and (self.snapshot.player_status == 'playing' or (self.snapshot.player_status == 'paused' and not CONFIG.pause_hide_lyric)):
+                    if self.snapshot.lyric is SENTINELS.LYRIC_LOADING:
                         self.after(0, self._update_text, text='[Loading ...]')
                         self._show()
 
-                    elif pos is not None and len(self.lyric) > 0:
-                        index = get_lyric_line(self.lyric, pos, offset + offset_overlay)
+                    elif self.snapshot.time is not None and len(self.snapshot.lyric) > 0:
+                        index = get_lyric_line(self.snapshot.lyric, 
+                                               self.snapshot.time,
+                                               self.snapshot.lyric_offset + self.snapshot.offset_overlay)
+                        
                         if index is SENTINELS.BEFORE_FIRST_LYRIC:
                             current_line = '...'
                         elif index is SENTINELS.EMPTY_LYRIC:
                             current_line = '[Lyric Empty]'
                         else:
-                            current_line = self.lyric[index][1].strip()
+                            current_line = self.snapshot.lyric[index][1].strip()
 
                         if current_line != '':
                             self.after(0, self._update_text, text=current_line)

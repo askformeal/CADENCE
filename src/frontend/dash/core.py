@@ -18,8 +18,8 @@ from src.frontend.client import test_heartbeat, handle_code, send_request
 from src.frontend.escape_code import ESCAPE_CODE as EC
 from src.utils.misc import squeeze
 from src.utils.tui import strlen, box, window_list
+from src.frontend.snapshot import Snapshot
 from .hotkey import HotkeyMixin
-from .snapshot import Snapshot
 from .gen_main import gen_main_text
 from .gen_playlist import gen_playlist_text
 from .gen_info import gen_info_text
@@ -29,7 +29,13 @@ class Dash(HotkeyMixin):
         os.system('')
         self.running = True
 
-        self.snapshot = Snapshot(self._send_dash_request)
+        self.snapshot = Snapshot(
+            self._send_dash_request, 
+            missing=f'{EC.yellow}{EC.bold}{EC.dim}[MISSING]{EC.rs}',
+            status=True,
+            info=True,
+            lyric=True,
+            current_songs=True)
 
         self.song_selected = 0 # 0-based!
         self.bind_selected = 0 # 0-based!

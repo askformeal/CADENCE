@@ -2,7 +2,6 @@ from src.utils.tui import window_list
 
 def gen_playlist_text(snapshot, height, selected):
     
-
     current = None
     if isinstance(snapshot.current_num, int):
         try:
@@ -10,7 +9,12 @@ def gen_playlist_text(snapshot, height, selected):
         except ValueError:
             ...
 
-    songs_lines = window_list(snapshot.current_songs, height, selected, current=current, filter=snapshot.filter)
+    current_songs = snapshot.current_songs
+    if len(current_songs) == 0:
+        songs_lines = ['[Empty]']
+    else:
+        songs_lines = window_list(current_songs, height, selected, current=current, filter=snapshot.filter)
+
     if snapshot.filter != '':
         songs_lines = [f'Filter: \"{snapshot.filter}\"', *songs_lines]
 

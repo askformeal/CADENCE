@@ -56,6 +56,7 @@ class SongOutput:
                 self.playlists = '[This song is not in any playlists]'
 
         self.player_status = info.get('player_status', '?')
+        self.player_status_raw = info.get('player_status', None)
 
         self.time_raw = info.get('time', None)
         self.length_raw = info.get('length', None)

@@ -12,13 +12,19 @@ from src.constants import ICON_PATH, ERROR_ICON_PATH, HEARTBEAT_POLL_INTERVAL, T
 from src.constants import AUDIO_FILE_TYPES
 from src.constants import TRAY_LOG_PATH
 from src.frontend.client import send_request, test_heartbeat, handle_code
-from src.frontend.song_output import SongOutput
+from src.frontend.snapshot import Snapshot
 from src.utils.tray import Label
 
 logger = setup_logger(__name__, TRAY_LOG_PATH)
 
 class Tray(Icon):
     def __init__(self):
+        self.snapshot = Snapshot(
+            self._send_tray_request,
+            status=True,
+            current_songs=True,
+            playlists=True
+            )
         self.running = True
         self.tk_window = tk.Tk() # file dialog will act weird without this
         self.tk_window.withdraw()
@@ -34,48 +40,31 @@ class Tray(Icon):
     def _update(self):
         while self.running:
             try:
+                self.snapshot.poll()
+                
                 title = 'CADENCE'
                 
                 songs_sub_menu = Menu(Label('---'))
                 playlists_sub_menu = [MenuItem('[Play All]', lambda *_: self._send_tray_request('play-all'))]
 
-                self._mute = None
-                self._shuffle = None
-                self._loop = None
-            
-                status = self._send_tray_request('status', silent=True)
-                if status is not None:
-                    status = SongOutput(status, prettify_none=False)
-                    if status.display_name is not None:
-                        title = f'Playing: {status.display_name}'
-                    if status.player_status is not None:
-                        title += f' ({status.player_status.capitalize()})'
-                    if status.mute_raw is not None:
-                        self._mute = status.mute_raw # fucking lying pystray only accepts nones and callbacks for checked for some reason
-                    if status.shuffle_raw is not None:
-                        self._shuffle = status.shuffle_raw
-                    if status.loop_raw is not None:
-                        self._loop = status.loop_raw 
 
-                current_songs = self._send_tray_request('list', silent=True)
-                if current_songs is not None:
-                    if len(current_songs) == 0:
-                        songs_sub_menu = Menu(Label('Empty'))
-                    else:
-                        song_buttons = []
-                        for i, song in enumerate(current_songs):
-                            name = SongOutput(song).display_name
-                            if name is None:
-                                name = 'N/A'
-                            song_buttons.append(MenuItem(f'{i+1}. {name}', lambda *_, n=i+1: self._send_tray_request('switch', number=n)))
-                        songs_sub_menu = Menu(*song_buttons)
+                if self.snapshot.display_name is not None:
+                    title = f'Playing: {self.snapshot.display_name}'
 
-                playlists = self._send_tray_request('lib.playlist.list', silent=True)
-                if playlists is not None:
-                    if len(playlists) > 0:
-                        for playlist in playlists:
-                            name = playlist['name']
-                            playlists_sub_menu.append(MenuItem(name, lambda *_, x=name: self._send_tray_request('open', song=x)))
+                if self.snapshot.player_status is not None:
+                    title += f' ({self.snapshot.player_status.capitalize()})'
+
+                if len(self.snapshot.current_songs) == 0:
+                    songs_sub_menu = Menu(Label('Empty'))
+                else:
+                    song_buttons = []
+                    for i, name in enumerate(self.snapshot.current_songs):
+                        song_buttons.append(MenuItem(f'{i+1}. {name}', lambda *_, n=i+1: self._send_tray_request('switch', number=n)))
+                    songs_sub_menu = Menu(*song_buttons)
+
+                if len(self.snapshot.playlists) > 0:
+                    for name in self.snapshot.playlists:
+                        playlists_sub_menu.append(MenuItem(name, lambda *_, x=name: self._send_tray_request('open', song=x)))
 
                 playlists_sub_menu = Menu(*playlists_sub_menu)
 
@@ -100,10 +89,10 @@ class Tray(Icon):
                     Menu.SEPARATOR,
                     MenuItem('Playlists', playlists_sub_menu),
                     Menu.SEPARATOR,
-                    MenuItem('Shuffle', lambda *_: self._send_tray_request('shuffle'), checked=lambda *_: self._shuffle),
-                    MenuItem('Loop', lambda *_: self._send_tray_request('loop'), checked=lambda *_: self._loop),
+                    MenuItem('Shuffle', lambda *_: self._send_tray_request('shuffle'), checked=lambda *_: self.snapshot.shuffle),
+                    MenuItem('Loop', lambda *_: self._send_tray_request('loop'), checked=lambda *_: self.snapshot.loop),
                     Menu.SEPARATOR,
-                    MenuItem('Mute', lambda *_: self._send_tray_request('mute'), checked=lambda *_: self._mute),
+                    MenuItem('Mute', lambda *_: self._send_tray_request('mute'), checked=lambda *_: self.snapshot.mute),
                     MenuItem('Volume', Menu(
                         MenuItem('0%', lambda *_: self._send_tray_request('volume', volume=0)),
                         MenuItem('25%', lambda *_: self._send_tray_request('volume', volume=25)),
@@ -117,7 +106,7 @@ class Tray(Icon):
                 )
 
                 self.title = title
-                sig = (str(menu), self._mute, self._shuffle, self._loop)
+                sig = (str(menu), self.snapshot.mute, self.snapshot.shuffle, self.snapshot.loop)
                 if sig != self._last_sig:
                     self._last_sig = sig
                     self.menu = menu
