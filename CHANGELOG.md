@@ -1,14 +1,26 @@
 # CHANGELOG
 
-## [Unreleased]
+## [0.49.0] - 2026-09-13
 
 ### Added
 
 - **ANSI colors.** The CLI now colors its `[Succeeded]` / `[Failed]` markers and the failed-action list, and the dashboard colors its `[MISSING]` placeholders and its toast. A new `escape_char` config option (default `true`) turns every escape code off, for terminals or logs that cannot handle them.
+- **Single-request frontend polling.** The dashboard, the tray icon and the floating lyric board now read everything they need from one keyless `poll` action — playback status, the playing song's library information, the lyric state, the current playlist and every playlist name — instead of running several requests on each refresh. The `get_lyric` action is gone, its state is part of the snapshot.
+- **`cadence reload`** re-opens the last opened song (or the last play-all session) without restarting the backend, and it re-reads the song from the library, so it also serves as a refresh after changing metadata or a lyric offset.
+- `cadence lib info` now shows the song's lyric offset.
+
+### Changed
+
+- The `continue_last` action is renamed to `load_last`; the `start -c` / `reboot -c` flags behave the same.
+- Opening a song that is already in the current playlist keeps the playlist intact and re-reads that song's information from the library. It used to replace the in-memory playlist with that single song, which also failed the request outright when the song was not at the first position.
+- The empty-value placeholder is now injected into the shared `Snapshot` by each frontend: the dashboard keeps its colored `[EMPTY]` marker while the tray and the lyric board simply show nothing.
+- `escape_code` moved from `src/frontend/` to `src/utils/`.
 
 ### Fixed
 
+- **The backend could hard-crash with no log and leave its PID behind.** The database kept a single connection and a single cursor for every thread, and the lock covered only the statement execution, not the row fetching: the request thread and the position-memorizing thread could step and reset the same statement at the same time and take the whole process down with a native access violation inside `_sqlite3.pyd`. Windows logged it as exception `0xc0000005`, so nothing ever reached `cadence.log` and the PID cleanup never ran. Every thread now owns its connection, and cross-thread use fails loudly instead of corrupting memory.
 - Dashboard lines were truncated by raw character count, so a cut could land in the middle of an escape sequence (leaving half a sequence in the output) or leave a line wider than the terminal and wrap the layout. Lines are now truncated by display width (wide characters counted as two columns) and a whole trailing sequence is dropped instead of being split.
+- `cadence lib info` showed `?` for the lyric path of songs that do have a `.lrc` bound — the attachment key is `lyric` there, while `status` calls the same field `lyric_path`.
 
 ## [0.48.0] - 2026-09-09
 
