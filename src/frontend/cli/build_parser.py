@@ -40,6 +40,8 @@ def build_parser():
 
     play_all_parser = command_sub.add_parser('play-all', help='Play all songs in library')
 
+    reload_parser = command_sub.add_parser('reload', help='Reload current songs')
+
     pause_parser = command_sub.add_parser('pause', help='Pause playing media')
 
     resume_parser = command_sub.add_parser('resume', help='Resume paused media')

@@ -1,4 +1,4 @@
-from . import misc, config
+from . import misc, config, poll
 from .library import meta, alias, lyric, playlist
 from .library import core as lib_core
 from .playback import sequence, navigation
@@ -11,7 +11,7 @@ ROUTER = {
     'status': play_core.status,
     'open': play_core.open,
     'play-all': play_core.play_all,
-    'continue_last': play_core.continue_last,
+    'load_last': play_core.load_last,
     'stop': play_core.stop,
     'pause': play_core.pause,
     'resume': play_core.resume,
@@ -29,8 +29,8 @@ ROUTER = {
     'volume': play_core.volume,
     'mute': play_core.mute,
     'lyric': play_core.lyric,
-    'get_lyric': play_core.get_lyric,
     'set_offset_overlay': play_core.set_offset_overlay,
+    'poll': poll.poll,
 
     'lib.info': lib_core.info,
     'lib.list': lib_core.list_,

@@ -11,9 +11,19 @@ import vlc
 from src import __version__
 from src.log import setup_logger
 from src.constants import BACKEND_LOG_PATH, SILENT_LOG_LEVEL
-from src.constants import DATABASE_PATH, DATABASE_DEV_PATH
-from src.constants import BACKLOG, ACTION_KEYS, NON_ACTION_KEYS, IterType, SERVER_TIMEOUT, ACK
-from src.constants import LOOP_INTERVAL, PLAY_DEAD_TIME, SOURCES, READABLE_TYPE_NAMES
+from src.constants import (
+    DATABASE_PATH, 
+    DATABASE_DEV_PATH,
+    BACKLOG, ACTION_KEYS, 
+    NON_ACTION_KEYS, 
+    IterType, 
+    SERVER_TIMEOUT, 
+    ACK,
+    LOOP_INTERVAL, 
+    PLAY_DEAD_TIME, 
+    SOURCES, 
+    READABLE_TYPE_NAMES
+    )
 from src.config import CONFIG
 from src.sentinels import SENTINELS
 from src.connection import recv_json, send_json
@@ -92,7 +102,7 @@ class Backend:
             self._flush_thread.start()
 
             if self.continue_last:
-                self.buffer_request({'action': 'continue_last', 'source': 'backend'})
+                self.buffer_request({'action': 'load_last', 'source': 'backend'})
 
             try:
                 while self.running:

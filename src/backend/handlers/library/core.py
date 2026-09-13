@@ -6,7 +6,13 @@ from src.constants import SEARCH_META
 from src import gen_response
 from src.sentinels import SENTINELS
 from src.utils.misc import sort_songs, shallow_scan, recurse_scan
-from .helpers import get_song, insert_songs_aliases, insert_songs_playlist_names, add_song
+from .helpers import (
+    get_song, 
+    get_song_playlist_names, 
+    insert_songs_aliases, 
+    insert_songs_playlist_names, 
+    add_song
+    )
 
 logger = setup_logger(__name__, BACKEND_LOG_PATH)
 
@@ -43,10 +49,7 @@ def info(ctx, request):
                 song_info['aliases'] = aliases
     
             if show_playlists:
-                playlist_ids = ctx.database.get_song_playlists(song_id)
-                playlist_info = ctx.database.get_playlists_info(playlist_ids)
-                playlist_names = list(map(lambda pl: pl['name'], playlist_info))
-                song_info['playlists'] = playlist_names
+                song_info['playlists'] = get_song_playlist_names(ctx, song_id)                
     
             info.append(song_info)
     

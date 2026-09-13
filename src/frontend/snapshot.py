@@ -1,129 +1,90 @@
-from src.sentinels import SENTINELS
-
-from src.frontend.song_output import SongOutput
+from pathlib import Path
 
 class Snapshot:
-    def __init__(self, requester, missing=None, status=False, info=False, lyric=False, current_songs=False, playlists=False):
+    def __init__(self, requester, empty=None):
         self.request = requester
-        self.missing=missing
-        self.poll_status = status
-        self.poll_info = info
-        self.poll_lyric = lyric
-        self.poll_current_songs = current_songs
-        self.poll_playlists = playlists
-        self.filter = ''
+        self.empty=empty
+        self.snapshot = {}
         self._reset()
 
     def _reset(self):
-        self.lib_id = None
-        self.display_name = self.missing
-        self.meta_name = self.missing
-        self.artist = self.missing
-        self.album = self.missing
+        self.lib_id = self.empty
+        self.display_name = self.empty
+        self.meta_name = self.empty
+        self.artist = self.empty
+        self.album = self.empty
         
-        self.time = self.missing
-        self.length = self.missing
+        self.time = self.empty
+        self.length = self.empty
         
-        self.volume = self.missing
-        self.mute = self.missing
+        self.volume = self.empty
+        self.mute = self.empty
         
-        self.shuffle = self.missing
-        self.loop = self.missing
+        self.shuffle = self.empty
+        self.loop = self.empty
         
-        self.current_num = self.missing # 0-based!
-        self.playlist_len = self.missing
-        self.current_songs = [self.missing]
+        self.current_num = self.empty # 0-based!
+        self.playlist_len = self.empty
+        self.current_songs = self.empty
         
-        self.player_status = self.missing
+        self.player_status = self.empty
         
-        self.duration = self.missing
-        self.bitrate = self.missing
-        self.sample_rate = self.missing
-        self.channels = self.missing
+        self.duration = self.empty
+        self.bitrate = self.empty
+        self.sample_rate = self.empty
+        self.channels = self.empty
         
-        self.aliases = [self.missing]
-        self.added_playlists = [self.missing]
-        self.lyric = {}
-        self.online_lyric = self.missing
-        self.lyric_offset = 0
-        self.offset_overlay = 0
-        self.songs_nums = [] # to prevent selected_song -> actual number in playlist mismatch when filter is applied
-        self.playlists = [self.missing]
+        self.aliases = self.empty
+        self.added_playlists = self.empty
+        self.lyric = self.empty
+        self.online_lyric = self.empty
+        self.lyric_loading = self.empty
+        self.lyric_offset = self.empty
+        self.offset_overlay = self.empty
+        self.playlists = self.empty
 
     def poll(self):
         self._reset()
+        self.snapshot = self.request('poll', silent=True)
+        if self.snapshot is not None:            
+            self.lib_id = self.get('id')
+            if self.snapshot.get('name', None) is not None:
+                self.display_name = self.snapshot['name']
+            elif self.snapshot.get('path', None) is not None:
+                self.display_name = Path(self.snapshot['path']).stem
+            else:
+                self.display_name = self.empty
 
-        if self.poll_status:
-            status = self.request('status', silent=True)
-            if status is not None:
-                status = SongOutput(status, prettify_none=False)
-                self.lib_id = status.lib_id_raw
-                self.display_name = status.display_name
-                self.meta_name = status.name
-                self.artist = status.artist
-                self.album = status.album
-                self.time = status.time_raw
-                self.length = status.length_raw
-                self.volume = status.volume
-                self.mute = status.mute_raw
-                self.shuffle = status.shuffle_raw
-                self.loop = status.loop_raw
-                self.online_lyric = status.online_lyric_raw # why Ol and not Online? I need to make this as narrow as possible things won't get messy in small terminal windows
-                self.current_num = status.current_num
-                if isinstance(self.current_num, int):
-                    self.current_num -= 1
-                self.playlist_len = status.playlist_len
-                self.player_status = status.player_status
+            self.meta_name = self.get('name')
+            self.artist = self.get('artist')
+            self.album = self.get('album')
+            self.time = self.get('time')
+            self.length = self.get('length')
+            self.volume = self.get('volume')
+            self.mute = self.get('mute')
+            self.shuffle = self.get('shuffle')
+            self.loop = self.get('loop')
+            self.online_lyric = self.get('online_lyric')
+            self.current_num = self.get('current_num') # 0-based
+            self.playlist_len = self.get('playlist_len')
+            self.player_status = self.get('player_status')
 
-        if self.poll_info and self.lib_id is not None:
-            info = self.request('lib.info', 
-                                songs=[str(self.lib_id)], 
-                                show_aliases=True, 
-                                show_playlists=True, 
-                                force_id=True, 
-                                silent=True)
-            if info is not None and len(info) > 0:
-                info = SongOutput(info[0], prettify_none=False)
-                self.duration = info.duration
+            self.duration = self.get('duration')
+            self.bitrate = self.get('bitrate')
+            self.sample_rate = self.get('sample_rate')
+            self.channels = self.get('channels')
+            self.aliases = self.get('aliases')
+            self.added_playlists = self.get('added_playlists')
 
-                self.bitrate = info.bitrate
-                self.sample_rate = info.sample_rate
-                self.channels = info.channels
+            self.lyric = self.get('lyric')
+            self.lyric_loading = self.get('lyric_loading')
+            self.lyric_offset = self.get('lyric_offset')
+            self.offset_overlay = self.get('offset_overlay')
+            self.current_songs = self.get('current_songs')
+            self.playlists = self.get('playlists')
 
-                self.aliases = info.aliases_raw
-                self.added_playlists = info.playlists_raw
-
-        if self.poll_lyric:
-            lyric = self.request('get_lyric', silent=True)
-            if lyric is not None:
-                if lyric.get('loading', False):
-                    self.lyric = SENTINELS.LYRIC_LOADING
-                else:
-                    self.lyric = lyric.get('lyric', None)
-                    if self.lyric is None:
-                        self.lyric = []
-                    self.lyric_offset = lyric.get('offset', 0)
-                    self.offset_overlay = lyric.get('offset_overlay', 0)
-
-        if self.poll_current_songs:
-            songs = self.request('list', silent=True)
-            if songs is not None:
-                self.current_songs = []
-                self.songs_nums = []
-                if len(songs) > 0:
-                    for i, song in enumerate(songs):
-                        song = SongOutput(song)
-                        filter = self.filter.lower()
-                        if filter in song.display_name.lower() or filter in song.artist.lower():
-                            song_info = f'{song.display_name} - {song.artist}'
-                            self.current_songs.append((song_info))
-                            self.songs_nums.append(i)
-
-                    if len(self.current_songs) == 0:
-                        self.current_songs = ['No matches of filter']
-
-        if self.poll_playlists:
-            playlists = self.request('lib.playlist.list', silent=True)
-            if playlists is not None:
-                self.playlists = list(map(lambda x: x['name'], playlists))
-                
+    def get(self, name):
+        value = self.snapshot.get(name, self.empty)
+        if value is None:
+            value = self.empty
+        return value

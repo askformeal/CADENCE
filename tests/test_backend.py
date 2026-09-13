@@ -1509,27 +1509,27 @@ def test_play_all_restores_zero_when_never_played(backend, audio_file, tmp_path)
     assert backend.playback.current_song_num == 0
 
 
-def test_continue_last_no_last_song(backend):
-    response = _request(backend, 'continue_last')
+def test_load_last_no_last_song(backend):
+    response = _request(backend, 'load_last')
     assert response['code'] == 1
     assert 'No last song' in response['msg']
 
 
-def test_continue_last_opens_last_song(backend, audio_file):
+def test_load_last_opens_last_song(backend, audio_file):
     database = backend.database
     song_id, _ = database.add_song(audio_file)
     database.set_setting('last_is_all', '0')
     database.set_setting('last_song', audio_file)
     database.set_setting('last_cwd', os.getcwd())
 
-    response = _request(backend, 'continue_last')
+    response = _request(backend, 'load_last')
     assert response['code'] == 0
     assert backend.playback.current_song_num == 0
     status = _request(backend, 'status')
     assert status['attachment']['path'] == audio_file
 
 
-def test_continue_last_play_all_mode(backend, audio_file, tmp_path):
+def test_load_last_play_all_mode(backend, audio_file, tmp_path):
     second = str(tmp_path / 'test_b.wav')
     _make_wav(second)
     backend.database.add_song(audio_file)
@@ -1540,13 +1540,13 @@ def test_continue_last_play_all_mode(backend, audio_file, tmp_path):
     database.set_setting('last_song', audio_file)
     database.set_setting('last_cwd', os.getcwd())
 
-    response = _request(backend, 'continue_last')
+    response = _request(backend, 'load_last')
     assert response['code'] == 0
     assert backend.playback.current_playlist is SENTINELS.PLAY_ALL
 
 
-def test_continue_last_ignores_num_setting(backend, audio_file):
-    # 旧的全局 last_num setting 不应再影响 continue_last(已被 playlist last_num 取代)
+def test_load_last_ignores_num_setting(backend, audio_file):
+    # 旧的全局 last_num setting 不应再影响 load_last(已被 playlist last_num 取代)
     database = backend.database
     database.add_song(audio_file)
     database.set_setting('last_is_all', '0')
@@ -1554,7 +1554,7 @@ def test_continue_last_ignores_num_setting(backend, audio_file):
     database.set_setting('last_cwd', os.getcwd())
     database.set_setting('last_num', 999)  # 毒数据:若被读取会导致越界
 
-    response = _request(backend, 'continue_last')
+    response = _request(backend, 'load_last')
     assert response['code'] == 0
     assert backend.playback.current_song_num == 0
 
@@ -1576,6 +1576,40 @@ def test_open_playlist_restores_last_num(backend, audio_file, tmp_path):
     assert backend.playback.current_song_num == 1
     status = _request(backend, 'status')
     assert status['attachment']['path'] == second
+
+
+def test_open_song_already_in_playlist_switches_and_keeps_playlist(backend, audio_file, tmp_path):
+    """Opening a song that is already in the current playlist switches to it.
+
+    Guards two regressions of this branch: the IndexError from collapsing the
+    in-memory playlist before switching to a song past the first one, and the
+    playlist itself being collapsed to a single song.
+    """
+    first, second = _open_two_song_playlist(backend, audio_file, tmp_path)
+
+    response = _request(backend, 'open', song=second)
+    assert response['code'] == 0
+    assert 'song in current playlist' in response['msg']
+    assert backend.playback.current_song_num == 1
+    assert len(backend.playback.current_song_info) == 2
+    status = _request(backend, 'status')
+    assert status['attachment']['path'] == second
+    assert status['attachment']['playlist_len'] == 2
+
+
+def test_open_song_already_in_playlist_refreshes_song_info(backend, audio_file, tmp_path):
+    """The switched song's in-memory entry is re-read from the library."""
+    first, second = _open_two_song_playlist(backend, audio_file, tmp_path)
+    song_id = backend.database.get_song_via_path(second)
+    backend.database.set_song_meta(song_id, 'name', 'Renamed')
+
+    response = _request(backend, 'open', song=second)
+    assert response['code'] == 0
+    assert 'Renamed' in response['msg']
+    status = _request(backend, 'status')
+    assert status['attachment']['name'] == 'Renamed'
+    assert backend.playback.current_song_info[1]['name'] == 'Renamed'
+    assert len(backend.playback.current_song_info) == 2
 
 
 def test_open_playlist_first_time_starts_at_zero(backend, audio_file, tmp_path):

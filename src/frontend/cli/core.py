@@ -10,16 +10,18 @@ from src.process import start, kill
 from src.constants import RESTART_NUM, RESTART_POLL_INTERVAL, ATTACHMENT_REQUIRED_ACTIONS
 from src.config_manager import CONFIG_MANAGER
 from src.frontend.song_output import SongOutput
-from src.frontend.escape_code import ESCAPE_CODE as EC
+from src.utils.escape_code import ESCAPE_CODE as EC
 from src.utils.tui import box
 from src.utils.time_ import format_time
 from .build_parser import build_parser
+from .translate import translate
 
 def main():
     is_reboot = False
 
     parser = build_parser()
     args = vars(parser.parse_args())
+    args = translate(args)
 
     if args['action'] == 'start':
         notifies = _start_backend(CADENCE_DEV=int(args['dev']), CADENCE_CONTINUE=int(args['continue']))[1]
@@ -341,6 +343,7 @@ def _show_song_info(info, empty_msg='No information to be shown', show_aliases=F
             lines += [
                 f'\nPath: {output.path}',
                 f'Lyric Path: {output.lyric}',
+                f'Lyric Offset: {output.lyric_offset}',
                 f'\nLibrary ID: {output.lib_id}'
             ]
 

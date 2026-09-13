@@ -76,6 +76,7 @@ Builds a self-contained folder (plus a `.zip`) into `dist/cadence-<version>/`, b
 | ---------------------- | ------------------------------------------------------ |
 | `cadence open <song>`  | Open a song, playlist, or file path                    |
 | `cadence play-all`     | Play all songs in the library                          |
+| `cadence reload`       | Re-open the last opened song or play-all session       |
 | `cadence pause`        | Pause playing media                                    |
 | `cadence resume`       | Resume paused media                                    |
 | `cadence toggle`       | Switch between playing and paused                      |

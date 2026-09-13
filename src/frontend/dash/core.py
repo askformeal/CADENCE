@@ -1,3 +1,4 @@
+from pathlib import Path
 import re
 import shutil
 import time
@@ -11,36 +12,36 @@ from .logger import logger
 from src.constants import MAX_SHOW_BIND
 from src.constants import HEARTBEAT_POLL_INTERVAL, POLL_INTERVAL
 from src.constants import DASH_KEY_MAP as KEY_MAP
-from src.constants import MAX_SHOW_SONG, TOAST_TIME
-from src.constants import BOX_STYLES
+from src.constants import MAX_SHOW_SONG, BOX_STYLES
 from src.config import CONFIG
 from src.frontend.client import test_heartbeat, handle_code, send_request
-from src.frontend.escape_code import ESCAPE_CODE as EC
-from src.utils.misc import squeeze
+from src.utils.escape_code import ESCAPE_CODE as EC
+from src.utils.misc import squeeze, get_song_display_name
 from src.utils.tui import strlen, box, window_list
 from src.frontend.snapshot import Snapshot
+from .empty import DASH_EMPTY as EMPTY
 from .hotkey import HotkeyMixin
-from .gen_main import gen_main_text
-from .gen_playlist import gen_playlist_text
-from .gen_info import gen_info_text
+from .gen_main import MainMixin
+from .gen_playlist import PlaylistMixin
+from .gen_info import InfoMixin
 
-class Dash(HotkeyMixin):
+class Dash(HotkeyMixin, MainMixin, PlaylistMixin, InfoMixin):
     def __init__(self):
         os.system('')
         self.running = True
 
         self.snapshot = Snapshot(
             self._send_dash_request, 
-            missing=f'{EC.yellow}{EC.bold}{EC.dim}[MISSING]{EC.rs}',
-            status=True,
-            info=True,
-            lyric=True,
-            current_songs=True)
+            empty=EMPTY)
 
         self.song_selected = 0 # 0-based!
         self.bind_selected = 0 # 0-based!
+        self.filtered_songs = []
+        self.song_nums = []
         self.select_end = False
         self.select_current = False
+
+        self.filter = ''
 
         self.playlist_height = 0
 
@@ -101,32 +102,60 @@ class Dash(HotkeyMixin):
                 else:
                     self.snapshot.poll()
 
+                    self.filtered_songs = []
+                    self.song_nums = []
+                    if self.snapshot.current_songs is not EMPTY:
+                        for i, song in enumerate(self.snapshot.current_songs):
+                            name = song.get('name', None)
+                            if name is None:
+                                name = ''
+                            else:
+                                name = name.lower()
+                        
+                            path_stem = song.get('path', None)
+                            if path_stem is None:
+                                path_stem = ''
+                            else:
+                                path_stem = Path(path_stem).stem.lower()
+                        
+                            artist = song.get('artist')
+                            if artist is None:
+                                artist = ''
+                            else:
+                                artist = artist.lower()
+                            filter_ = self.filter.lower()
+                            if filter_ in name or filter_ in path_stem or filter_ in artist:
+                                display_name = get_song_display_name(song)
+                                if display_name is None:
+                                    display_name = 'N/A'
+
+                                self.filtered_songs.append(display_name)
+                                self.song_nums.append(i)
+
                     if self.select_end:
-                        self.song_selected = len(self.snapshot.current_songs) - 1
+                        self.song_selected = max(len(self.filtered_songs) - 1, 0)
                         self.select_end = False
 
                     elif self.select_current:
-                        try:
-                            self.song_selected = self.snapshot.songs_nums.index(self.snapshot.current_num)
-                        except ValueError:
+                        if self.snapshot.current_num is EMPTY:
                             self.song_selected = 0
+                        else:
+                            try:
+                                self.song_selected = self.song_nums.index(self.snapshot.current_num)
+                            except ValueError:
+                                self.song_selected = 0
                         self.select_current = False
                     else:                                
-                        self.song_selected = squeeze(self.song_selected, len(self.snapshot.current_songs)-1)
-
-                    if (time.time() - self.toast_time) <= TOAST_TIME:
-                        toast = self.toast_text
-                    else:
-                        toast = ''
+                        self.song_selected = squeeze(self.song_selected, max(len(self.filtered_songs)-1, 0))
 
                     if CONFIG.auto_dash_height:
                         self.playlist_height = max(shutil.get_terminal_size((0, MAX_SHOW_SONG+12)).lines-12, 1)
                     else:
                         self.playlist_height = MAX_SHOW_SONG
 
-                    main_text = gen_main_text(self.snapshot, toast, self._dash_box)
-                    playlist_text = gen_playlist_text(self.snapshot, self.playlist_height, self.song_selected)
-                    info_text = gen_info_text(self.snapshot)
+                    main_text = self.gen_main_text()
+                    playlist_text = self.gen_playlist_text()
+                    info_text = self.gen_info_text()
 
                     text = self._dash_box(info_text, main_text, playlist_text, l_pad=2, r_pad=2)
 

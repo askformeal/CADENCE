@@ -15,21 +15,21 @@ def _open_raw(backend, audio_file):
     assert backend.playback.current_song_in_lib is False
 
 
-def test_get_lyric_returns_offset_overlay_before_open(backend):
-    """get_lyric must not crash and should attach offset_overlay even with no song.
+def test_poll_returns_offset_overlay_before_open(backend):
+    """poll must not crash and should attach offset_overlay even with no song.
 
     Guards the AttributeError regression where the handler read the
     non-existent ctx.playback.lyric_overlay attribute.
     """
-    response = _request(backend, 'get_lyric')
+    response = _request(backend, 'poll')
     assert response['code'] == 0
     assert 'offset_overlay' in response['attachment']
     assert response['attachment']['offset_overlay'] == 0
 
 
-def test_get_lyric_after_open_has_offset_overlay(backend, audio_file):
+def test_poll_after_open_has_offset_overlay(backend, audio_file):
     _open_raw(backend, audio_file)
-    response = _request(backend, 'get_lyric')
+    response = _request(backend, 'poll')
     assert response['code'] == 0
     assert response['attachment']['offset_overlay'] == 0
 
@@ -40,8 +40,8 @@ def test_set_offset_overlay_sets_value(backend, audio_file):
     assert response['code'] == 0
     assert backend.playback.offset_overlay == 500
 
-    # and the next get_lyric serves that overlay
-    lyric = _request(backend, 'get_lyric')
+    # and the next poll serves that overlay
+    lyric = _request(backend, 'poll')
     assert lyric['attachment']['offset_overlay'] == 500
 
 

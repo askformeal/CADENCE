@@ -80,7 +80,9 @@ def sort_songs(info):
 def get_song_display_name( info):
     name = info.get('name', None)
     if name is None:
-        name = Path(info['path']).stem
+        name = info.get('path', None)
+        if name is not None:
+            name = Path(name).stem
     return name
 
 def extract_file_meta(path):

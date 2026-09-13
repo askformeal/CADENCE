@@ -102,12 +102,16 @@ class HotkeyMixin:
                     self.select_current = True
 
                 elif key in KEY_MAP.filter:
-                    self.snapshot.filter = self._get_input('Enter filter: ').strip()
+                    self.filter = self._get_input('Enter filter: ').strip()
 
                 elif key in KEY_MAP.switch_select:
-                    if len(self.snapshot.songs_nums) > 0:
-                        num = self.snapshot.songs_nums[self.song_selected] + 1
-                        self._send_dash_request('switch', number=num)
+                    if len(self.song_nums) > 0:
+                        try:
+                            num = self.song_nums[self.song_selected] + 1
+                        except IndexError:
+                            ...
+                        else:
+                            self._send_dash_request('switch', number=num)
 
                 elif key in KEY_MAP.help:
                     self.show_help = not self.show_help

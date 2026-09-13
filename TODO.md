@@ -54,6 +54,8 @@
 - [X] Lyric offset
 - [X] Make floating lyric board draggable
 - [X] Colored TUI
+- [ ] Log rotation
+- [ ] Dashboard show album cover
 - [ ] GUI configure editor
 - [ ] HTTP frontend
 - [ ] Bluetooth frontend

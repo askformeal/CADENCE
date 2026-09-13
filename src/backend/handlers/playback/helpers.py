@@ -1,5 +1,8 @@
+import time
 import random
 from pathlib import Path
+
+import vlc
 
 from src.log import setup_logger
 from src.constants import BACKEND_LOG_PATH
@@ -10,6 +13,64 @@ from src.utils.misc import sort_songs
 from src.utils.time_ import format_time
 
 logger = setup_logger(__name__, BACKEND_LOG_PATH)
+
+def get_status(ctx):
+    player_status = {
+        vlc.State.Playing: 'playing',
+        vlc.State.Paused: 'paused',
+        vlc.State.Stopped: 'stopped'
+    }.get(ctx.player.player.get_state(), None)
+    
+    if ctx.playback.current_song_info is None:
+        info = {}
+        playlist_len = None
+        current_num = None
+    else:
+        info = ctx.playback.get_playing_info()
+        playlist_len = len(ctx.playback.current_song_info)
+        current_num = ctx.playback.current_song_num
+    
+    status = {
+        'id': info.get('id', None),
+        'path': info.get('path', None),
+        'name': info.get('name', None),
+        'artist': info.get('artist', None),
+        'album': info.get('album', None),
+        'duration': info.get('duration', None),
+        'bitrate': info.get('bitrate', None),
+        'sample_rate': info.get('sample_rate', None),
+        'channels': info.get('channels', None),
+        'lyric_path': info.get('lyric', None),
+        'in_library': ctx.playback.current_song_in_lib,
+        'player_status': player_status,
+        'volume': ctx.player.volume,
+        'mute': ctx.player.mute,
+        'shuffle': ctx.playback.shuffle,
+        'loop': ctx.playback.loop,
+        'online_lyric': ctx.playback.online_lyric,
+        'playlist_len': playlist_len,
+        'current_num': current_num,
+        'run_time': time.time() - ctx.start_time
+    }
+    progress = ctx.player.get_progress()
+    status['length'] = progress['length']
+    status['time'] = progress['time']
+    status['dev'] = ctx.dev
+
+    return status
+
+def get_current_songs(ctx):
+    if ctx.playback.current_song_info is not None:
+        return ctx.playback.current_song_info.copy()
+    else:
+        return []
+
+def get_current_lyric(ctx):
+    ctx.playback.update_lyric()
+    lyric = ctx.playback.lyric
+    lyric['offset_overlay'] = ctx.playback.offset_overlay
+
+    return lyric
 
 def open_song(ctx, song, cwd) -> gen_response.Response:
     from ..library.helpers import get_song, get_playlist_songs
@@ -63,6 +124,7 @@ def open_song(ctx, song, cwd) -> gen_response.Response:
 
         if len(paths_to_load) == 1 and paths_to_load[0] in current_paths:
             num = current_paths.index(paths_to_load[0])
+            ctx.playback.current_song_info[num] = info_to_set[0][0]
             response = gen_response.Success('song in current playlist. try to switch')
             response.append(switch_song(ctx, num), joiner='->')
         else:

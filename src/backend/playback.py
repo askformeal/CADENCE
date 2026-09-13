@@ -58,14 +58,14 @@ class Playback:
         else:
             return get_song_display_name(self.get_playing_info())
 
-    def update_lyric(self):
+    def update_lyric(self, force=False):
         if self.current_song_info is not None:
             info = self.get_playing_info()
             song_path = info.get('path', None)
             offset = info.get('offset', None)
             if offset is None:
                 offset = 0
-            if self.lyric.get('path', None) != song_path or self.lyric.get('online', None) != self.online_lyric:
+            if force or self.lyric.get('path', None) != song_path or self.lyric.get('online', None) != self.online_lyric:
                 self.lyric = {'path': song_path, 'offset': offset, 'lyric': None}
 
                 if self.online_lyric:

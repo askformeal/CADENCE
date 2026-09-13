@@ -8,23 +8,25 @@ from pystray import Icon, Menu, MenuItem
 from PIL import Image
 
 from src.log import setup_logger
-from src.constants import ICON_PATH, ERROR_ICON_PATH, HEARTBEAT_POLL_INTERVAL, TRAY_POLL_INTERVAL, TRAY_ERROR_DISPLAY_TIME
-from src.constants import AUDIO_FILE_TYPES
-from src.constants import TRAY_LOG_PATH
+from src.constants import (
+    TRAY_LOG_PATH,
+    ICON_PATH, 
+    ERROR_ICON_PATH, 
+    HEARTBEAT_POLL_INTERVAL, 
+    TRAY_POLL_INTERVAL, 
+    TRAY_ERROR_DISPLAY_TIME, 
+    AUDIO_FILE_TYPES
+    )
 from src.frontend.client import send_request, test_heartbeat, handle_code
 from src.frontend.snapshot import Snapshot
+from src.utils.misc import get_song_display_name
 from src.utils.tray import Label
 
 logger = setup_logger(__name__, TRAY_LOG_PATH)
 
 class Tray(Icon):
     def __init__(self):
-        self.snapshot = Snapshot(
-            self._send_tray_request,
-            status=True,
-            current_songs=True,
-            playlists=True
-            )
+        self.snapshot = Snapshot(self._send_tray_request)
         self.running = True
         self.tk_window = tk.Tk() # file dialog will act weird without this
         self.tk_window.withdraw()
@@ -44,7 +46,6 @@ class Tray(Icon):
                 
                 title = 'CADENCE'
                 
-                songs_sub_menu = Menu(Label('---'))
                 playlists_sub_menu = [MenuItem('[Play All]', lambda *_: self._send_tray_request('play-all'))]
 
 
@@ -54,23 +55,31 @@ class Tray(Icon):
                 if self.snapshot.player_status is not None:
                     title += f' ({self.snapshot.player_status.capitalize()})'
 
-                if len(self.snapshot.current_songs) == 0:
+                if self.snapshot.current_songs is None or len(self.snapshot.current_songs) == 0:
                     songs_sub_menu = Menu(Label('Empty'))
                 else:
                     song_buttons = []
-                    for i, name in enumerate(self.snapshot.current_songs):
+                    for i, song in enumerate(self.snapshot.current_songs):
+                        name = get_song_display_name(song)
+                        if name is None:
+                            name = 'N/A'
                         song_buttons.append(MenuItem(f'{i+1}. {name}', lambda *_, n=i+1: self._send_tray_request('switch', number=n)))
                     songs_sub_menu = Menu(*song_buttons)
 
-                if len(self.snapshot.playlists) > 0:
+                if self.snapshot.playlists is not None and len(self.snapshot.playlists) > 0:
                     for name in self.snapshot.playlists:
                         playlists_sub_menu.append(MenuItem(name, lambda *_, x=name: self._send_tray_request('open', song=x)))
 
                 playlists_sub_menu = Menu(*playlists_sub_menu)
 
+                if self.snapshot.volume is None:
+                    volume = '?'
+                else:
+                    volume = self.snapshot.volume
+
                 menu = Menu(
                     Label(title),
-                    MenuItem('Open', self._open_file),
+                    MenuItem('Open', lambda *_: self.tk_window.after(0, self._open_file)),
                     Menu.SEPARATOR,
                     MenuItem('Play/Pause', lambda *_: self._send_tray_request('toggle'), default=True),
                     MenuItem('Previous Song', lambda *_: self._send_tray_request('prev')),
@@ -94,19 +103,28 @@ class Tray(Icon):
                     Menu.SEPARATOR,
                     MenuItem('Mute', lambda *_: self._send_tray_request('mute'), checked=lambda *_: self.snapshot.mute),
                     MenuItem('Volume', Menu(
-                        MenuItem('0%', lambda *_: self._send_tray_request('volume', volume=0)),
-                        MenuItem('25%', lambda *_: self._send_tray_request('volume', volume=25)),
-                        MenuItem('50%', lambda *_: self._send_tray_request('volume', volume=50)),
-                        MenuItem('75%', lambda *_: self._send_tray_request('volume', volume=75)),
-                        MenuItem('100%', lambda *_: self._send_tray_request('volume', volume=100)),
+                        Label(f'Volume: {volume}%'),
+                        MenuItem('0%', lambda *_: self._send_tray_request('volume', volume='0')),
+                        MenuItem('25%', lambda *_: self._send_tray_request('volume', volume='25')),
+                        MenuItem('50%', lambda *_: self._send_tray_request('volume', volume='50')),
+                        MenuItem('75%', lambda *_: self._send_tray_request('volume', volume='75')),
+                        MenuItem('100%', lambda *_: self._send_tray_request('volume', volume='100')),
                     )),
                     Menu.SEPARATOR,
                     MenuItem('Quit Tray', lambda *_: self.exit()),
                     MenuItem('Exit CADENCE', lambda *_: self._send_tray_request('exit')),
                 )
 
-                self.title = title
-                sig = (str(menu), self.snapshot.mute, self.snapshot.shuffle, self.snapshot.loop)
+                if self.title != title:
+                    self.title = title
+
+                sig = (
+                    str(menu), 
+                    self.snapshot.mute, 
+                    self.snapshot.shuffle, 
+                    self.snapshot.loop, 
+                    self.snapshot.volume
+                    )
                 if sig != self._last_sig:
                     self._last_sig = sig
                     self.menu = menu
@@ -125,7 +143,7 @@ class Tray(Icon):
                 logger.exception('An error occurred during updating icon')
                 self.exit()
 
-    def _open_file(self, *_):
+    def _open_file(self):
         file_types = list(map(lambda x: (x[0], '*'+x[1]), AUDIO_FILE_TYPES))
         path = filedialog.askopenfilename(
             title= 'Select a song file',
@@ -160,11 +178,13 @@ class Tray(Icon):
             self.tk_window.mainloop()
         except KeyboardInterrupt:
             ...
+        return
 
     def exit(self):
         self.stop()
         logger.info('Exit tray frontend')
         self.running = False
+        self.tk_window.after(0, self.tk_window.destroy)
 
 if __name__ == '__main__':
     Tray().start()

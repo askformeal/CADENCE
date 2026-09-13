@@ -52,6 +52,24 @@ A list of messages of failed sub-actions during a batch action such as `lib.scan
 
 ## Actions
 
+### poll
+
+Collect everything a polling frontend needs in one round trip. The dashboard, the tray icon and the floating lyric board request it on every refresh cycle (0.1~1s), instead of combining `status`, `list`, `lib.info`, `lib.playlist.list` and the lyric state into separate requests. They send it with `silent` set, since it runs at a high frequency.
+
+Request keys: none. In particular no `cwd` — a frontend that only displays the current state has no path to resolve.
+
+Success response attachment: a dictionary combining
+
+- the playback status fields, the same ones the `status` action returns: `id`, `path`, `name`, `artist`, `album`, `duration` (milliseconds), `bitrate`, `sample_rate`, `channels`, `lyric_path`, `in_library`, `player_status`, `volume`, `mute`, `shuffle`, `loop`, `online_lyric`, `playlist_len`, `current_num` (0-based number in the current playlist), `run_time` (seconds), `length` and `time` (milliseconds, -1 when unknown), `dev`
+- the library information of the current song: `aliases` (a list of strings) and `added_playlists` (the names of the playlists holding it). Both are `null` when the current song is not in the library.
+- the lyric state of the current song: `lyric` (a list of `[position in milliseconds, text]` pairs), `lyric_loading` (true while an online lyric is being fetched), `lyric_offset` (the offset stored for this song in the library) and `offset_overlay` (the offset the user adjusted on the fly)
+- `current_songs`, the current playlist as a list of song info dictionaries (empty when nothing is playing)
+- `playlists`, the names of every playlist in the library
+
+Unknown values are sent as `null`; a frontend should treat a missing key the same way, since an older backend may not send it. How a frontend renders `null` is not part of the protocol — the dashboard substitutes a colored `[EMPTY]` marker, the other frontends show nothing.
+
+`poll` supersedes `get_lyric`, which has been removed: instead of fetching the playback status, the library information and the lyric state with separate requests, frontends now read them from a single snapshot. Because an online lyric is fetched in a background thread, a frontend must keep polling to see it arrive (`lyric_loading` is true until it does).
+
 ### config
 
 Read and modify the configuration file. These actions operate on the options defined in `constants.py:CONFIG_SCHEME`, stored in `config.toml`.

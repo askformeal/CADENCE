@@ -32,6 +32,11 @@ def get_song(ctx, song, cwd): # try to get song id from database
     else:
         return SENTINELS.MISSING_CWD
 
+def get_song_playlist_names(ctx, song_id):
+    playlist_ids = ctx.database.get_song_playlists(song_id)
+    playlist_info = ctx.database.get_playlists_info(playlist_ids)
+    return list(map(lambda pl: pl['name'], playlist_info))
+
 def get_playlist_songs(ctx, name, return_id=False):
     playlist_id = ctx.database.get_playlist_via_name(name)
     if playlist_id is not SENTINELS.PLAYLIST_NOT_FOUND:

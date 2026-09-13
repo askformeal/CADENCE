@@ -25,11 +25,7 @@ class Lyric(tk.Tk):
     def __init__(self):
         super().__init__()
 
-        self.snapshot = Snapshot(
-            self._send_lyric_request,
-            status=True,
-            lyric=True
-            )
+        self.snapshot = Snapshot(self._send_lyric_request)
 
         i = 0
         while i in (dec_hex(CONFIG.lyric_font_color), dec_hex(CONFIG.lyric_bg_color)):
@@ -144,11 +140,15 @@ class Lyric(tk.Tk):
                 self.snapshot.poll()                
 
                 if self.lyric_on and (self.snapshot.player_status == 'playing' or (self.snapshot.player_status == 'paused' and not CONFIG.pause_hide_lyric)):
-                    if self.snapshot.lyric is SENTINELS.LYRIC_LOADING:
+                    if self.snapshot.lyric_loading is not None and self.snapshot.lyric_loading:
                         self.after(0, self._update_text, text='[Loading ...]')
                         self._show()
 
-                    elif self.snapshot.time is not None and len(self.snapshot.lyric) > 0:
+                    elif None not in (self.snapshot.time, 
+                                        self.snapshot.lyric,
+                                        self.snapshot.lyric_offset, 
+                                        self.snapshot.offset_overlay
+                                        ) and len(self.snapshot.lyric) > 0:
                         index = get_lyric_line(self.snapshot.lyric, 
                                                self.snapshot.time,
                                                self.snapshot.lyric_offset + self.snapshot.offset_overlay)
@@ -227,6 +227,7 @@ class Lyric(tk.Tk):
         Thread(target=self._check_heartbeat, daemon=True).start()
         Thread(target=self._update_lyric, daemon=True).start()
         Thread(target=self.icon.run, daemon=True).start()
+        logger.info('Lyric board running')
         try:
             self.mainloop()
         except KeyboardInterrupt:
