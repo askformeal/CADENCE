@@ -10,9 +10,6 @@ from src.sentinels import SENTINELS
 logger = setup_logger(__name__, CONFIG_LOG_PATH)
 
 class Config:
-    def __init__(self):
-        logger.debug(f'{__name__} initiated')
-
     def load_file(self):
         try:
             with open(CONFIG_PATH, 'rb') as f:

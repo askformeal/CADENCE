@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [Unreleased]
+
+### Changed
+
+- Log files no longer grow without a limit. Every log file is truncated in place once it passes `LOG_FILE_MAX_BYTES` (20MB), so a backend left running for weeks cannot fill the disk with one file. Only the most recent window is kept — there are no rotated backups, by design: truncating is the one way to bound a log file that several processes append to, since Windows refuses to rename a file while another process has it open.
+
 ## [0.49.0] - 2026-09-13
 
 ### Added

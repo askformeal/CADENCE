@@ -1,6 +1,14 @@
 import logging
+import os
+from pathlib import Path
 
-from src.constants import FILE_LOG_LEVEL, CONSOLE_LOG_LEVEL, ENCODING, LOG_MAX_LENGTH
+from src.constants import (
+    FILE_LOG_LEVEL, 
+    CONSOLE_LOG_LEVEL, 
+    ENCODING, 
+    LOG_MAX_LENGTH,
+    LOG_FILE_MAX_BYTES
+    )
 
 class TruncateFilter(logging.Filter):
     def __init__(self, max_len):
@@ -14,11 +22,19 @@ class TruncateFilter(logging.Filter):
             record.args = ()
         return True
 
-class FlushFileHandler(logging.FileHandler):
-    def __init__(self, filename, mode = "a", encoding = None, delay = False, errors = None):
+class RotatingFlushFileHandler(logging.FileHandler):
+    def __init__(self, filename, max_bytes, mode = "a", encoding = None, delay = False, errors = None):
         super().__init__(filename, mode, encoding, delay, errors)
+        self.path = Path(self.baseFilename)
+        self.max_bytes = max_bytes
 
     def emit(self, record):
+        try:
+            if self.path.stat().st_size > self.max_bytes:
+                self.stream.seek(0)
+                self.stream.truncate()
+        except OSError:
+            ...
         super().emit(record)
         self.flush()
 
@@ -31,7 +47,11 @@ def setup_logger(name, path, add_console=True) -> logging.Logger:
         console.setLevel(CONSOLE_LOG_LEVEL)
         console.setFormatter(format)
 
-        file = FlushFileHandler(path, encoding=ENCODING)
+        file = RotatingFlushFileHandler(
+            path, 
+            max_bytes=LOG_FILE_MAX_BYTES, 
+            encoding=ENCODING
+            )
         file.setLevel(FILE_LOG_LEVEL)
         file.setFormatter(format)
 

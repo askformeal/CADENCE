@@ -7,6 +7,8 @@ REPO_LINK = 'https://github.com/askformeal/CADENCE'
 ENCODING = 'utf-8'
 ENCODING_CHAIN = ('utf-8', 'gb18030', 'big5', 'shift_jis', 'utf-16')
 
+LOG_FILE_MAX_BYTES = 20 * 1024 * 1024 # 20MB
+
 LOG_MAX_LENGTH = 500
 
 FILE_LOG_LEVEL = logging.DEBUG
