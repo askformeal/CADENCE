@@ -3,10 +3,7 @@ import sqlite3
 from .logger import logger
 
 class MiscMixin:
-    def _init_database(self):
-    
-        self.execute('PRAGMA foreign_keys = ON')
-    
+    def _init_database(self):    
         INIT_DATABASE = [
             '''CREATE TABLE IF NOT EXISTS songs (
                 id INTEGER NOT NULL PRIMARY KEY,

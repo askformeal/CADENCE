@@ -16,8 +16,15 @@ class SongOutput:
         self.artist = info.get('artist', '?')
         self.album = info.get('album', '?')
 
-        self.lyric = info.get('lyric_path', '?')
-        self.lyric_raw = info.get('lyric_path', None)
+        if 'lyric_path' in info.keys():
+            self.lyric = info['lyric_path']
+            self.lyric_raw = info['lyric_path']
+        elif 'lyric' in info.keys():
+            self.lyric = info['lyric']
+            self.lyric_raw = info['lyric']
+        else:
+            self.lyric = '?'
+            self.lyric_raw = None
 
         self.lyric_offset = info.get('offset', 0)
 

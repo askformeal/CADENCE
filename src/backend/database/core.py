@@ -13,20 +13,27 @@ from .settings import SettingsMixin
 
 class Database(MiscMixin, SongMixin, AliasMixin, PlaylistMixin, PosMixin, SettingsMixin):
     def __init__(self, database_path):
+        self.database_path = database_path
         self.old_level = logger.level
-        self._lock = threading.Lock()
+        self._local = threading.local()
+        self._get_connection()
+        self._init_database()
+        logger.debug(f'{__name__} initiated')
 
-        try:
-            self.connection = sqlite3.connect(database_path, check_same_thread=False, isolation_level=None)
-        except sqlite3.Error as e:
-            raise RuntimeError(f'Failed to connect to database: {e}') from e
-        else:
-            self.connection.execute("PRAGMA journal_mode = WAL").fetchone()
-            self.connection.row_factory = sqlite3.Row
+    def _new_connection(self):
+        connection = sqlite3.connect(self.database_path, isolation_level=None)
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA journal_mode = WAL").fetchone()
+        connection.execute('PRAGMA foreign_keys = ON')
+        logger.debug(f'New connection opened for thread \"{threading.get_ident()}\"')
+        return connection
 
-            self.cursor = self.connection.cursor()
-            self._init_database()
-            logger.debug(f'{__name__} initiated')
+    def _get_connection(self):
+        connection = getattr(self._local, 'connection', None)
+        if connection is None:
+            connection = self._new_connection()
+            self._local.connection = connection
+        return connection
 
     def silence_on(self):
         self.old_level = logger.level
@@ -41,9 +48,10 @@ class Database(MiscMixin, SongMixin, AliasMixin, PlaylistMixin, PosMixin, Settin
         if not sql.strip():
             raise ValueError('Empty SQL statement')
         else:
-            with self._lock:
-                return self.cursor.execute(sql, parameters)
+            return self._get_connection().execute(sql, parameters)
 
     def on_exit(self):
-        self.connection.commit()
-        self.connection.close()
+        connection = getattr(self._local, 'connection', None)
+        if connection is not None:
+            connection.close()
+            self._local.connection = None

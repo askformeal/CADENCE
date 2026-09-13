@@ -33,7 +33,6 @@ class PosMixin:
             self.execute('INSERT INTO positions(path, position) VALUES (?, ?)', path, pos)
         if log:
             logger.debug(msg)
-        self.connection.commit()
         return SENTINELS.SUCCESS
 
     def del_pos(self, path):
