@@ -7,8 +7,9 @@ from src.log import setup_logger
 from src.constants import BACKEND_LOG_PATH
 from src.config import CONFIG
 from src.sentinels import SENTINELS
-from src.utils.misc import get_song_display_name
+from src.utils.misc import get_song_display_name, hash_bytes
 from src.utils.lyric import parse_lyric
+from src.utils.file_extract import extract_cover
 
 logger = setup_logger(__name__, BACKEND_LOG_PATH)
 
@@ -17,15 +18,22 @@ class Playback:
         self.database = database
 
         self.loop = False
+
         self.shuffle = CONFIG.default_shuffle
         self.shuffle_order = []
+
         self.current_song_info = None
         self.current_song_num = None
         self.current_song_in_lib = False
         self.current_playlist = None
+
         self.online_lyric = CONFIG.default_online_lyric
         self.lyric = {}
         self.offset_overlay = 0
+
+        self.cover_path = None
+        self.cover_hash = None
+        self.cover = None
 
     def get_playing_info(self):
         return self.current_song_info[self.current_song_num]
@@ -101,3 +109,15 @@ class Playback:
             if result is not None:
                 lrc = parse_lyric(content=result)
                 self.lyric['lyric'] = lrc
+
+    def update_cover(self):
+        if self.current_song_info is not None: 
+            # since Monica asked so kindly: yes, cover will remain as the one of the last song when current_song_info become None
+            path = self.get_playing_info().get('path', None)
+            if self.cover_path != path:
+                self.cover_path = path
+                self.cover = extract_cover(path)
+                if self.cover is None:
+                    self.cover_hash = None
+                else:
+                    self.cover_hash = hash_bytes(self.cover)

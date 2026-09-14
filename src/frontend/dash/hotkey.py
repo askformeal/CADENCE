@@ -112,9 +112,13 @@ class HotkeyMixin:
                             ...
                         else:
                             self._send_dash_request('switch', number=num)
+                elif key in KEY_MAP.poster:
+                    self.poster = not self.poster
+                    self.show_help = False
 
                 elif key in KEY_MAP.help:
                     self.show_help = not self.show_help
+                    self.poster = False
 
                 elif key in KEY_MAP.prev_box:
                     self.box_style_num -= 1

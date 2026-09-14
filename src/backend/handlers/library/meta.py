@@ -4,7 +4,7 @@ from src.constants import METADATA
 from src.constants import BACKEND_LOG_PATH
 from src.sentinels import SENTINELS
 from src import gen_response
-from src.utils.misc import extract_file_meta
+from src.utils.file_extract import extract_file_meta
 from .helpers import get_song
 
 logger = setup_logger(__name__, BACKEND_LOG_PATH)

@@ -18,6 +18,9 @@ FILE_META = {
     'album': 'album'
 }
 
+COVER_NAMES = ('cover', 'folder', 'album', 'albumart', 'front')
+COVER_EXTENSIONS = ('.jpg', '.jpeg', '.png')
+
 # file type descriptions, kept short like those used in file selectors
 AUDIO_FILE_TYPES = (
     ('MP3 Audio', '.mp3'),

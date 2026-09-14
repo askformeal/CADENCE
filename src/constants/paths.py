@@ -5,6 +5,7 @@ from pathlib import Path
 ICON_PATH = str(files('res') / 'icon.ico')
 ERROR_ICON_PATH = str(files('res') / 'icon_error.ico')
 LYRIC_ICON_PATH = str(files('res') / 'lyric_icon.ico')
+NO_COVER_PATH = str(files('res') / 'no_cover.txt')
 
 dirs = PlatformDirs('cadence', ensure_exists=True)
 

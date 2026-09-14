@@ -43,6 +43,8 @@ class Snapshot:
         self.offset_overlay = self.empty
         self.playlists = self.empty
 
+        self.cover_hash = self.empty
+
     def poll(self):
         self._reset()
         self.snapshot = self.request('poll', silent=True)
@@ -82,6 +84,8 @@ class Snapshot:
             self.offset_overlay = self.get('offset_overlay')
             self.current_songs = self.get('current_songs')
             self.playlists = self.get('playlists')
+
+            self.cover_hash = self.get('cover_hash')
 
     def get(self, name):
         value = self.snapshot.get(name, self.empty)

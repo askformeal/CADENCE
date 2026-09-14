@@ -5,14 +5,11 @@ import subprocess
 from pathlib import Path
 import re
 import sys
-import mutagen
+import base64
+import hashlib
 
-from src.log import setup_logger
-from src.constants import UTIL_LOG_PATH
-from src.constants import WINDOWS_ILLEGAL, WINDOWS_RESERVED, FILE_META, AUDIO_EXTENSIONS
+from src.constants import WINDOWS_ILLEGAL, WINDOWS_RESERVED, AUDIO_EXTENSIONS
 from src.sentinels import SENTINELS
-
-logger = setup_logger(__name__, UTIL_LOG_PATH)
 
 def squeeze(number, highest, lowest=0):
     if number > highest:
@@ -85,34 +82,6 @@ def get_song_display_name( info):
             name = Path(name).stem
     return name
 
-def extract_file_meta(path):
-    try:
-        file = mutagen.File(path, easy=True)
-    except (OSError, mutagen.MutagenError):
-        logger.debug(f'Failed to extract metadata from {path} because it is not accessible')
-        return {}
-    else:
-        tags = {}
-        if file is not None:
-            for file_tag, meta in FILE_META.items():
-                tags[meta] = file.get(file_tag, [None])[0]
-                if tags[meta] == '':
-                    tags[meta] = None
-
-            tags['duration'] = getattr(file.info, 'length', None)
-            tags['bitrate'] = getattr(file.info, 'bitrate', None)
-            tags['sample_rate'] = getattr(file.info, 'sample_rate', None)
-            tags['channels'] = getattr(file.info, 'channels', None)
-
-            if tags['duration'] is not None:
-                tags['duration'] = int(tags['duration'] * 1000)
-
-            logger.debug(f'Extracted metadata from {path}: {tags}')
-            return tags
-        else:
-            logger.debug(f'Failed to extract metadata from {path} because there is no metadata in the file')
-            return {}
-
 def shallow_scan(directory):
     paths = []
     for path in Path(directory).iterdir():
@@ -128,3 +97,12 @@ def recurse_scan(directory):
             if path.suffix.lower() in AUDIO_EXTENSIONS:
                 paths.append(str(path.resolve()))
     return paths
+
+def bytes2base64(data):
+    return base64.b64encode(data).decode('ascii')
+
+def base642bytes(data):
+    return base64.b64decode(data)
+
+def hash_bytes(data):
+    return hashlib.sha256(data).hexdigest()

@@ -30,6 +30,7 @@ ROUTER = {
     'mute': play_core.mute,
     'lyric': play_core.lyric,
     'set_offset_overlay': play_core.set_offset_overlay,
+    'get_cover': play_core.get_cover,
     'poll': poll.poll,
 
     'lib.info': lib_core.info,

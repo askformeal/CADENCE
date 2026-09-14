@@ -14,6 +14,7 @@ POLL_KEYS = {
     'aliases', 'added_playlists',
     'lyric', 'lyric_loading', 'lyric_offset', 'offset_overlay',
     'current_songs', 'playlists',
+    'cover_hash',
 }
 
 

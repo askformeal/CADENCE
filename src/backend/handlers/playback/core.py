@@ -2,6 +2,7 @@ from src.log import setup_logger
 from src.constants import BACKEND_LOG_PATH
 from src.sentinels import SENTINELS
 from src import gen_response
+from src.utils.misc import bytes2base64
 from .helpers import get_status, open_song, play_all_songs, stop_player
 
 logger = setup_logger(__name__, BACKEND_LOG_PATH)
@@ -111,4 +112,12 @@ def set_offset_overlay(ctx, request):
         ctx.playback.offset_overlay = offset
     ctx.playback.update_lyric()
     return gen_response.Success(f'lyric offset overlay set to {ctx.playback.offset_overlay}')
-    
+
+def get_cover(ctx, request):
+    if ctx.playback.cover is None:
+        return gen_response.Failed('Cover unavailable')
+    else:
+        return gen_response.Success(
+            'Cover obtain', 
+            attachment={'cover': bytes2base64(ctx.playback.cover)}
+            )

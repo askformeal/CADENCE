@@ -1,7 +1,10 @@
+from io import BytesIO
 import math
 import re
 
 from wcwidth import wcswidth
+from PIL import Image, ImageOps
+
 from src.constants import BOX_STYLES
 
 ESCAPE_PATTERN = re.compile(r'\x1b\[[0-?]*[ -/]*[@-~]')
@@ -138,3 +141,23 @@ def window_list(lines, window_len, selected, current=None, filter='', newline_se
         result = above_mark + result + below_mark
 
     return result
+
+def render_tui_cover(data, width, height):
+    height = height // 2 * 2
+    image = Image.open(BytesIO(data)).convert('RGBA')
+    image = ImageOps.pad(image, (width, height), Image.Resampling.LANCZOS, color=(0,0,0,0))
+    pixels = list(image.get_flattened_data())
+    text = ''
+    for row in range(height // 2):
+        for column in range(width):
+            top = pixels[(row * 2) * width + column]
+            bottom = pixels[(row * 2 + 1) * width + column]
+            if top[3] == 0:
+                text += '\033[49m '
+            else:
+                text += (
+                    f'\033[38;2;{top[0]};{top[1]};{top[2]}m'
+                    f'\033[48;2;{bottom[0]};{bottom[1]};{bottom[2]}m▀'
+                )
+        text += '\033[0m\n'
+    return text

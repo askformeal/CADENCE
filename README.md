@@ -289,6 +289,8 @@ Icon: [Cadence icons created by Three musketeers - Flaticon](https://www.flatico
 
 Lyric icon: [Lyrics icons created by Aranagraphics - Flaticon](https://www.flaticon.com/free-icons/lyrics)
 
+Cover placeholder: [Image-placeholder icons created by Graphics Plazza - Flaticon](https://www.flaticon.com/free-icons/image-placeholder)
+
 ## License
 
 MIT License, because using it is your loss.

@@ -64,11 +64,11 @@ def handle_code(code, callback):
         logger.info('Backend existing')
         callback()
     elif code == 5:
-        logger.info('Authorization failed')
+        logger.error('Authorization failed')
         callback()
     elif code == 2:
         if confirm_dead():
-            logger.info('Death confirmed')
+            logger.error('Death confirmed')
             callback()
         else:
             logger.info('Heartbeat resumed')

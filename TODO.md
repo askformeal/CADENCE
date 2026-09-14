@@ -54,8 +54,14 @@
 - [X] Lyric offset
 - [X] Make floating lyric board draggable
 - [X] Colored TUI
-- [ ] Log rotation
+- [X] Log rotation
 - [ ] Dashboard show album cover
+  - [X] Resize poster with terminal width/height
+  - [ ] Compress oversized covers in backend
+  - [ ] Cover cache
+- [ ] Reload hotkey for dashboard
+- [ ] Manually jump to memorized position feature
+- [ ] Reverse playback sequence
 - [ ] GUI configure editor
 - [ ] HTTP frontend
 - [ ] Bluetooth frontend

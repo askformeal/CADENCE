@@ -9,6 +9,7 @@ MAX_SHOW_BIND = 25
 VOL_BAR_LEN = 20
 TOAST_TIME = 5
 OFFSET_OVERLAY_STEP = 100
+POSTER_TOP_PAD = 3
 
 CHAR_TO_NAME = {}
 
@@ -76,6 +77,7 @@ class DashKeyMap: # why not a dict? because this works better with my IDE's sugg
 
         self.switch_select = Bind(readchar.key.ENTER, name='Switch to Selected Song')
 
+        self.poster = Bind('f', name='Toggle Poster Mode')
         self.help = Bind('?', readchar.key.F1, name='Show Help')
 
         self.next_box = Bind('t', name='Switch to Next Box Style')

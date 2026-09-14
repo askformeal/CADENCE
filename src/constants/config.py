@@ -150,6 +150,18 @@ CONFIG_SCHEME = {
         'default': 'rounded',
         'description': 'Box style of dashboard'
     },
+    'dash_poster_width': {
+        'type': CONVERTER.pos_int,
+        'section': 'appearance',
+        'default': 80,
+        'description': 'Width of album cover on dashboard (columns)'
+    },
+    'dash_poster_height': {
+        'type': CONVERTER.pos_int,
+        'section': 'appearance',
+        'default': 64,
+        'description': 'Height of album cover on dashboard (pixels / 2 rows)'
+    },
     'dash_screen_buffer': {
         'type': CONVERTER.boolean,
         'section': 'appearance',

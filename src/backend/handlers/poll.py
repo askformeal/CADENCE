@@ -19,5 +19,7 @@ def poll(ctx, request):
     snapshot['current_songs'] = get_current_songs(ctx)
     playlists = ctx.database.get_all_playlists()
     snapshot['playlists'] = list(map(lambda x: x['name'], playlists))
+    ctx.playback.update_cover()
+    snapshot['cover_hash'] = ctx.playback.cover_hash
 
     return gen_response.Success('snapshot obtained', attachment=snapshot)

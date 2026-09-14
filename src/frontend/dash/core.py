@@ -9,16 +9,33 @@ from threading import Thread
 from src import __version__
 
 from .logger import logger
-from src.constants import MAX_SHOW_BIND
-from src.constants import HEARTBEAT_POLL_INTERVAL, POLL_INTERVAL
-from src.constants import DASH_KEY_MAP as KEY_MAP
-from src.constants import MAX_SHOW_SONG, BOX_STYLES
+from src.constants import (
+    NO_COVER_PATH,
+    ENCODING,
+    HEARTBEAT_POLL_INTERVAL, 
+    POLL_INTERVAL, 
+    MAX_SHOW_SONG, 
+    MAX_SHOW_BIND, 
+    BOX_STYLES,
+    POSTER_TOP_PAD,
+    DASH_KEY_MAP as KEY_MAP
+    )
 from src.config import CONFIG
 from src.frontend.client import test_heartbeat, handle_code, send_request
 from src.utils.escape_code import ESCAPE_CODE as EC
-from src.utils.misc import squeeze, get_song_display_name
-from src.utils.tui import strlen, box, window_list
+from src.utils.misc import (
+    squeeze, 
+    get_song_display_name,
+    base642bytes
+    )
+from src.utils.tui import (
+    strlen, 
+    box, 
+    window_list,
+    render_tui_cover
+    )
 from src.frontend.snapshot import Snapshot
+from src.frontend.cover import Cover
 from .empty import DASH_EMPTY as EMPTY
 from .hotkey import HotkeyMixin
 from .gen_main import MainMixin
@@ -30,9 +47,20 @@ class Dash(HotkeyMixin, MainMixin, PlaylistMixin, InfoMixin):
         os.system('')
         self.running = True
 
+        with open(NO_COVER_PATH, 'r', encoding=ENCODING) as f:
+            no_cover_raw = f.read()
+        self.no_cover = base642bytes(no_cover_raw)
+
         self.snapshot = Snapshot(
             self._send_dash_request, 
-            empty=EMPTY)
+            empty=EMPTY
+            )
+
+        self.cover = Cover(
+            self._send_dash_request,
+            placeholder=self.no_cover,
+            logger=logger
+            )
 
         self.song_selected = 0 # 0-based!
         self.bind_selected = 0 # 0-based!
@@ -53,6 +81,10 @@ class Dash(HotkeyMixin, MainMixin, PlaylistMixin, InfoMixin):
         self.box_style_num = self.box_styles.index(CONFIG.dash_box_style)
 
         self.show_help = False
+        self.poster = False
+
+        self.cover_text = ''
+        self.old_cover_state = (None, None, None)
 
         self.toast_text = ''
         self.toast_time = 0
@@ -80,7 +112,7 @@ class Dash(HotkeyMixin, MainMixin, PlaylistMixin, InfoMixin):
                 main_text = ''
                 playlist_text = ''
                 info_text = ''
-
+                self.snapshot.poll()
                 if self.show_help:
                     lines = ['Key Map\n']
                     bind_lines = []
@@ -98,10 +130,18 @@ class Dash(HotkeyMixin, MainMixin, PlaylistMixin, InfoMixin):
                     bind_lines = self._dash_box('\n'.join(bind_lines)).split('\n')
                     lines += bind_lines
                     text = '\n'.join(lines)
-                    
-                else:
-                    self.snapshot.poll()
 
+                elif self.poster:
+                    if self.snapshot.cover_hash is not EMPTY:
+                        cover = self.cover.get_cover(self.snapshot.cover_hash)
+                        cover_hash = self.snapshot.cover_hash
+                    else:
+                        cover = self.no_cover
+                        cover_hash = None
+
+                    text = self.gen_cover_text(cover, cover_hash)
+
+                else:
                     self.filtered_songs = []
                     self.song_nums = []
                     if self.snapshot.current_songs is not EMPTY:
@@ -161,16 +201,26 @@ class Dash(HotkeyMixin, MainMixin, PlaylistMixin, InfoMixin):
 
                 width = shutil.get_terminal_size((-1, -1)).columns
                 text_lines = text.splitlines()
+
+                if self.poster:
+                    max_len = self._cover_size()[0]
+                else:
+                    max_len = max(map(strlen, text_lines), default=0)
+
                 text = ''
                 for line in text_lines:
                     if width != -1:
-                        while strlen(line) > width:
-                            last_escape = re.findall(r'\x1b\[[0-?]*[ -/]*[@-~]$', line)
-                            if len(last_escape) > 0:
-                                last_escape = last_escape[0]
-                                line = line[:-len(last_escape)]
-                            else:
-                                line = line[:-1]
+                        if max_len < width:
+                            pad = ' ' * ((width - max_len) // 2)
+                            line = pad + line
+                        else:
+                            while strlen(line) > width:
+                                last_escape = re.findall(r'\x1b\[[0-?]*[ -/]*[@-~]$', line)
+                                if len(last_escape) > 0:
+                                    last_escape = last_escape[0]
+                                    line = line[:-len(last_escape)]
+                                else:
+                                    line = line[:-1]
 
                     text += f'{line}{EC.rs}\n'
 
@@ -196,6 +246,38 @@ class Dash(HotkeyMixin, MainMixin, PlaylistMixin, InfoMixin):
             logger.info(f'Sent request: {request}, response received: {response}')
         handle_code(response.get('code', None), self.exit)
         return response.get('attachment', None)
+
+    def gen_cover_text(self, cover_bytes, cover_hash):
+        cover_width, cover_height = self._cover_size()
+        state = (cover_width, cover_height, cover_hash)
+        if state != self.old_cover_state:
+            self.old_cover_state = state
+            logger.debug('Regenerate cover text')
+            self.cover_text = render_tui_cover(
+                cover_bytes, 
+                cover_width, 
+                cover_height
+                )
+        return ('\n' * POSTER_TOP_PAD) + self.cover_text
+
+    def _cover_size(self):
+        width = CONFIG.dash_poster_width
+        height = CONFIG.dash_poster_height
+        terminal_size = shutil.get_terminal_size((0, 0))
+        lines = terminal_size.lines
+        columns = terminal_size.columns
+
+        if lines > 0:
+            # one line of slack: every row ends with a newline, a full screen would scroll the top away
+            available = lines - POSTER_TOP_PAD - 1
+            if available < 1:
+                available = 1
+            if height > available * 2:
+                height = available * 2
+        if columns > 0:
+            width = min(width, columns)
+        
+        return width, height
 
     def _toast(self, text):
         self.toast_text = text
