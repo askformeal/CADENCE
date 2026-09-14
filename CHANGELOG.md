@@ -1,10 +1,22 @@
 # CHANGELOG
 
-## [Unreleased]
+## [0.50.0] - 2026-09-14
+
+### Added
+
+- **Album cover.** The backend reads the cover of the playing song and hands it to frontends through a new `get_cover` action. The image comes from the file's own tags (FLAC pictures, ID3 `APIC` for MP3/WAV, MP4 `covr`, Vorbis `metadata_block_picture`) or, failing that, from a `cover.jpg` / `folder.jpg` / `album.jpg` / `albumart.jpg` / `front.jpg` next to it. It is re-encoded to JPEG and downscaled so its longest side is at most `MAX_COVER_SIDE` (512 px) before being served — a 1400x1400 embedded cover drops from ~170 KB to ~48 KB, and a 4 MB folder image to ~55 KB. Small covers are passed through untouched, never upscaled. A cover that cannot be decoded (corrupt, truncated, or not an image at all) simply counts as "no cover".
+- **Poster mode on the dashboard.** `f` replaces the whole layout with the current song's cover, rendered as half-block cells with true color, sized by the new `dash_poster_width` / `dash_poster_height` options and clamped to the terminal. The image is scaled proportionally and the leftover area is left transparent, so the cover sits on the terminal's own background instead of a black box. Songs without a cover show a bundled placeholder (`res/no_cover.txt`). The rendered poster is cached and only redrawn when the cover, the size or the cover hash changes.
+- `poll` now carries `cover_hash`, the SHA-256 of the bytes `get_cover` would serve. Frontends use it to tell whether the cover they already hold is still current, so the image itself never travels on the polling path.
+- New config options `dash_poster_width` (default `80` columns) and `dash_poster_height` (default `64` pixels, 2 per terminal row).
 
 ### Changed
 
 - Log files no longer grow without a limit. Every log file is truncated in place once it passes `LOG_FILE_MAX_BYTES` (20MB), so a backend left running for weeks cannot fill the disk with one file. Only the most recent window is kept — there are no rotated backups, by design: truncating is the one way to bound a log file that several processes append to, since Windows refuses to rename a file while another process has it open.
+
+### Fixed
+
+- Cover art that could not be decoded crashed the request that read it. `poll` ran the cover through Pillow, and a corrupt or unsupported image (a `cover.jpg` that is a text file, a JPEG missing its last bytes) raised out of the handler: the request was never answered, the cover and its hash were left disagreeing, and every frontend that used the hash then re-requested the image on every poll. The decode now falls back to "no cover" and logs a warning once per song.
+- A cover was re-read and re-encoded on every song change with no limit on the image size, so a 4000x4000 folder image was decoded in full and every frontend transferred it whole.
 
 ## [0.49.0] - 2026-09-13
 

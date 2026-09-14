@@ -55,9 +55,9 @@
 - [X] Make floating lyric board draggable
 - [X] Colored TUI
 - [X] Log rotation
-- [ ] Dashboard show album cover
+- [X] Dashboard show album cover
   - [X] Resize poster with terminal width/height
-  - [ ] Compress oversized covers in backend
+  - [X] Compress oversized covers in backend
   - [ ] Cover cache
 - [ ] Reload hotkey for dashboard
 - [ ] Manually jump to memorized position feature

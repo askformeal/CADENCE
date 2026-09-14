@@ -1,10 +1,12 @@
+from io import BytesIO
 import random
 from threading import Thread
 
 import syncedlyrics
+from PIL import Image
 
 from src.log import setup_logger
-from src.constants import BACKEND_LOG_PATH
+from src.constants import BACKEND_LOG_PATH, MAX_COVER_SIDE, COVER_QUALITY
 from src.config import CONFIG
 from src.sentinels import SENTINELS
 from src.utils.misc import get_song_display_name, hash_bytes
@@ -120,4 +122,18 @@ class Playback:
                 if self.cover is None:
                     self.cover_hash = None
                 else:
-                    self.cover_hash = hash_bytes(self.cover)
+                    try:
+                        image = Image.open(BytesIO(self.cover))
+                        image.thumbnail((MAX_COVER_SIDE, MAX_COVER_SIDE), Image.Resampling.LANCZOS)
+                        buffer = BytesIO()
+                        image.convert('RGB').save(
+                            buffer, format='JPEG', 
+                            quality=COVER_QUALITY, 
+                            optimize=True)
+                    except (OSError, Image.DecompressionBombError) as e:
+                        logger.warning(f'Failed to process cover of \"{path}\": {e}')
+                        self.cover = None
+                        self.cover_hash = None
+                    else:
+                        self.cover = buffer.getvalue()
+                        self.cover_hash = hash_bytes(self.cover)

@@ -48,3 +48,7 @@ BOX_STYLES = {
     'double': ('╔', '╗', '╚', '╝', '║', '═', '╦', '╩'),
     'heavy': ('┏', '┓', '┗', '┛', '┃', '━', '┳', '┻'),
 }
+
+MAX_COVER_SIDE = 512
+COVER_QUALITY = 85
+# MAX_COVER_CACHE = 

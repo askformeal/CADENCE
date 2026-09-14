@@ -21,7 +21,8 @@ Retrieves collections of mechanically-represented wave data from persistent stor
 - Volume and mute control
 - Hotkey frontend (pynput)
 - Tray icon frontend (pystray): playback controls, song/playlist switching, volume presets, now-playing tooltip and error indicator
-- Dashboard frontend (`cadence dash`): interactive TUI with live status, playlist browsing and keyboard controls
+- Dashboard frontend (`cadence dash`): interactive TUI with live status, playlist browsing and keyboard controls, including a poster mode that fills the screen with the album cover
+- Album cover art: read from the file's own tags (FLAC pictures, ID3 APIC, MP4 `covr`, Vorbis comments) or from a `cover.jpg` / `folder.jpg` next to it, downscaled by the backend and served to frontends
 - Lyric board frontend: floating always-on-top window showing the current lyric line, styled via config options and fading to semi-transparent until hovered
 - Socket-based backend/frontend architecture (see [docs/protocol.md](docs/protocol.md))
 
@@ -159,6 +160,8 @@ Config file: `%LOCALAPPDATA%\cadence\cadence\config.toml` (Windows). Options:
 | `pos_memorize_interval` | `5` | Interval of memorized position updates (seconds) |
 | `dash_volume_step` | `5` | Volume increase/decrease step on the dashboard |
 | `dash_pos_step` | `5` | Position forward/backward step on the dashboard |
+| `dash_poster_width` | `80` | Width of the album cover in the dashboard's poster mode (columns) |
+| `dash_poster_height` | `64` | Height of the album cover in poster mode (pixels, 2 per terminal row) |
 | `escape_char` | `true` | Use ANSI escape codes (colors) in the CLI and dashboard output |
 | `cli_box_style` | `rounded` | Box style of the CLI |
 | `dash_box_style` | `rounded` | Box style of the dashboard |
@@ -196,7 +199,7 @@ The tray icon starts with the backend (unless the `tray` config option is off) a
 
 ### Dashboard
 
-The dashboard (`cadence dash`) is an interactive terminal UI. It shows the current song, a progress bar with elapsed/total time, volume bar and playback state, the current lyric line (the song's local lyric if one is set via `cadence lib lyric set`, or its live online lyric in online mode), the playlist (with the playing song and your selection highlighted), and is controlled entirely from the keyboard. A left column shows library information for the current song (duration, metadata, tech fields, aliases and playlists). It starts its own frontend process and uses the same socket protocol as the other frontends.
+The dashboard (`cadence dash`) is an interactive terminal UI. It shows the current song, a progress bar with elapsed/total time, volume bar and playback state, the current lyric line (the song's local lyric if one is set via `cadence lib lyric set`, or its live online lyric in online mode), the playlist (with the playing song and your selection highlighted), and is controlled entirely from the keyboard. A left column shows library information for the current song (duration, metadata, tech fields, aliases and playlists). It starts its own frontend process and uses the same socket protocol as the other frontends. Pressing `f` switches to poster mode: the whole layout is replaced by the current song's album cover, drawn as colored half-blocks sized to `dash_poster_width` × `dash_poster_height` and clamped to the terminal. The cover comes from the backend (see `get_cover` in [docs/protocol.md](docs/protocol.md)), which reads it once per song from the file's tags or from a cover image next to it; songs without one show a bundled placeholder.
 
 Screenshot:
 
@@ -242,6 +245,7 @@ Keys (defined in `DASH_KEY_MAP` in `src/constants/`):
 | `z` | Toggle the lyric source (local `.lrc` / online) |
 | `]` / `[` | Nudge the current lyric later / earlier (live overlay, step `100ms`; not persisted) |
 | `\` | Reset the live lyric offset overlay |
+| `f` | Toggle poster mode (full-screen album cover) |
 | `=` / `-` | Volume up / down (step from `dash_volume_step`) |
 | `m` | Mute |
 | `,` / `h`, `←` | Jump backward (step from `dash_pos_step`) |

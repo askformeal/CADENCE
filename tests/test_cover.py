@@ -1,4 +1,4 @@
-"""Album cover extraction and the dashboard poster caches.
+"""Album cover extraction, the backend downscale, and the dashboard poster caches.
 
 Three independent layers, each of which failed silently at least once:
 mutagen extraction per container, the Cover byte cache keyed by hash, and the
@@ -9,6 +9,7 @@ import base64
 import hashlib
 import io
 import os
+from pathlib import Path
 import wave
 
 import mutagen.id3
@@ -16,11 +17,26 @@ import mutagen.wave
 import pytest
 from PIL import Image
 
+from src.constants import MAX_COVER_SIDE
 from src.frontend.cover import Cover
 from src.frontend.dash import core as dash_core
 from src.utils.file_extract import _pick_front, extract_cover
 
-FAKE_COVER = b'NOT_A_REAL_JPEG'  # extract_cover never decodes, only the frontends do
+
+def _jpeg(color, size=16):
+    if isinstance(size, int):
+        size = (size, size)
+    buffer = io.BytesIO()
+    Image.new('RGB', size, color).save(buffer, 'JPEG', quality=90)
+    return buffer.getvalue()
+
+
+COVER_IMAGE = _jpeg('purple', 32)
+COVER_A = _jpeg('red')
+COVER_B = _jpeg('blue')
+PLACEHOLDER = _jpeg('gray')
+HASH_A = hashlib.sha256(COVER_A).hexdigest()
+HASH_B = hashlib.sha256(COVER_B).hexdigest()
 
 
 def _request(backend, action, **extra):
@@ -38,13 +54,20 @@ def _write_wav(path):
     return path
 
 
+def _open_and_get_cover(backend, song):
+    _request(backend, 'open', song=song)
+    attachment = _request(backend, 'poll')['attachment']
+    response = _request(backend, 'get_cover')
+    return attachment, response
+
+
 @pytest.fixture
 def covered_wav(tmp_path):
     """WAV carrying an ID3 APIC frame, the tag branch MP3 and WAV share."""
     path = _write_wav(tmp_path / 'covered.wav')
     file = mutagen.wave.WAVE(path)
     file.add_tags()
-    file.tags.add(mutagen.id3.APIC(mime='image/jpeg', type=3, desc='cover', data=FAKE_COVER))
+    file.tags.add(mutagen.id3.APIC(mime='image/jpeg', type=3, desc='cover', data=COVER_IMAGE))
     file.save()
     return str(path)
 
@@ -52,6 +75,17 @@ def covered_wav(tmp_path):
 @pytest.fixture
 def bare_wav(tmp_path):
     return str(_write_wav(tmp_path / 'bare.wav'))
+
+
+@pytest.fixture
+def folder_cover_wav(tmp_path):
+    """WAV with a separate cover.jpg next to it, sized on request."""
+    def build(color='green', size=(1200, 600)):
+        folder = tmp_path / f'folder_{size[0]}x{size[1]}'
+        folder.mkdir(exist_ok=True)
+        (folder / 'cover.jpg').write_bytes(_jpeg(color, size))
+        return str(_write_wav(folder / 'song.wav'))
+    return build
 
 
 def test_pick_front_prefers_front_cover():
@@ -64,17 +98,17 @@ def test_pick_front_prefers_front_cover():
 
 
 def test_extract_cover_from_id3(covered_wav):
-    assert extract_cover(covered_wav) == FAKE_COVER
+    assert extract_cover(covered_wav) == COVER_IMAGE
 
 
 def test_extract_cover_folder_fallback(bare_wav, tmp_path):
-    (tmp_path / 'cover.jpg').write_bytes(FAKE_COVER)
+    (tmp_path / 'cover.jpg').write_bytes(COVER_IMAGE)
 
-    assert extract_cover(bare_wav) == FAKE_COVER
+    assert extract_cover(bare_wav) == COVER_IMAGE
 
 
 def test_extract_cover_folder_fallback_ignores_other_images(bare_wav, tmp_path):
-    (tmp_path / 'back.jpg').write_bytes(FAKE_COVER)
+    (tmp_path / 'back.jpg').write_bytes(COVER_IMAGE)
 
     assert extract_cover(bare_wav) is None
 
@@ -96,18 +130,54 @@ def test_poll_cover_hash_before_open(backend):
 
 
 def test_cover_after_open(backend, covered_wav):
-    _request(backend, 'open', song=covered_wav)
+    """The poll hash must describe the bytes get_cover actually serves, not the raw tag."""
+    attachment, response = _open_and_get_cover(backend, covered_wav)
+    data = base64.b64decode(response['attachment']['cover'])
 
-    attachment = _request(backend, 'poll')['attachment']
-    assert attachment['cover_hash'] == hashlib.sha256(FAKE_COVER).hexdigest()
-
-    response = _request(backend, 'get_cover')
     assert response['code'] == 0
-    assert base64.b64decode(response['attachment']['cover']) == FAKE_COVER
+    assert attachment['cover_hash'] == hashlib.sha256(data).hexdigest()
+    with Image.open(io.BytesIO(data)) as image:
+        assert image.format == 'JPEG'
+        assert max(image.size) <= MAX_COVER_SIDE
+
+
+def test_cover_is_downscaled(backend, folder_cover_wav):
+    song = folder_cover_wav(size=(1200, 1200))
+
+    attachment, response = _open_and_get_cover(backend, song)
+    data = base64.b64decode(response['attachment']['cover'])
+
+    with Image.open(io.BytesIO(data)) as image:
+        assert image.size == (MAX_COVER_SIDE, MAX_COVER_SIDE)
+    assert len(data) < (Path(song).parent / 'cover.jpg').stat().st_size
+
+
+def test_cover_downscale_keeps_aspect(backend, folder_cover_wav):
+    """A 2:1 cover must stay 2:1 with no black bars baked in."""
+    song = folder_cover_wav(color='red', size=(1200, 600))
+
+    attachment, response = _open_and_get_cover(backend, song)
+    data = base64.b64decode(response['attachment']['cover'])
+
+    with Image.open(io.BytesIO(data)) as image:
+        assert image.size == (MAX_COVER_SIDE, MAX_COVER_SIDE // 2)
+        red, green, blue = image.convert('RGB').getpixel((1, 1))
+    assert (red, green, blue) != (0, 0, 0)
+
+
+def test_cover_is_not_upscaled(backend, folder_cover_wav):
+    song = folder_cover_wav(color='blue', size=(100, 100))
+
+    attachment, response = _open_and_get_cover(backend, song)
+    data = base64.b64decode(response['attachment']['cover'])
+
+    with Image.open(io.BytesIO(data)) as image:
+        assert image.size == (100, 100)
 
 
 def test_get_cover_without_cover(backend, bare_wav):
-    _request(backend, 'open', song=bare_wav)
+    attachment = _request(backend, 'open', song=bare_wav)
+    assert attachment['code'] == 0
 
     attachment = _request(backend, 'poll')['attachment']
     assert attachment['cover_hash'] is None
@@ -117,18 +187,59 @@ def test_get_cover_without_cover(backend, bare_wav):
     assert 'Cover unavailable' in response['msg']
 
 
-def _jpeg(color, size=16):
-    buffer = io.BytesIO()
-    Image.new('RGB', (size, size), color).save(buffer, 'JPEG')
-    return buffer.getvalue()
+def _folder_cover_song(tmp_path, name, cover_bytes):
+    folder = tmp_path / name
+    folder.mkdir()
+    (folder / 'cover.jpg').write_bytes(cover_bytes)
+    return str(_write_wav(folder / 'song.wav'))
 
 
-COVER_A = _jpeg('red')
-COVER_B = _jpeg('blue')
-PLACEHOLDER = _jpeg('gray')
+def test_undecodable_cover_falls_back_to_placeholder(backend, tmp_path):
+    """Garbage bytes named cover.jpg must not kill the poll, and must not leave a
+    hash describing bytes that get_cover never served."""
+    song = _folder_cover_song(tmp_path, 'garbage', b'this is not an image at all' * 40)
 
-HASH_A = hashlib.sha256(COVER_A).hexdigest()
-HASH_B = hashlib.sha256(COVER_B).hexdigest()
+    _request(backend, 'open', song=song)
+    attachment = _request(backend, 'poll')['attachment']
+
+    assert attachment['cover_hash'] is None
+    response = _request(backend, 'get_cover')
+    assert response['code'] == 1
+    assert 'Cover unavailable' in response['msg']
+
+
+def test_truncated_cover_falls_back_to_placeholder(backend, tmp_path):
+    """A cover missing its last bytes opens fine (Image.open only reads the header)
+    and only fails when the pixels are decoded."""
+    source = _jpeg('green', 400)
+    song = _folder_cover_song(tmp_path, 'truncated', source[:len(source) - 200])
+
+    _request(backend, 'open', song=song)
+    attachment = _request(backend, 'poll')['attachment']
+
+    assert attachment['cover_hash'] is None
+    response = _request(backend, 'get_cover')
+    assert response['code'] == 1
+
+
+def test_broken_cover_does_not_retry_every_poll(backend, tmp_path, caplog):
+    """The path is remembered even when processing fails, so a broken cover is
+    warned about once instead of on every poll."""
+    song = _folder_cover_song(tmp_path, 'garbage', b'not an image' * 40)
+
+    _request(backend, 'open', song=song)
+    with caplog.at_level('WARNING'):
+        _request(backend, 'poll')
+        warnings = _cover_warnings(caplog)
+        _request(backend, 'poll')
+        _request(backend, 'poll')
+
+    assert len(warnings) == 1
+    assert len(_cover_warnings(caplog)) == 1
+
+
+def _cover_warnings(caplog):
+    return [r for r in caplog.records if 'Failed to process cover' in r.getMessage()]
 
 
 def _counting_requester(covers, calls):

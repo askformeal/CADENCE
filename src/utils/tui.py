@@ -145,7 +145,13 @@ def window_list(lines, window_len, selected, current=None, filter='', newline_se
 def render_tui_cover(data, width, height):
     height = height // 2 * 2
     image = Image.open(BytesIO(data)).convert('RGBA')
-    image = ImageOps.pad(image, (width, height), Image.Resampling.LANCZOS, color=(0,0,0,0))
+    image = ImageOps.pad(
+        image, 
+        (width, height), 
+        Image.Resampling.LANCZOS, 
+        color=(0,0,0,0)
+        )
+    
     pixels = list(image.get_flattened_data())
     text = ''
     for row in range(height // 2):

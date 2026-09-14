@@ -65,10 +65,25 @@ Success response attachment: a dictionary combining
 - the lyric state of the current song: `lyric` (a list of `[position in milliseconds, text]` pairs), `lyric_loading` (true while an online lyric is being fetched), `lyric_offset` (the offset stored for this song in the library) and `offset_overlay` (the offset the user adjusted on the fly)
 - `current_songs`, the current playlist as a list of song info dictionaries (empty when nothing is playing)
 - `playlists`, the names of every playlist in the library
+- `cover_hash`, the SHA-256 of the bytes `get_cover` would serve for the current song (`null` when it has no usable cover)
 
 Unknown values are sent as `null`; a frontend should treat a missing key the same way, since an older backend may not send it. How a frontend renders `null` is not part of the protocol — the dashboard substitutes a colored `[EMPTY]` marker, the other frontends show nothing.
 
 `poll` supersedes `get_lyric`, which has been removed: instead of fetching the playback status, the library information and the lyric state with separate requests, frontends now read them from a single snapshot. Because an online lyric is fetched in a background thread, a frontend must keep polling to see it arrive (`lyric_loading` is true until it does).
+
+### get_cover
+
+Hand over the current song's cover art. Request keys: none — the cover belongs to the song being played, so there is nothing to look up.
+
+Success response attachment: `{"cover": <base64 of a JPEG image>}`.
+
+The backend reads the cover when the playing song changes (from the file's own tags, or from a `cover.jpg` / `folder.jpg` / `album.jpg` / `albumart.jpg` / `front.jpg` next to it) and keeps it in memory, so repeated requests cost no disk access. Before serving it, the image is downscaled so that its longest side is at most `MAX_COVER_SIDE` (512 px, `constants.py`) and re-encoded as JPEG at `COVER_QUALITY` (85) — a 1400x1400 cover shrinks from ~170 KB to ~48 KB, which is what a frontend actually needs: the dashboard's poster mode draws it as 80x64 half-block cells. A cover already smaller than the limit is passed through untouched, never upscaled.
+
+Failure responses: the current song has no cover, or the cover could not be decoded (a corrupt, truncated or unsupported image — a `cover.jpg` that is not really an image gets here). Frontends are expected to fall back to a placeholder of their own in both cases; the dashboard bundles one in `res/no_cover.txt`.
+
+`cover_hash` in the `poll` snapshot is the SHA-256 of exactly the bytes this action serves. A frontend caches the bytes it received and only asks again when the hash changes, which is why the poll never carries the image itself. Note that the hash describes the *served* bytes, not the original file: two songs with the same cover serve the same bytes and share a hash.
+
+The cover is remembered even when playback stops — there is no current song whose cover would replace it — so `get_cover` keeps returning the last song's cover until something else plays.
 
 ### config
 
@@ -95,6 +110,8 @@ Read and modify the configuration file. These actions operate on the options def
 | `player_timeout` | positive float | playback | `1` | Timeout of backend waiting for a player action (seconds) |
 | `dash_volume_step` | positive int | dash | `5` | Step of volume increase/decrease on dashboard |
 | `dash_pos_step` | positive int | dash | `5` | Step of position forward/backward on dashboard |
+| `dash_poster_width` | positive int | appearance | `80` | Width of album cover on dashboard (columns) |
+| `dash_poster_height` | positive int | appearance | `64` | Height of album cover on dashboard (pixels / 2 rows) |
 | `escape_char` | boolean | appearance | `true` | Whether the CLI and dashboard output uses ANSI escape codes (colors) |
 | `cli_box_style` | box style | appearance | `rounded` | Box style of CLI (`ascii`, `at`, `rounded`, `square`, `double-corner`, `heavy-corner`, `double`, `heavy`) |
 | `dash_box_style` | box style | appearance | `rounded` | Box style of dashboard |

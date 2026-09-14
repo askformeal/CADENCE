@@ -7,6 +7,7 @@ class Cover:
         self.logger = logger
         self.cover = None
         self.old_cover_hash = None
+        self.cover_cache = {}
 
     def get_cover(self, cover_hash):
         if cover_hash != self.old_cover_hash:
