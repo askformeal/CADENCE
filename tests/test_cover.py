@@ -8,6 +8,7 @@ rendered poster cache keyed by (width, height, hash).
 import base64
 import hashlib
 import io
+import logging
 import os
 from pathlib import Path
 import wave
@@ -17,7 +18,7 @@ import mutagen.wave
 import pytest
 from PIL import Image
 
-from src.constants import MAX_COVER_SIDE
+from src.constants import MAX_COVER_CACHE, MAX_COVER_SIDE
 from src.frontend.cover import Cover
 from src.frontend.dash import core as dash_core
 from src.utils.file_extract import _pick_front, extract_cover
@@ -37,6 +38,7 @@ COVER_B = _jpeg('blue')
 PLACEHOLDER = _jpeg('gray')
 HASH_A = hashlib.sha256(COVER_A).hexdigest()
 HASH_B = hashlib.sha256(COVER_B).hexdigest()
+LOGGER = logging.getLogger(__name__)
 
 
 def _request(backend, action, **extra):
@@ -252,7 +254,7 @@ def _counting_requester(covers, calls):
 def test_cover_cache_requests_once_per_hash():
     covers = [COVER_A, COVER_B]
     calls = []
-    cover = Cover(_counting_requester(covers, calls), placeholder=PLACEHOLDER, logger=None)
+    cover = Cover(_counting_requester(covers, calls), placeholder=PLACEHOLDER, logger=LOGGER)
 
     assert cover.get_cover(HASH_A) == COVER_A
     assert cover.get_cover(HASH_A) == COVER_A
@@ -262,9 +264,42 @@ def test_cover_cache_requests_once_per_hash():
     assert len(calls) == 2
 
 
+def test_cover_cache_serves_a_previous_cover_from_memory():
+    """A -> B -> A must come back out of the cache: the requester runs dry, so a
+    third request would raise instead of quietly passing."""
+    covers = [COVER_A, COVER_B]
+    calls = []
+    cover = Cover(_counting_requester(covers, calls), placeholder=PLACEHOLDER, logger=LOGGER)
+
+    assert cover.get_cover(HASH_A) == COVER_A
+    assert cover.get_cover(HASH_B) == COVER_B
+    assert cover.get_cover(HASH_A) == COVER_A
+    assert cover.get_cover(HASH_B) == COVER_B
+
+    assert len(calls) == 2
+    assert len(cover.cover_cache) == 2
+
+
+def test_cover_cache_stays_bounded():
+    """Every new song pushes a cover in, so the cache must evict instead of
+    growing with the whole library."""
+    counter = {'count': 0}
+
+    def requester(action, **kwargs):
+        counter['count'] += 1
+        return {'cover': base64.b64encode(_jpeg((counter['count'], 0, 0))).decode('ascii')}
+
+    cover = Cover(requester, placeholder=PLACEHOLDER, logger=LOGGER)
+    for index in range(MAX_COVER_CACHE + 10):
+        cover.get_cover(f'{HASH_A}-{index}')
+
+    assert counter['count'] == MAX_COVER_CACHE + 10
+    assert len(cover.cover_cache) <= MAX_COVER_CACHE
+
+
 def test_cover_placeholder_when_request_fails():
     calls = []
-    cover = Cover(lambda action, **kwargs: calls.append(action), placeholder=PLACEHOLDER, logger=None)
+    cover = Cover(lambda action, **kwargs: calls.append(action), placeholder=PLACEHOLDER, logger=LOGGER)
 
     assert cover.get_cover(HASH_A) == PLACEHOLDER
     assert cover.get_cover(HASH_A) == PLACEHOLDER
