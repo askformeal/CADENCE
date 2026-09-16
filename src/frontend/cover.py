@@ -34,4 +34,3 @@ class Cover:
             self.logger.debug(f'Max cover cache size reached, deleted entry with hash {del_hash}')
 
         return self.cover
-    

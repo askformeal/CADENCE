@@ -58,8 +58,8 @@
 - [X] Dashboard show album cover
   - [X] Resize poster with terminal width/height
   - [X] Compress oversized covers in backend
-  - [ ] Cover cache
-- [ ] Reload hotkey for dashboard
+  - [X] Cover cache
+- [X] Reload hotkey for dashboard
 - [ ] Manually jump to memorized position feature
 - [ ] Reverse playback sequence
 - [ ] GUI configure editor

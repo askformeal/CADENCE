@@ -40,6 +40,9 @@ class DashKeyMap: # why not a dict? because this works better with my IDE's sugg
     def __init__(self):
         self.open = Bind('o', name='Open')
         self.play_all = Bind(readchar.key.CTRL_A, name='Play All')
+
+        self.reload = Bind(readchar.key.CTRL_R, name='Reload')
+
         self.toggle = Bind(readchar.key.SPACE, name='Play/Pause')
         self.stop = Bind('x', name='Stop Playback')
         self.dice = Bind('d', name='Dice')
