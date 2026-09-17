@@ -58,7 +58,8 @@ class MainMixin:
                     offset_overlay_display = f'+{self.snapshot.offset_overlay}'
                 else:
                     offset_overlay_display = str(self.snapshot.offset_overlay)
-                lines[-1] += f' ({offset_overlay_display})'
+                lines[-1] += f' ({offset_overlay_display}) '
+            lines[-1] += 'ms'
 
         lines += [
             '{lyric}',
@@ -101,11 +102,12 @@ class MainMixin:
         online_lyric = {True: '[Ol Lyric] ', False: '', EMPTY: '?'}[self.snapshot.online_lyric]
         shuffle = {True: '[Shuffle] ', False: '', EMPTY: '?'}[self.snapshot.shuffle]
         loop = {True: '[Loop] ', False: '', EMPTY: '?'}[self.snapshot.loop]
+        reverse = {True: '[Reverse] ', False: '', EMPTY: '?'}[self.snapshot.reverse]
         if self.snapshot.player_status is EMPTY:
-            player_status = 'N/A'
+            player_status = ''
         else:
             player_status = f'[{self.snapshot.player_status.capitalize()}]'
-        state = align(max_len, volume, f"{online_lyric}{shuffle}{loop}{player_status}")
+        state = align(max_len, volume, f"{online_lyric}{shuffle}{loop}{reverse}{player_status}")
 
         if (time.time() - self.toast_time) <= TOAST_TIME:
             toast = wrap_text(self.toast_text, max_len)

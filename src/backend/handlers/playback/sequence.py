@@ -9,7 +9,8 @@ from .helpers import (
     switch_song, 
     switch_shuffle, 
     replay_song, 
-    del_current_pos
+    del_current_pos,
+    loop_play
     )
 
 logger = setup_logger(__name__, BACKEND_LOG_PATH)
@@ -30,6 +31,11 @@ def loop(ctx, request):
     ctx.playback.loop = not ctx.playback.loop
     mode = {True: 'on', False: 'off'}[ctx.playback.loop]
     return gen_response.Success(f'loop mode turned {mode}')
+
+def reverse(ctx, request):
+    ctx.playback.reverse = not ctx.playback.reverse
+    mode = {True: 'on', False: 'off'}[ctx.playback.reverse]
+    return gen_response.Success(f'reverse mode turned {mode}')
 
 def dice(ctx, request):
     if ctx.playback.current_song_info is None:
@@ -62,24 +68,31 @@ def switch(ctx, request):
         return switch_song(ctx, num-1)
 
 def prev(ctx, request):
-    if ctx.playback.shuffle:
-        result = ctx.player.load_number(switch_shuffle(ctx, -1))
+    on_end = request['on_end']
+    if on_end:
+        del_current_pos(ctx)
+    
+    if on_end and ctx.playback.loop:
+        return loop_play(ctx)
     else:
-        result = ctx.player.switch_prev()
-    
-    if result is SENTINELS.SUCCESS:
-        ctx.playback.set_current_num(ctx.player.number)
-    
-    response = {
-        SENTINELS.SUCCESS: gen_response.Success(f'switched to previous song: {ctx.playback.get_current_display_name()}'),
-        SENTINELS.PLAYER_EMPTY: gen_response.PlayerEmpty('switch to previous song'),
-        SENTINELS.VLC_ERROR: gen_response.VLCError('switch to previous song'),
-        SENTINELS.PLAYER_TIMEOUT: gen_response.PlayerTimeout('switch to previous song')
-    }[result]
-    if result is SENTINELS.SUCCESS:
-        response += replay_song(ctx)
+        if ctx.playback.shuffle:
+            result = ctx.player.load_number(switch_shuffle(ctx, -1))
+        else:
+            result = ctx.player.switch_prev()
+        
+        if result is SENTINELS.SUCCESS:
+            ctx.playback.set_current_num(ctx.player.number)
+        
+        response = {
+            SENTINELS.SUCCESS: gen_response.Success(f'switched to previous song: {ctx.playback.get_current_display_name()}'),
+            SENTINELS.PLAYER_EMPTY: gen_response.PlayerEmpty('switch to previous song'),
+            SENTINELS.VLC_ERROR: gen_response.VLCError('switch to previous song'),
+            SENTINELS.PLAYER_TIMEOUT: gen_response.PlayerTimeout('switch to previous song')
+        }[result]
+        if result is SENTINELS.SUCCESS:
+            response += replay_song(ctx)
 
-    return response
+        return response
 
 def next_(ctx, request):
     on_end = request['on_end']
@@ -87,12 +100,7 @@ def next_(ctx, request):
         del_current_pos(ctx)
 
     if on_end and ctx.playback.loop:
-        result = ctx.player.load_number(ctx.player.number)
-        return {
-            SENTINELS.SUCCESS: gen_response.Success('replayed current song'),
-            SENTINELS.VLC_ERROR: gen_response.VLCError('replayed current song'),
-            SENTINELS.PLAYER_TIMEOUT: gen_response.PlayerTimeout('replayed current song'),
-        }[result]
+        return loop_play(ctx)
     else:
         if ctx.playback.shuffle:
             result = ctx.player.load_number(switch_shuffle(ctx, 1))

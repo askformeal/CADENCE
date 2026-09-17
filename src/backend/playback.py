@@ -16,10 +16,12 @@ from src.utils.file_extract import extract_cover
 logger = setup_logger(__name__, BACKEND_LOG_PATH)
 
 class Playback:
-    def __init__(self, database):
+    def __init__(self, buffer_func, database):
+        self.buffer = buffer_func
         self.database = database
 
         self.loop = False
+        self.reverse = False
 
         self.shuffle = CONFIG.default_shuffle
         self.shuffle_order = []
@@ -67,6 +69,12 @@ class Playback:
             return 'no song playing'
         else:
             return get_song_display_name(self.get_playing_info())
+
+    def on_end(self):
+        if self.reverse:
+            self.buffer({'action':'prev', 'on_end': True, 'source': 'player'})
+        else:
+            self.buffer({'action':'next', 'on_end': True, 'source': 'player'})
 
     def update_lyric(self, force=False):
         if self.current_song_info is not None:

@@ -56,6 +56,9 @@ class HotkeyMixin:
                 elif key in KEY_MAP.loop:
                     self._toast('Toggle loop')
                     self._send_dash_request('loop')
+                elif key in KEY_MAP.reverse:
+                    self._toast('Toggle reverse')
+                    self._send_dash_request('reverse')
                 elif key in KEY_MAP.lyric:
                     self._toast('Toggle online lyric')
                     self._send_dash_request('lyric')

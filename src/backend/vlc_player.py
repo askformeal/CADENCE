@@ -8,8 +8,8 @@ from src.sentinels import SENTINELS
 
 logger = setup_logger(__name__, BACKEND_LOG_PATH)
 class Player():
-    def __init__(self, buffer_func):
-        self.buffer = buffer_func
+    def __init__(self, on_end_func):
+        self.on_end = on_end_func
         self.instance = vlc.Instance('--no-video')
         self.player = self.instance.media_player_new()
         self.medias = []
@@ -21,10 +21,7 @@ class Player():
 
     def _attach_events(self):
         manager = self.player.event_manager() # I might need. Scratch that. I WILL need this.
-        manager.event_attach(vlc.EventType.MediaPlayerEndReached, self._on_end)
-
-    def _on_end(self, event):
-        self.buffer({'action':'next', 'on_end': True, 'source': 'player'})
+        manager.event_attach(vlc.EventType.MediaPlayerEndReached, lambda *_: self.on_end())
 
     def _wait_state(self, target_states):
         for i in range(int(CONFIG.player_timeout/PLAYER_POLL_INTERVAL)):

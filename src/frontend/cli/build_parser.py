@@ -54,6 +54,8 @@ def build_parser():
 
     loop_parser = command_sub.add_parser('loop', help='Toggle loop mode')
 
+    reverse = command_sub.add_parser('reverse', help='Toggle reverse playback mode')
+
     shuffle_parser = command_sub.add_parser('shuffle', help='Toggle shuffle mode')
 
     dice_parser = command_sub.add_parser('dice', help='Switch to a random song in current playlist')

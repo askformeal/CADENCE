@@ -12,6 +12,12 @@ def _request(backend, action, **extra):
     return backend.dispatch(request)
 
 
+def _run_buffered_request(backend):
+    """Pop one request queued by the backend itself and dispatch it, like _flush_buffer does."""
+    request, _ = backend.dispatch_buffer.get()
+    return request, backend.dispatch(request)
+
+
 def test_status_before_open(backend):
     response = _request(backend, 'status')
     assert response['code'] == 0
@@ -1389,6 +1395,130 @@ def test_loop_manual_next_still_advances(backend, audio_file, tmp_path):
     assert backend.playback.current_song_num == 1
     status = _request(backend, 'status')
     assert status['attachment']['path'] == second
+
+
+def test_loop_prev_on_end_replays_current(backend, audio_file, tmp_path):
+    first, _ = _open_two_song_playlist(backend, audio_file, tmp_path)
+    backend.playback.loop = True
+
+    response = _request(backend, 'prev', on_end=True)
+    assert response['code'] == 0
+    assert 'replayed' in response['msg']
+    assert backend.playback.current_song_num == 0
+    status = _request(backend, 'status')
+    assert status['attachment']['path'] == first
+
+
+def test_reverse_toggle_on_off(backend):
+    response = _request(backend, 'reverse')
+    assert response['code'] == 0
+    assert 'on' in response['msg']
+    assert backend.playback.reverse is True
+
+    response = _request(backend, 'reverse')
+    assert response['code'] == 0
+    assert 'off' in response['msg']
+    assert backend.playback.reverse is False
+
+
+def test_reverse_reported_in_status(backend):
+    status = _request(backend, 'status')
+    assert status['attachment']['reverse'] is False
+
+    _request(backend, 'reverse')
+    status = _request(backend, 'status')
+    assert status['attachment']['reverse'] is True
+
+
+def test_reverse_on_end_switches_to_previous(backend, audio_file, tmp_path):
+    first, _ = _open_two_song_playlist(backend, audio_file, tmp_path)
+    _request(backend, 'next')
+    assert backend.playback.current_song_num == 1
+    backend.playback.reverse = True
+
+    request, response = _run_buffered_request(backend)
+    assert request['action'] == 'prev'
+    assert response['code'] == 0
+    assert 'previous' in response['msg']
+    assert backend.playback.current_song_num == 0
+    status = _request(backend, 'status')
+    assert status['attachment']['path'] == first
+
+
+def test_reverse_on_end_wraps_at_first_song(backend, audio_file, tmp_path):
+    _, second = _open_two_song_playlist(backend, audio_file, tmp_path)
+    backend.playback.reverse = True
+
+    request, response = _run_buffered_request(backend)
+    assert request['action'] == 'prev'
+    assert response['code'] == 0
+    assert backend.playback.current_song_num == 1  # wraps to the last song
+    status = _request(backend, 'status')
+    assert status['attachment']['path'] == second
+
+
+def test_reverse_does_not_affect_manual_next(backend, audio_file, tmp_path):
+    _, second = _open_two_song_playlist(backend, audio_file, tmp_path)
+    backend.playback.reverse = True
+
+    response = _request(backend, 'next')
+    assert response['code'] == 0
+    assert backend.playback.current_song_num == 1
+    status = _request(backend, 'status')
+    assert status['attachment']['path'] == second
+
+
+def test_reverse_on_end_with_loop_replays_current(backend, audio_file, tmp_path):
+    first, _ = _open_two_song_playlist(backend, audio_file, tmp_path)
+    backend.playback.reverse = True
+    backend.playback.loop = True
+
+    request, response = _run_buffered_request(backend)
+    assert request['action'] == 'prev'
+    assert response['code'] == 0
+    assert 'replayed' in response['msg']
+    assert backend.playback.current_song_num == 0
+    status = _request(backend, 'status')
+    assert status['attachment']['path'] == first
+
+
+def test_playback_on_end_buffers_next(backend):
+    backend.playback.on_end()
+    request, connection = backend.dispatch_buffer.get()
+    assert request['action'] == 'next'
+    assert request['on_end'] is True
+    assert request['source'] == 'player'
+    assert connection is None
+
+
+def test_playback_on_end_buffers_prev_when_reversed(backend):
+    backend.playback.reverse = True
+    backend.playback.on_end()
+    request, connection = backend.dispatch_buffer.get()
+    assert request['action'] == 'prev'
+    assert request['on_end'] is True
+    assert request['source'] == 'player'
+    assert connection is None
+
+
+def test_prev_on_end_deletes_memorized_pos(backend, audio_file, tmp_path):
+    first, _ = _open_two_song_playlist(backend, audio_file, tmp_path)
+    database = backend.database
+    database.set_pos(first, 1000)
+
+    response = _request(backend, 'prev', on_end=True)
+    assert response['code'] == 0
+    assert database.get_pos(first) is SENTINELS.POS_NOT_FOUND
+
+
+def test_manual_prev_keeps_memorized_pos(backend, audio_file, tmp_path):
+    first, _ = _open_two_song_playlist(backend, audio_file, tmp_path)
+    database = backend.database
+    database.set_pos(first, 1000)
+
+    response = _request(backend, 'prev')
+    assert response['code'] == 0
+    assert database.get_pos(first) == 1000
 
 
 def test_invalid_key_type(backend):

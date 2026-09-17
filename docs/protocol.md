@@ -60,7 +60,7 @@ Request keys: none. In particular no `cwd` — a frontend that only displays the
 
 Success response attachment: a dictionary combining
 
-- the playback status fields, the same ones the `status` action returns: `id`, `path`, `name`, `artist`, `album`, `duration` (milliseconds), `bitrate`, `sample_rate`, `channels`, `lyric_path`, `in_library`, `player_status`, `volume`, `mute`, `shuffle`, `loop`, `online_lyric`, `playlist_len`, `current_num` (0-based number in the current playlist), `run_time` (seconds), `length` and `time` (milliseconds, -1 when unknown), `dev`
+- the playback status fields, the same ones the `status` action returns: `id`, `path`, `name`, `artist`, `album`, `duration` (milliseconds), `bitrate`, `sample_rate`, `channels`, `lyric_path`, `in_library`, `player_status`, `volume`, `mute`, `shuffle`, `loop`, `reverse`, `online_lyric`, `playlist_len`, `current_num` (0-based number in the current playlist), `run_time` (seconds), `length` and `time` (milliseconds, -1 when unknown), `dev`
 - the library information of the current song: `aliases` (a list of strings) and `added_playlists` (the names of the playlists holding it). Both are `null` when the current song is not in the library.
 - the lyric state of the current song: `lyric` (a list of `[position in milliseconds, text]` pairs), `lyric_loading` (true while an online lyric is being fetched), `lyric_offset` (the offset stored for this song in the library) and `offset_overlay` (the offset the user adjusted on the fly)
 - `current_songs`, the current playlist as a list of song info dictionaries (empty when nothing is playing)

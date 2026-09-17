@@ -18,6 +18,7 @@ ROUTER = {
     'toggle': play_core.toggle,
     'list': sequence.list_,
     'loop': sequence.loop,
+    'reverse': sequence.reverse,
     'shuffle': sequence.shuffle,
     'dice': sequence.dice,
     'switch': sequence.switch,

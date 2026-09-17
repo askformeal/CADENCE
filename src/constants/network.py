@@ -33,6 +33,9 @@ ACTION_KEYS = {
     'switch': {
         'number': (int, True)
     },
+    'prev': {
+        'on_end': (bool, False, False)
+    },
     'next': {
         'on_end': (bool, False, False)
     },

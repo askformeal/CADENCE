@@ -1,13 +1,29 @@
 # CHANGELOG
 
+## [0.51.0] - 2026-09-17
+
+### Added
+
+- **Reverse playback.** `cadence reverse` (also `b` on the dashboard, and a `Reverse` item in the tray menu next to `Shuffle` and `Loop`) turns the playlist around: when a song ends, the backend moves to the previous one instead of the next, wrapping from the first song to the last. Only the end of a song is affected — manual `prev` / `next`, `switch` and `dice` still move forward — and it composes with loop, where the current song is replayed instead. The state is reported as `reverse` by `status` and `poll`.
+- **Reload hotkey on the dashboard.** `Ctrl+R` re-opens the last opened song or play-all session (`load_last`, the same action as `cadence reload`), so the library can be re-read without restarting the backend.
+- The dashboard now shows a toast for every playback action it triggers — open, reload, play all, play/pause, stop, seek, dice, the mode toggles, mute, volume and the lyric source — instead of only for the lyric offset.
+
+### Changed
+
+- The dashboard's state line no longer prints `N/A` when the player state is unknown; the slot is left empty.
+- The dashboard's lyric offset line now carries its unit (`Offset: 250ms`).
+
 ## [0.50.0] - 2026-09-14
 
 ### Added
 
-- **Album cover.** The backend reads the cover of the playing song and hands it to frontends through a new `get_cover` action. The image comes from the file's own tags (FLAC pictures, ID3 `APIC` for MP3/WAV, MP4 `covr`, Vorbis `metadata_block_picture`) or, failing that, from a `cover.jpg` / `folder.jpg` / `album.jpg` / `albumart.jpg` / `front.jpg` next to it. It is re-encoded to JPEG and downscaled so its longest side is at most `MAX_COVER_SIDE` (512 px) before being served — a 1400x1400 embedded cover drops from ~170 KB to ~48 KB, and a 4 MB folder image to ~55 KB. Small covers are passed through untouched, never upscaled. A cover that cannot be decoded (corrupt, truncated, or not an image at all) simply counts as "no cover".
-- **Poster mode on the dashboard.** `f` replaces the whole layout with the current song's cover, rendered as half-block cells with true color, sized by the new `dash_poster_width` / `dash_poster_height` options and clamped to the terminal. The image is scaled proportionally and the leftover area is left transparent, so the cover sits on the terminal's own background instead of a black box. Songs without a cover show a bundled placeholder (`res/no_cover.txt`). The rendered poster is cached and only redrawn when the cover, the size or the cover hash changes.
-- `poll` now carries `cover_hash`, the SHA-256 of the bytes `get_cover` would serve. Frontends use it to tell whether the cover they already hold is still current, so the image itself never travels on the polling path.
-- New config options `dash_poster_width` (default `80` columns) and `dash_poster_height` (default `64` pixels, 2 per terminal row).
+**Album cover.** The backend reads the cover of the playing song and hands it to frontends through a new `get_cover` action. The image comes from the file's own tags (FLAC pictures, ID3 `APIC` for MP3/WAV, MP4 `covr`, Vorbis `metadata_block_picture`) or, failing that, from a `cover.jpg` / `folder.jpg` / `album.jpg` / `albumart.jpg` / `front.jpg` next to it. It is re-encoded to JPEG and downscaled so its longest side is at most `MAX_COVER_SIDE` (512 px) before being served — a 1400x1400 embedded cover drops from ~170 KB to ~48 KB, and a 4 MB folder image to ~55 KB. Small covers are passed through untouched, never upscaled. A cover that cannot be decoded (corrupt, truncated, or not an image at all) simply counts as "no cover".
+
+**Poster mode on the dashboard.** `f` replaces the whole layout with the current song's cover, rendered as half-block cells with true color, sized by the new `dash_poster_width` / `dash_poster_height` options and clamped to the terminal. The image is scaled proportionally and the leftover area is left transparent, so the cover sits on the terminal's own background instead of a black box. Songs without a cover show a bundled placeholder (`res/no_cover.txt`). The rendered poster is cached and only redrawn when the cover, the size or the cover hash changes.
+
+`poll` now carries `cover_hash`, the SHA-256 of the bytes `get_cover` would serve. Frontends use it to tell whether the cover they already hold is still current, so the image itself never travels on the polling path.
+
+New config options `dash_poster_width` (default `80` columns) and `dash_poster_height` (default `64` pixels, 2 per terminal row).
 
 ### Changed
 
@@ -61,6 +77,7 @@
 ## [0.47.0] - 2026-09-08
 
 > **⚠️ Breaking Changes**
+>
 > - The single `ipc_timeout` config option is removed. The frontend's socket wait is now split in two: `connection_timeout` (waiting for the backend's acknowledge, default `3`) and `execution_timeout` (waiting for the full response, default `30`). Any `ipc_timeout` you set is no longer read.
 
 ### Added
@@ -478,6 +495,7 @@
 ## [0.22.0] - 2026-08-23
 
 > **⚠️ Breaking Changes**
+>
 > - `lib.playlist.add` request key renamed: `song` → `songs` — now takes a list/tuple of strings (`IterType(str)`). The CLI argument order changed too: `lib playlist add <playlist> <song>...` (playlist first, then one or more songs).
 > - `lib.playlist.kick` request key renamed: `song` → `songs` — same shape; the CLI is now `lib playlist kick <playlist> <song>...`.
 
@@ -496,6 +514,7 @@
 ## [0.21.0] - 2026-08-22
 
 > **⚠️ Breaking Changes**
+>
 > - `lib.alias.bind` request key renamed: `alias` → `aliases` — now takes a list/tuple of strings (`IterType(str)`); the CLI takes multiple alias values after the song.
 > - `lib.alias.unbind` request key renamed: `alias` → `aliases` — same shape; the CLI takes multiple aliases to unbind.
 
@@ -515,6 +534,7 @@
 ## [0.20.0] - 2026-08-22
 
 > **⚠️ Breaking Changes**
+>
 > - `lib.del` request key renamed: `song` → `songs` — now takes a list/tuple of strings (`IterType(str)`); the CLI takes multiple positional songs.
 
 ### Added
@@ -530,6 +550,7 @@
 ## [0.19.0] - 2026-08-22
 
 > **⚠️ Breaking Changes**
+>
 > - `lib.add` request keys renamed: `path` → `paths`, `alias` → `aliases` — both now take a list/tuple of strings (`IterType(str)`); the CLI takes multiple positional paths and `-a/--aliases` takes multiple alias values.
 
 ### Added

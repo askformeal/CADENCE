@@ -16,6 +16,7 @@ Retrieves collections of mechanically-represented wave data from persistent stor
 - Memorized playback position — resume where you left off
 - Shuffle mode
 - Loop mode — replay the current song on end
+- Reverse mode — walk the playlist backwards when a song ends
 - Random song jump (`dice`)
 - Dev mode — isolated development database
 - Volume and mute control
@@ -88,6 +89,7 @@ Builds a self-contained folder (plus a `.zip`) into `dist/cadence-<version>/`, b
 | `cadence dice`         | Switch to a random song in current playlist            |
 | `cadence shuffle`      | Toggle shuffle mode                                    |
 | `cadence loop`         | Toggle loop mode                                       |
+| `cadence reverse`      | Toggle reverse playback mode                           |
 | `cadence lyric`        | Toggle lyric source (local `.lrc` / online)            |
 | `cadence switch <num>` | Switch to a song in current playlist via number        |
 | `cadence seek <time>`  | Jump to a specific time, or seek relative to the current position with a `+`/`-` prefix (e.g. `seek +10` forward, `seek -10` backward) |
@@ -231,6 +233,7 @@ Keys (defined in `DASH_KEY_MAP` in `src/constants/`):
 | --- | --- |
 | `Space` | Play / pause |
 | `Ctrl+A` | Play all songs in the library |
+| `Ctrl+R` | Reload the last opened song or play-all session |
 | `o` | Open a song — prompts for a song name, library ID, file path or playlist name |
 | `/` | Filter the playlist — prompts for text, matches against song name and artist; highlights matches and shows remaining counts above/below |
 | `g` | Jump to a specific time — prompts for `HH:MM:SS` |
@@ -242,6 +245,7 @@ Keys (defined in `DASH_KEY_MAP` in `src/constants/`):
 | `Enter` | Play the selected song |
 | `x` / `d` | Stop / random song jump |
 | `s` / `r` | Toggle shuffle / loop |
+| `b` | Toggle reverse playback |
 | `z` | Toggle the lyric source (local `.lrc` / online) |
 | `]` / `[` | Nudge the current lyric later / earlier (live overlay, step `100ms`; not persisted) |
 | `\` | Reset the live lyric offset overlay |

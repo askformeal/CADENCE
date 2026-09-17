@@ -22,6 +22,7 @@ class Snapshot:
         
         self.shuffle = self.empty
         self.loop = self.empty
+        self.reverse = self.empty
         
         self.current_num = self.empty # 0-based!
         self.playlist_len = self.empty
@@ -66,6 +67,7 @@ class Snapshot:
             self.mute = self.get('mute')
             self.shuffle = self.get('shuffle')
             self.loop = self.get('loop')
+            self.reverse = self.get('reverse')
             self.online_lyric = self.get('online_lyric')
             self.current_num = self.get('current_num') # 0-based
             self.playlist_len = self.get('playlist_len')

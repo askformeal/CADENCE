@@ -60,8 +60,8 @@
   - [X] Compress oversized covers in backend
   - [X] Cover cache
 - [X] Reload hotkey for dashboard
-- [ ] Manually jump to memorized position feature
-- [ ] Reverse playback sequence
+- [X] Reverse playback sequence
+- [ ] Dual audio engine: miniaudio + VLC
 - [ ] GUI configure editor
 - [ ] HTTP frontend
 - [ ] Bluetooth frontend

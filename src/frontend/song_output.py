@@ -90,6 +90,9 @@ class SongOutput:
         self.loop = {True: 'On', False: 'Off', '?': '?'}[info.get('loop', '?')]
         self.loop_raw = info.get('loop', None)
 
+        self.reverse = {True: 'On', False: 'Off', '?': '?'}[info.get('reverse', '?')]
+        self.reverse_raw = info.get('reverse', None)
+
         self.online_lyric = {True: 'On', False: 'Off', '?': '?'}[info.get('online_lyric', '?')]
         self.online_lyric_raw = info.get('online_lyric', None)
 

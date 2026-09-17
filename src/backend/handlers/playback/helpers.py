@@ -47,6 +47,7 @@ def get_status(ctx):
         'mute': ctx.player.mute,
         'shuffle': ctx.playback.shuffle,
         'loop': ctx.playback.loop,
+        'reverse': ctx.playback.reverse,
         'online_lyric': ctx.playback.online_lyric,
         'playlist_len': playlist_len,
         'current_num': current_num,
@@ -287,3 +288,11 @@ def remove_from_current(ctx, path) -> gen_response.Response:
             return gen_response.Success('path not in current playlist') # not that anyone will actually read this but, you know, for good measure
     else:
         return gen_response.Success('current playlist empty') # same as above
+
+def loop_play(ctx):
+    result = ctx.player.load_number(ctx.player.number)
+    return {
+        SENTINELS.SUCCESS: gen_response.Success('replayed current song'),
+        SENTINELS.VLC_ERROR: gen_response.VLCError('replayed current song'),
+        SENTINELS.PLAYER_TIMEOUT: gen_response.PlayerTimeout('replayed current song'),
+    }[result]

@@ -64,8 +64,8 @@ class Backend:
             logger.critical(e)
             self.running = False
         else:
-            self.player = Player(self.buffer_request)
-            self.playback = Playback(self.database)
+            self.playback = Playback(self.buffer_request, self.database)
+            self.player = Player(self.playback.on_end)
 
             self.ctx = Context(
                 database=self.database,

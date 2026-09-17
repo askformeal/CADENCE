@@ -100,6 +100,7 @@ class Tray(Icon):
                     Menu.SEPARATOR,
                     MenuItem('Shuffle', lambda *_: self._send_tray_request('shuffle'), checked=lambda *_: self.snapshot.shuffle),
                     MenuItem('Loop', lambda *_: self._send_tray_request('loop'), checked=lambda *_: self.snapshot.loop),
+                    MenuItem('Reverse', lambda *_: self._send_tray_request('reverse'), checked=lambda *_: self.snapshot.reverse),
                     Menu.SEPARATOR,
                     MenuItem('Mute', lambda *_: self._send_tray_request('mute'), checked=lambda *_: self.snapshot.mute),
                     MenuItem('Volume', Menu(
