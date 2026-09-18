@@ -46,4 +46,4 @@ def backend(tmp_path, monkeypatch):
     yield b
     b.exit_()
     b.database.on_exit()
-    b.player.on_exit()
+    b.playback.engine.on_exit()

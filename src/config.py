@@ -3,9 +3,10 @@ import tomli_w
 
 from src.log import setup_logger
 
-from src.constants import CONFIG_PATH, CONFIG_SCHEME, READABLE_TYPE_NAMES
+from src.constants import CONFIG_PATH, CONFIG_SCHEME
 from src.constants import CONFIG_LOG_PATH
 from src.sentinels import SENTINELS
+from src.types import get_type_name
 
 logger = setup_logger(__name__, CONFIG_LOG_PATH)
 
@@ -69,7 +70,8 @@ class Config:
                 try:
                     file_value = option_type(file_value)
                 except ValueError:
-                    logger.warning(f"the value of \"{name}\" option must be a {READABLE_TYPE_NAMES[option_type]} value "
+                    type_name = get_type_name(option_type)
+                    logger.warning(f"the value of \"{name}\" option must be a {type_name} value "
                                    f"but a value of type \"{type(value).__name__}\" was read from file instead. Default value of {default} will be used")
                 else:
                     value = file_value
@@ -100,7 +102,8 @@ class Config:
             try:
                 value = option_type(value)
             except ValueError:
-                    logger.warning(f"the value of \"{name}\" option must be a {READABLE_TYPE_NAMES[option_type]} value "
+                    type_name = get_type_name(option_type)
+                    logger.warning(f"the value of \"{name}\" option must be a {type_name} value "
                                 f"but a value of type \"{type(value).__name__}\" was provided instead. Setting cancelled")
                     return SENTINELS.INVALID_OPTION_VALUE
             else:

@@ -1,5 +1,5 @@
 from src.sentinels import SENTINELS
-from src.types import CONVERTER
+from src.types import CONVERTER, StrChoiceList
 
 # dunno if scheme is the right name
 # each option name must be unique
@@ -89,6 +89,12 @@ CONFIG_SCHEME = {
         'section': 'service',
         'default': True,
         'description': 'Whether to start lyric board service on start backend'
+    },
+    'engine': {
+        'type': StrChoiceList(('vlc',)),
+        'section': 'playback',
+        'default': 'vlc',
+        'description': 'Which audio engine to use'
     },
     'default_volume': {
         'type': CONVERTER.percentage,

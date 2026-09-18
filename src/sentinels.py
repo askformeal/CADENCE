@@ -61,6 +61,10 @@ class Sentinels:
 
         # Player
 
+        self.PLAYING = Sentinel('Player is Playing')
+        self.PAUSED = Sentinel('Player is Paused')
+        self.STOPPED = Sentinel('Player is Stopped')
+        self.PLAYER_INVALID = Sentinel('Player is in an Unexpected Status')
         self.PLAYER_EMPTY = Sentinel('Current playlist is empty')
         self.PLAYER_LOAD_EMPTY = Sentinel('Tried to load empty list of paths')
         self.VLC_ERROR = Sentinel('A VLC error occurred')

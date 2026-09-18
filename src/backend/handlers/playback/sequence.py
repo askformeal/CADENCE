@@ -46,10 +46,10 @@ def dice(ctx, request):
         pool = list(range(len(ctx.playback.current_song_info)))
         pool.remove(ctx.playback.current_song_num)
         num = random.choice(pool)
-        result = ctx.player.load_number(num)
+        result = ctx.playback.engine.load_number(num)
     
         if result is SENTINELS.SUCCESS:
-            ctx.playback.set_current_num(ctx.player.number)
+            ctx.playback.set_current_num(ctx.playback.engine.number)
     
         return {
             SENTINELS.SUCCESS: gen_response.Success(f'diced to the {num+1}nd song in current playlist: {ctx.playback.get_current_display_name()}'),
@@ -76,12 +76,12 @@ def prev(ctx, request):
         return loop_play(ctx)
     else:
         if ctx.playback.shuffle:
-            result = ctx.player.load_number(switch_shuffle(ctx, -1))
+            result = ctx.playback.engine.load_number(switch_shuffle(ctx, -1))
         else:
-            result = ctx.player.switch_prev()
+            result = ctx.playback.engine.switch_prev()
         
         if result is SENTINELS.SUCCESS:
-            ctx.playback.set_current_num(ctx.player.number)
+            ctx.playback.set_current_num(ctx.playback.engine.number)
         
         response = {
             SENTINELS.SUCCESS: gen_response.Success(f'switched to previous song: {ctx.playback.get_current_display_name()}'),
@@ -103,12 +103,12 @@ def next_(ctx, request):
         return loop_play(ctx)
     else:
         if ctx.playback.shuffle:
-            result = ctx.player.load_number(switch_shuffle(ctx, 1))
+            result = ctx.playback.engine.load_number(switch_shuffle(ctx, 1))
         else:
-            result = ctx.player.switch_next()
+            result = ctx.playback.engine.switch_next()
 
         if result is SENTINELS.SUCCESS:
-            ctx.playback.set_current_num(ctx.player.number)
+            ctx.playback.set_current_num(ctx.playback.engine.number)
 
         response = {
             SENTINELS.SUCCESS: gen_response.Success(f'switched to next song: {ctx.playback.get_current_display_name()}'),

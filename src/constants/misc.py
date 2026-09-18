@@ -1,4 +1,4 @@
-from src.types import CONVERTER, IterType
+from src.types import CONVERTER
 
 import logging
 
@@ -19,7 +19,6 @@ READABLE_TYPE_NAMES = {
     str: 'string',
     int: 'integer',
     bool: 'boolean',
-    IterType: 'list or tuple',
     CONVERTER.boolean: 'boolean',
     CONVERTER.port: 'network port',
     CONVERTER.pos_int: 'positive integer',
@@ -27,7 +26,7 @@ READABLE_TYPE_NAMES = {
     CONVERTER.timeout: 'positive float',
     CONVERTER.percentage: 'percentage number',
     CONVERTER.hex_color: 'hex color',
-    CONVERTER.box_style: 'box style'
+    CONVERTER.box_style: 'box style',
 }
 
 MIN_TIMEOUT = 0.01

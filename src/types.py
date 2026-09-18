@@ -1,8 +1,18 @@
-
 class IterType:
     # can be list or tuple
     def __init__(self, element_type):
         self.element_type = element_type
+
+class StrChoiceList:
+    def __init__(self, choices):
+        self.choices = tuple(map(lambda x: x.lower(), choices))
+
+    def __call__(self, value):
+        value = str(value)
+        if value.lower() in self.choices:
+            return value
+        else:
+            raise ValueError
 
 class Converter:
     def boolean(self, value):
@@ -74,4 +84,14 @@ class Converter:
             raise ValueError
         else:
             raise ValueError
+
+def get_type_name(obj):
+    if isinstance(obj, IterType):
+        return f'list or tuple completely with elements of instances of {get_type_name(obj.element_type)}'
+    elif isinstance(obj, StrChoiceList):
+        return f'A string that is one of: {', '.join(obj.choices)} (case-insensitive)'
+    else:
+        from src.constants import READABLE_TYPE_NAMES
+        return READABLE_TYPE_NAMES.get(obj, getattr(obj, '__name__', str(obj)))
+        
 CONVERTER = Converter()

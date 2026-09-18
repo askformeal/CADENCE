@@ -9,6 +9,8 @@ from src.log import setup_logger
 from src.constants import BACKEND_LOG_PATH, MAX_COVER_SIDE, COVER_QUALITY
 from src.config import CONFIG
 from src.sentinels import SENTINELS
+from .engine import Engine
+from .vlc_engine import VLCEngine
 from src.utils.misc import get_song_display_name, hash_bytes
 from src.utils.lyric import parse_lyric
 from src.utils.file_extract import extract_cover
@@ -19,6 +21,12 @@ class Playback:
     def __init__(self, buffer_func, database):
         self.buffer = buffer_func
         self.database = database
+
+        engine = {
+            'vlc': VLCEngine
+        }[CONFIG.engine]
+
+        self.engine: Engine = engine(logger, self.on_end)
 
         self.loop = False
         self.reverse = False
@@ -38,7 +46,7 @@ class Playback:
         self.cover_path = None
         self.cover_hash = None
         self.cover = None
-
+        
     def get_playing_info(self):
         return self.current_song_info[self.current_song_num]
 

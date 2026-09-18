@@ -17,7 +17,7 @@ def seek(ctx, request):
             if raw_time.startswith('-'):
                 step = -step
     
-            progress = ctx.player.get_progress()
+            progress = ctx.playback.engine.get_progress()
             length = progress['length']
             current_pos = progress['time']
     
@@ -40,7 +40,7 @@ def jump(ctx, request):
     elif percent > 100:
         return gen_response.PercentageTooHigh(percent)
     else:
-        length = ctx.player.get_progress()['length']
+        length = ctx.playback.engine.get_progress()['length']
         if length == -1:
             return gen_response.NotPlayingPaused('jump to progress')
         else:

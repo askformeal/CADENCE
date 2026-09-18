@@ -1,23 +1,18 @@
 import vlc
 from time import sleep
-from src.log import setup_logger
-from src.constants import BACKEND_LOG_PATH
 from src.constants import PLAYER_POLL_INTERVAL
 from src.config import CONFIG
 from src.sentinels import SENTINELS
+from .engine import Engine
 
-logger = setup_logger(__name__, BACKEND_LOG_PATH)
-class Player():
-    def __init__(self, on_end_func):
-        self.on_end = on_end_func
+class VLCEngine(Engine):
+    def __init__(self, logger, on_end_func):
+        super().__init__(logger, on_end_func)
         self.instance = vlc.Instance('--no-video')
         self.player = self.instance.media_player_new()
         self.medias = []
-        self.number = 0
-        self.volume = CONFIG.default_volume
-        self.mute = False
         self._attach_events()
-        logger.debug(f'{__name__} initiated')
+        self.logger.debug(f'{__name__} initiated')
 
     def _attach_events(self):
         manager = self.player.event_manager() # I might need. Scratch that. I WILL need this.
@@ -31,8 +26,18 @@ class Player():
             elif state == vlc.State.Error:
                 return state
             sleep(PLAYER_POLL_INTERVAL)
-        logger.info('Timeout waiting for completion')
+        self.logger.info('Timeout waiting for completion')
         return None
+
+    def get_status(self):
+        return {
+            vlc.State.Playing: SENTINELS.PLAYING,
+            vlc.State.Paused: SENTINELS.PAUSED,
+            vlc.State.Stopped: SENTINELS.STOPPED
+            }.get(self.player.get_state(), SENTINELS.PLAYER_INVALID)
+
+    def get_media_len(self):
+        return len(self.medias)
 
     def get_progress(self):
         length = self.player.get_length()
@@ -64,7 +69,7 @@ class Player():
             paths = [paths]
 
         if len(paths) == 0:
-            logger.error('Can not load empty path list')
+            self.logger.error('Can not load empty path list')
             return SENTINELS.PLAYER_LOAD_EMPTY
         else:
             self.medias = []
@@ -72,12 +77,12 @@ class Player():
                 media = self.instance.media_new(path)
                 media.parse()
                 if media.get_state() == vlc.State.Error or media.get_parsed_status() == vlc.MediaParsedStatus.failed:
-                    logger.error(f'Failed to parse {path}')
+                    self.logger.error(f'Failed to parse {path}')
                     break
                 else:
                     self.medias.append(media)
             else:
-                logger.info(f'Opened {len(paths)} files: {", ".join(paths)}')
+                self.logger.info(f'Opened {len(paths)} files: {", ".join(paths)}')
                 self.number = 0
                 self.player.set_media(self.medias[0])
                 return self.play()
@@ -92,11 +97,11 @@ class Player():
             return SENTINELS.PLAYER_TIMEOUT
 
         elif result == vlc.State.Stopped:
-            logger.info('Stopped playing')
+            self.logger.info('Stopped playing')
             return SENTINELS.SUCCESS
         
         elif result == vlc.State.Error:
-            logger.error('Failed to stop playing')
+            self.logger.error('Failed to stop playing')
             return SENTINELS.VLC_ERROR
 
     def jump_pos(self, pos):
@@ -118,12 +123,12 @@ class Player():
             return SENTINELS.PLAYER_TIMEOUT
 
         elif result == vlc.State.Playing:
-            logger.info('Started playing')
+            self.logger.info('Started playing')
             self._apply_volume()
             return SENTINELS.SUCCESS
         
         elif result == vlc.State.Error:
-            logger.error('Failed to start playing')
+            self.logger.error('Failed to start playing')
             return SENTINELS.VLC_ERROR
 
     def toggle(self):
@@ -133,7 +138,7 @@ class Player():
         elif state == vlc.State.Playing:
             return self.pause()
         else:
-            logger.error('Invalid player state, can not toggle')
+            self.logger.error('Invalid player state, can not toggle')
             return SENTINELS.INVALID_PLAYER_STATE
 
     def pause(self):
@@ -144,14 +149,14 @@ class Player():
                 return SENTINELS.PLAYER_TIMEOUT
 
             elif result == vlc.State.Paused:
-                logger.info('Paused')
+                self.logger.info('Paused')
                 return SENTINELS.SUCCESS
 
             elif result == vlc.State.Error:
-                logger.error('Failed to pause audio')
+                self.logger.error('Failed to pause audio')
                 return SENTINELS.VLC_ERROR
         else:
-            logger.error('Failed to pause because player is not playing')
+            self.logger.error('Failed to pause because player is not playing')
             return SENTINELS.INVALID_PLAYER_STATE
 
     def resume(self):
@@ -161,36 +166,37 @@ class Player():
             if result is None:
                 return SENTINELS.PLAYER_TIMEOUT
             elif result == vlc.State.Playing:
-                logger.info('Resumed')
+                self.logger.info('Resumed')
                 return SENTINELS.SUCCESS
 
             elif result == vlc.State.Error:
-                logger.info('Failed to resume audio')
+                self.logger.info('Failed to resume audio')
                 return SENTINELS.VLC_ERROR
         else:
-            logger.error('Failed to resume because player is not paused')
+            self.logger.error('Failed to resume because player is not paused')
             return SENTINELS.INVALID_PLAYER_STATE
 
     def set_volume(self, volume):
         self.volume = volume
-        logger.debug(f'Set target volume to {self.volume}')
+        self.logger.debug(f'Set target volume to {self.volume}')
         self._apply_volume()
         return SENTINELS.SUCCESS
     
     def set_mute(self, mute):
         self.mute = mute
-        logger.debug(f'Set target mute mode to {self.mute}')
+        self.logger.debug(f'Set target mute mode to {self.mute}')
         self._apply_volume()
         return SENTINELS.SUCCESS
     
     def _apply_volume(self):
         if self.player.get_state() in (vlc.State.Playing, vlc.State.Paused):
-            logger.debug(f'Applied volume: {self.volume}, mute: {self.mute}')
+            self.logger.debug(f'Applied volume: {self.volume}, mute: {self.mute}')
             self.player.audio_set_volume(self.volume)
             self.player.audio_set_mute(self.mute)
         else:
-            logger.debug(f'Can not apply volume and mute: unsupported player state')
+            self.logger.debug(f'Can not apply volume and mute: unsupported player state')
         
     def on_exit(self):
         self.player.stop()
         self.instance.release()
+        return SENTINELS.SUCCESS

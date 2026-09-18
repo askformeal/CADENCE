@@ -6,8 +6,6 @@ import socket
 import queue
 import time
 
-import vlc
-
 from src import __version__
 from src.log import setup_logger
 from src.constants import BACKEND_LOG_PATH, SILENT_LOG_LEVEL
@@ -21,18 +19,17 @@ from src.constants import (
     ACK,
     LOOP_INTERVAL, 
     PLAY_DEAD_TIME, 
-    SOURCES, 
-    READABLE_TYPE_NAMES
+    SOURCES
     )
 from src.config import CONFIG
 from src.sentinels import SENTINELS
 from src.connection import recv_json, send_json
 from src import gen_response
 from src.backend.database.core import Database
-from src.backend.vlc_player import Player
-from src.backend.playback import Playback
+from src.backend.playback.core import Playback
 from src.backend.context import Context
 from src.backend.handlers import ROUTER
+from src.types import get_type_name
 from src.pid import add_pid, remove_pid
 
 logger = setup_logger(__name__, BACKEND_LOG_PATH)
@@ -65,11 +62,8 @@ class Backend:
             self.running = False
         else:
             self.playback = Playback(self.buffer_request, self.database)
-            self.player = Player(self.playback.on_end)
-
             self.ctx = Context(
                 database=self.database,
-                player=self.player,
                 playback=self.playback,
                 exit_=self.exit_,
                 start_time=time.time(),
@@ -114,7 +108,7 @@ class Backend:
             self.dispatch_buffer.put((SENTINELS.EXIT_FLUSHING, SENTINELS.EXIT_FLUSHING))
             self._flush_thread.join()
             self.database.on_exit()
-            self.player.on_exit()
+            self.playback.engine.on_exit()
             logging.shutdown()
 
         else:
@@ -251,20 +245,20 @@ class Backend:
                                 if isinstance(value, (list, tuple)):
                                     for element in value:
                                         if not isinstance(element, element_type):
-                                            return gen_response.InvalidElementType(action, key, READABLE_TYPE_NAMES[element_type], type(element).__name__)
+                                            return gen_response.InvalidElementType(action, key, get_type_name(element_type), type(element).__name__)
                                 elif not (value is None and not is_required):
-                                    return gen_response.InvalidKeyType(action, key, READABLE_TYPE_NAMES[IterType], type(value).__name__)
+                                    return gen_response.InvalidKeyType(action, key, get_type_name(key_type), type(value).__name__)
                                 
                             elif not isinstance(value, key_type) and not (value is None and not is_required): # None type acceptable for non-required keys even if not stated in ACTION_KEYS
-                                return gen_response.InvalidKeyType(action, key, READABLE_TYPE_NAMES[key_type], type(value).__name__)
+                                return gen_response.InvalidKeyType(action, key, get_type_name(key_type), type(value).__name__)
 
                     return request
 
     def _memorize_pos(self):
         while self.running:
-            if self.playback.current_song_info is not None and self.player.player.get_state() == vlc.State.Playing:
+            if self.playback.current_song_info is not None and self.playback.engine.get_status() is SENTINELS.PLAYING:
                 path = self.playback.get_playing_info()['path']
-                pos = self.player.get_progress()['time']
+                pos = self.playback.engine.get_progress()['time']
                 self.database.set_pos(path, pos, log=False)
             time.sleep(CONFIG.pos_memorize_interval)
 
@@ -302,7 +296,7 @@ class Backend:
         self.running = False
 
     def exit_(self, error=False, msg=None):
-        Thread(target=self.player.stop, daemon=True).start()
+        Thread(target=self.playback.engine.stop, daemon=True).start()
         if msg is not None:
             if error:
                 logger.critical(msg)
