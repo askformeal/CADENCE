@@ -12,7 +12,7 @@ class Engine(ABC):
         self.mute: bool = False
 
     @abstractmethod
-    def get_status(self) -> str | None:
+    def get_status(self) -> Sentinel | None:
         ...
 
     @abstractmethod

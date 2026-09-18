@@ -8,8 +8,8 @@ class StrChoiceList:
         self.choices = tuple(map(lambda x: x.lower(), choices))
 
     def __call__(self, value):
-        value = str(value)
-        if value.lower() in self.choices:
+        value = str(value).lower()
+        if value in self.choices:
             return value
         else:
             raise ValueError
