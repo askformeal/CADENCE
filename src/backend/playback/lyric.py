@@ -1,0 +1,58 @@
+from threading import Thread
+
+import syncedlyrics
+
+from src.config import CONFIG
+from src.sentinels import SENTINELS
+from src.utils.misc import get_song_display_name
+from src.utils.lyric import parse_lyric
+
+class LyricMixin:
+    def __init__(self):
+        self.online_lyric = CONFIG.default_online_lyric
+        self.lyric = {}
+        self.offset_overlay = 0
+
+    def update_lyric(self, force=False):
+        if self.current_song_info is not None:
+            info = self.get_playing_info()
+            song_path = info.get('path', None)
+            offset = info.get('offset', None)
+            if offset is None:
+                offset = 0
+            if force or self.lyric.get('path', None) != song_path or self.lyric.get('online', None) != self.online_lyric:
+                self.lyric = {'path': song_path, 'offset': offset, 'lyric': None}
+
+                if self.online_lyric:
+                    self.lyric['online'] = True
+                    self.lyric['loading'] = True
+
+                    name = get_song_display_name(info)
+                    artist = info.get('artist', None)
+                    if artist is None:
+                        artist = ''
+                    Thread(target=self._fetch_lyric, args=(song_path, f'{name} {artist}'.strip())).start()
+                else:
+                    self.lyric['online'] = False
+
+                    lyric_path = info.get('lyric', None)
+                    if lyric_path is not None:
+                        lyric = parse_lyric(lyric_path)
+                        if lyric is not SENTINELS.FILE_IO_FAILED:
+                            self.lyric['lyric'] = lyric
+                    
+
+    def _fetch_lyric(self, song_path, search_term):
+        try:
+            result = syncedlyrics.search(
+                search_term,
+                synced_only=True,
+            )
+        except Exception:
+            result = None
+
+        if song_path == self.lyric.get('path') and self.lyric.get('online', False):
+            self.lyric['loading'] = False
+            if result is not None:
+                lrc = parse_lyric(content=result)
+                self.lyric['lyric'] = lrc

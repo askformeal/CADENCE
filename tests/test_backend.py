@@ -955,7 +955,7 @@ def test_jump_success(backend, audio_file):
 
 def test_jump_ended_state_not_crash(backend, monkeypatch):
     """Ended/Stopped state with a known length must return a proper error, not dispatch_failed."""
-    monkeypatch.setattr(backend.playback.engine, 'get_progress', lambda: {'length': 3000, 'time': 3000})
+    monkeypatch.setattr(backend.playback.engine, 'get_progress', lambda: (3000, 3000))
     response = _request(backend, 'jump', progress=50)
     assert response['code'] == 1
     assert 'neither playing nor paused' in response['msg']

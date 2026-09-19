@@ -11,9 +11,9 @@ from src.constants import (
     )
 from src.sentinels import SENTINELS
 from src.error import InitializationError
-from .engine import Engine
+from .base_engine import BaseEngine
 
-class MiniEngine(Engine):
+class MiniEngine(BaseEngine):
     def __init__(self, logger, on_end_func):
         super().__init__(logger, 'Miniaudio', on_end_func)
         self.running = True
@@ -22,7 +22,6 @@ class MiniEngine(Engine):
         except MiniaudioError as e:
             raise InitializationError(f'Failed to initialize Miniaudio engine: {str(e)}') from e
         else:
-            self.medias = []
             self.at_end = False
             Thread(target=self.poll_end, daemon=True).start()
             self.logger.debug(f'{__name__} initiated')
@@ -34,97 +33,53 @@ class MiniEngine(Engine):
             return SENTINELS.PAUSED
         else:
             return SENTINELS.PLAYING
-
-    def get_media_len(self):
-        return len(self.medias)
-
     def get_progress(self):
         if self.player.active:
-            time_ = self.player.curr_pos
-            if time_ > 0:
-                time_ = round(time_ * 1000)
-            time_ = int(time_)
-
-            length = self.player.duration
-            if length > 0:
-                length = round(length * 1000)
-            length = int(length)
+            time_ = self.player.curr_pos * 1000
+            length = self.player.duration * 1000
         else:
             time_ = -1
             length = -1
 
-        return {'length': length, 'time': time_}
+        return time_, length
 
-    def load_number(self, num):
+    def load_number(self):
         self.at_end = False
-        if len(self.medias) > 0:
-            if num < 0:
-                self.number = len(self.medias) - 1
-            elif num >= len(self.medias):
-                self.number = 0
+        path = self.medias[self.number]
+        if Path(path).is_file():
+            try:
+                self.player.load_file(path)
+            except (MiniaudioError, FileNotFoundError):
+                self.logger.warning(f'Failed to load file: \"{path}\"')
+                return SENTINELS.FILE_IO_FAILED
             else:
-                self.number = num
-            path = self.medias[self.number]
+                return SENTINELS.SUCCESS
+        else:
+            self.logger.warning(f'File not exist: \"{path}\"')
+            return SENTINELS.FILE_IO_FAILED
+        
+    def load_paths(self, paths):
+        self.medias = []
+        for path in paths:
             if Path(path).is_file():
-                try:
-                    self.player.load_file(path)
-                except (MiniaudioError, FileNotFoundError):
-                    self.logger.warning(f'Failed to load file: \"{path}\"')
-                    return SENTINELS.FILE_IO_FAILED
-                else:
-                    return self.play()
+                self.medias.append(path)
             else:
                 self.logger.warning(f'File not exist: \"{path}\"')
+                self.medias = []
                 return SENTINELS.FILE_IO_FAILED
-        else:
-            return SENTINELS.PLAYER_EMPTY
-    
-    def switch_prev(self):
-        return self.load_number(self.number - 1)
 
-    def switch_next(self):
-        return self.load_number(self.number + 1)
-
-    def load_paths(self, paths):
-        if not isinstance(paths, (list, tuple)):
-            paths = [paths]
-
-        if len(paths) == 0:
-            self.logger.error('Can not load empty path list')
-            return SENTINELS.PLAYER_LOAD_EMPTY
-        else:
-            self.medias = []
-            for path in paths:
-                if Path(path).is_file():
-                    self.medias.append(path)
-                else:
-                    self.logger.warning(f'File not exist: \"{path}\"')
-                    break
-            else:
-                self.logger.info(f'Loaded {len(paths)} files: {", ".join(paths)}')
-                self.number = 0
-                return self.load_number(0)
-
-            self.medias = []
-            return SENTINELS.FILE_IO_FAILED
+        return SENTINELS.SUCCESS
 
     def stop(self):
         self.player.stop()
         return SENTINELS.SUCCESS
 
     def jump_pos(self, pos):
-        if self.player.active:
-            length = self.get_progress()['length']
-            pos = int(pos)
-            if pos > length:
-                return SENTINELS.POS_TOO_LATE
-            else:
-                self.player.seek(pos / 1000)
-                if length - pos > END_REDUNDANCY:
-                    self.at_end = False
-                return SENTINELS.SUCCESS
-        else:
-            return SENTINELS.INVALID_PLAYER_STATE
+        self.player.seek(pos / 1000)
+        length = self.get_progress()[1]
+        if length - pos > END_REDUNDANCY:
+            self.at_end = False
+        return SENTINELS.SUCCESS
 
     def play(self):
         try:
@@ -133,7 +88,7 @@ class MiniEngine(Engine):
             self.logger.error(f'Failed to play: {e}')
             return SENTINELS.ENGINE_ERROR
         if self.player.active:
-            self._apply_volume()
+            self.apply_volume()
             return SENTINELS.SUCCESS
         else:
             self.logger.error(f'Failed to start playing')
@@ -153,32 +108,9 @@ class MiniEngine(Engine):
             return SENTINELS.SUCCESS
         else:
             self.logger.error('Failed to resume because player is not paused')
-            return SENTINELS.INVALID_PLAYER_STATE    
-
-    def toggle(self):
-        if self.player.playing:
-            self.pause()
-            return SENTINELS.SUCCESS
-        elif self.player.paused:
-            self.resume()
-            return SENTINELS.SUCCESS
-        else:
-            self.logger.error('Invalid player state, can not toggle')
             return SENTINELS.INVALID_PLAYER_STATE
 
-    def set_volume(self, volume):
-        self.volume = volume
-        self.logger.debug(f'Set target volume to {self.volume}')
-        self._apply_volume()
-        return SENTINELS.SUCCESS
-
-    def set_mute(self, mute):
-        self.mute = mute
-        self.logger.debug(f'Set target mute mode to {self.mute}')
-        self._apply_volume()
-        return SENTINELS.SUCCESS
-
-    def _apply_volume(self):
+    def apply_volume(self):
         if self.player.active:
             if self.mute:
                 self.player.set_volume(0)
@@ -187,6 +119,7 @@ class MiniEngine(Engine):
             self.logger.debug(f'Applied volume: {self.volume}, mute: {self.mute}')
         else:
             self.logger.debug(f'Can not apply volume and mute: unsupported player state')
+        return SENTINELS.SUCCESS
 
     def on_exit(self):
         self.player.stop()
@@ -197,9 +130,7 @@ class MiniEngine(Engine):
         while self.running:
             try:
                 if self.player.playing:
-                    progress = self.get_progress()
-                    time_ = progress['time']
-                    length = progress['length']
+                    time_, length = self.get_progress()
                     if (
                         not self.at_end
                         and time_ > 0

@@ -1,34 +1,21 @@
-from io import BytesIO
 import random
-from threading import Thread
 
-import syncedlyrics
-from PIL import Image
-
-from src.log import setup_logger
-from src.constants import BACKEND_LOG_PATH, MAX_COVER_SIDE, COVER_QUALITY
+from .logger import logger
 from src.config import CONFIG
 from src.sentinels import SENTINELS
-from .engine import Engine
-from .vlc_engine import VLCEngine
-from .mini_engine import MiniEngine
-from src.utils.misc import get_song_display_name, hash_bytes
-from src.utils.lyric import parse_lyric
-from src.utils.file_extract import extract_cover
+from src.utils.misc import get_song_display_name
+from .engine_mixin import EngineMixin
+from .lyric import LyricMixin
+from .cover import CoverMixin
 
-logger = setup_logger(__name__, BACKEND_LOG_PATH)
-
-class Playback:
+class Playback(EngineMixin, LyricMixin, CoverMixin):
     def __init__(self, buffer_func, database):
+        EngineMixin.__init__(self)
+        LyricMixin.__init__(self)
+        CoverMixin.__init__(self)
+
         self.buffer = buffer_func
         self.database = database
-
-        engine = {
-            'vlc': VLCEngine,
-            'miniaudio': MiniEngine
-        }[CONFIG.engine]
-
-        self.engine: Engine = engine(logger, self.on_end)
 
         self.loop = False
         self.reverse = False
@@ -40,14 +27,6 @@ class Playback:
         self.current_song_num = None
         self.current_song_in_lib = False
         self.current_playlist = None
-
-        self.online_lyric = CONFIG.default_online_lyric
-        self.lyric = {}
-        self.offset_overlay = 0
-
-        self.cover_path = None
-        self.cover_hash = None
-        self.cover = None
         
     def get_playing_info(self):
         return self.current_song_info[self.current_song_num]
@@ -79,79 +58,6 @@ class Playback:
             return 'no song playing'
         else:
             return get_song_display_name(self.get_playing_info())
-
-    def on_end(self):
-        if self.reverse:
-            self.buffer({'action':'prev', 'on_end': True, 'source': 'player'})
-        else:
-            self.buffer({'action':'next', 'on_end': True, 'source': 'player'})
-
-    def update_lyric(self, force=False):
-        if self.current_song_info is not None:
-            info = self.get_playing_info()
-            song_path = info.get('path', None)
-            offset = info.get('offset', None)
-            if offset is None:
-                offset = 0
-            if force or self.lyric.get('path', None) != song_path or self.lyric.get('online', None) != self.online_lyric:
-                self.lyric = {'path': song_path, 'offset': offset, 'lyric': None}
-
-                if self.online_lyric:
-                    self.lyric['online'] = True
-                    self.lyric['loading'] = True
-
-                    name = get_song_display_name(info)
-                    artist = info.get('artist', None)
-                    if artist is None:
-                        artist = ''
-                    Thread(target=self._fetch_lyric, args=(song_path, f'{name} {artist}'.strip())).start()
-                else:
-                    self.lyric['online'] = False
-
-                    lyric_path = info.get('lyric', None)
-                    if lyric_path is not None:
-                        lyric = parse_lyric(lyric_path)
-                        if lyric is not SENTINELS.FILE_IO_FAILED:
-                            self.lyric['lyric'] = lyric
-                    
-
-    def _fetch_lyric(self, song_path, search_term):
-        try:
-            result = syncedlyrics.search(
-                search_term,
-                synced_only=True,
-            )
-        except Exception:
-            result = None
-
-        if song_path == self.lyric.get('path') and self.lyric.get('online', False):
-            self.lyric['loading'] = False
-            if result is not None:
-                lrc = parse_lyric(content=result)
-                self.lyric['lyric'] = lrc
-
-    def update_cover(self):
-        if self.current_song_info is not None: 
-            # since Monica asked so kindly: yes, cover will remain as the one of the last song when current_song_info become None
-            path = self.get_playing_info().get('path', None)
-            if self.cover_path != path:
-                self.cover_path = path
-                self.cover = extract_cover(path)
-                if self.cover is None:
-                    self.cover_hash = None
-                else:
-                    try:
-                        image = Image.open(BytesIO(self.cover))
-                        image.thumbnail((MAX_COVER_SIDE, MAX_COVER_SIDE), Image.Resampling.LANCZOS)
-                        buffer = BytesIO()
-                        image.convert('RGB').save(
-                            buffer, format='JPEG', 
-                            quality=COVER_QUALITY, 
-                            optimize=True)
-                    except (OSError, Image.DecompressionBombError) as e:
-                        logger.warning(f'Failed to process cover of \"{path}\": {e}')
-                        self.cover = None
-                        self.cover_hash = None
-                    else:
-                        self.cover = buffer.getvalue()
-                        self.cover_hash = hash_bytes(self.cover)
+        
+    def on_exit(self):
+        return self.engine.on_exit()

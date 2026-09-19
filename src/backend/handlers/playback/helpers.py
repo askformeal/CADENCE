@@ -16,8 +16,9 @@ def get_status(ctx):
     player_status = {
         SENTINELS.PLAYING: 'playing',
         SENTINELS.PAUSED: 'paused',
-        SENTINELS.STOPPED: 'stopped'
-    }.get(ctx.playback.engine.get_status(), None)
+        SENTINELS.STOPPED: 'stopped',
+        SENTINELS.PLAYER_INVALID: None
+    }.get(ctx.playback.get_status(), None)
     
     if ctx.playback.current_song_info is None:
         info = {}
@@ -41,18 +42,18 @@ def get_status(ctx):
         'lyric_path': info.get('lyric', None),
         'in_library': ctx.playback.current_song_in_lib,
         'player_status': player_status,
-        'volume': ctx.playback.engine.volume,
-        'mute': ctx.playback.engine.mute,
+        'volume': ctx.playback.get_volume(),
+        'mute': ctx.playback.get_mute(),
         'shuffle': ctx.playback.shuffle,
         'loop': ctx.playback.loop,
         'reverse': ctx.playback.reverse,
         'online_lyric': ctx.playback.online_lyric,
         'playlist_len': playlist_len,
         'current_num': current_num,
-        'engine': ctx.playback.engine.name,
+        'engine': ctx.playback.get_engine_name(),
         'run_time': time.time() - ctx.start_time
     }
-    progress = ctx.playback.engine.get_progress()
+    progress = ctx.playback.get_progress()
     status['length'] = progress['length']
     status['time'] = progress['time']
     status['dev'] = ctx.dev
@@ -170,17 +171,17 @@ def play_all_songs(ctx):
     return response
 
 def switch_song(ctx, num) -> gen_response.Response:
-    max_num = ctx.playback.engine.get_media_len()
+    max_num = ctx.playback.get_media_len()
     if num >= max_num:
         num_to_load = max_num - 1 # 9999999999 will switch the last song
     elif num < 0:
         num_to_load = max(max_num + num, 0) # -3 will switch the third from last song, -9999999999 will switch to the first song
     else:
         num_to_load = num
-    result = ctx.playback.engine.load_number(num_to_load)
+    result = ctx.playback.switch_to(num_to_load)
 
     if result is SENTINELS.SUCCESS:
-        ctx.playback.set_current_num(ctx.playback.engine.number)
+        ctx.playback.set_current_num(ctx.playback.get_number())
 
     response = {
         SENTINELS.SUCCESS: gen_response.Success(f'switched to the {num+1}nd song in current playlist: {ctx.playback.get_current_display_name()}'),
@@ -212,7 +213,7 @@ def _jump_to_memorized_pos(ctx) -> gen_response.Response:
         return gen_response.Success(f'no memorized position')
 
 def jump_to_pos(ctx, pos) -> gen_response.Response:
-    result = ctx.playback.engine.jump_pos(pos)
+    result = ctx.playback.jump_pos(pos)
     return {
         SENTINELS.SUCCESS: gen_response.Success(f'jumped to {format_time(pos)}'),
         SENTINELS.POS_TOO_LATE: gen_response.Failed(f'can not jumps to {format_time(pos)} because it is later than the end of the current song'), 
@@ -220,7 +221,7 @@ def jump_to_pos(ctx, pos) -> gen_response.Response:
     }[result]
 
 def replay_song(ctx) -> gen_response.Response:
-    result = ctx.playback.engine.jump_pos(0)
+    result = ctx.playback.jump_pos(0)
     return {
         SENTINELS.SUCCESS: gen_response.Success('jumped to beginning'),
         SENTINELS.POS_TOO_LATE: gen_response.PosTooLate('jump to beginning'), # is this even possible?
@@ -228,7 +229,7 @@ def replay_song(ctx) -> gen_response.Response:
     }[result]
 
 def _load_paths(ctx, paths, song, jump_to_mem=True) -> gen_response.Response:
-    result = ctx.playback.engine.load_paths(paths)
+    result = ctx.playback.load_paths(paths)
     response = {
         SENTINELS.SUCCESS: gen_response.Success(f'opened song/playlist \"{song}\"'),
         SENTINELS.PLAYER_LOAD_EMPTY: gen_response.Failed('can not load empty list of songs'),
@@ -241,7 +242,7 @@ def _load_paths(ctx, paths, song, jump_to_mem=True) -> gen_response.Response:
     return response
 
 def stop_player(ctx) -> gen_response.Response:
-    result = ctx.playback.engine.stop()
+    result = ctx.playback.stop()
     return {
         SENTINELS.SUCCESS: gen_response.Success('player stopped'),
         SENTINELS.ENGINE_ERROR: gen_response.EngineError('stop player'),
@@ -291,7 +292,7 @@ def remove_from_current(ctx, path) -> gen_response.Response:
         return gen_response.Success('current playlist empty') # same as above
 
 def loop_play(ctx):
-    result = ctx.playback.engine.load_number(ctx.playback.engine.number)
+    result = ctx.playback.switch_to(ctx.playback.get_number())
     return {
         SENTINELS.SUCCESS: gen_response.Success('replayed current song'),
         SENTINELS.ENGINE_ERROR: gen_response.EngineError('replayed current song'),

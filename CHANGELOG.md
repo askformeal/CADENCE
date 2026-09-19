@@ -4,12 +4,13 @@
 
 ### Added
 
-- **Swappable audio engine.** The player now sits behind an `Engine` interface (`src/backend/playback/`): `engine.py` declares the ABC (status, progress, media count, track switching, transport, volume, mute, shutdown), `vlc_engine.py` holds the former `vlc_player.Player` under the name `VLCEngine`, and `core.py` keeps the `Playback` session state. The new `engine` option (playback section, default `vlc`) picks the implementation. `status` and `poll` report the active engine as `engine`, and `cadence status` prints it on an `Audio Engine:` line.
+- **Swappable audio engine.** The new `engine` option (playback section, default `vlc`) selects the decoder: `vlc` or `miniaudio`. `status` / `poll` report the active engine as `engine`, the CLI prints it on an `Audio Engine:` line and the dashboard in its info panel.
 - **Miniaudio engine.** `engine = miniaudio` decodes through `just_playback`, a wrapper around [miniaudio](https://github.com/mackron/miniaudio), so no VLC installation is needed. It is a much smaller decoder than VLC: MP3, MP2, FLAC, WAV, AIFF and OGG Vorbis play; the AAC/M4A, WMA, Opus and AC3 families do not, nor do the lossless and less common containers. A song in an unsupported format still scans into the library (metadata is read with `mutagen`, not by the engine) and fails when it is opened, reported as "the audio file does not exist or is not valid". Because the engine has no end-of-stream event, it detects the end of a song by polling (new `PLAYER_END_POLL_INTERVAL` / `PLAYER_END_REDUNDANCY` constants). New runtime dependency: `just_playback` (a small wrapper around miniaudio, which brings `cffi` and `tinytag` with it).
 - `src/error.py` with `InitializationError`, raised when the database or the audio engine cannot be initialized.
 
 ### Changed
 
+- **The playback core and the engine are fused.** `Playback` is now built from mixins: an `EngineMixin` (`playback/engine_mixin.py`) runs everything the engine flow does — status, progress, media count, track switching, transport, volume and mute — and calls into a thin `BaseEngine` (`playback/base_engine.py`) implementation that only decodes, which is what `vlc_engine.py` and `mini_engine.py` shrank to. Lyric state and cover art moved into `playback/lyric.py` and `playback/cover.py`, and all of them log through one shared `playback/logger.py`. Handlers and the backend act on `Playback` instead of reaching into `playback.engine`, and an engine reports the length of its media list and its progress the same way whichever engine is in use.
 - The `VLC_ERROR` sentinel and the `VLCError` response class are renamed to `ENGINE_ERROR` / `EngineError` ("because an internal audio engine error occurred"), since the failing engine is no longer necessarily VLC.
 - `engine` is read when the backend constructs its player, so changing it needs a backend restart.
 

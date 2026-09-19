@@ -109,7 +109,7 @@ class Backend:
             self.dispatch_buffer.put((SENTINELS.EXIT_FLUSHING, SENTINELS.EXIT_FLUSHING))
             self._flush_thread.join()
             self.database.on_exit()
-            self.playback.engine.on_exit()
+            self.playback.on_exit()
             logging.shutdown()
 
         else:
@@ -257,9 +257,9 @@ class Backend:
 
     def _memorize_pos(self):
         while self.running:
-            if self.playback.current_song_info is not None and self.playback.engine.get_status() is SENTINELS.PLAYING:
+            if self.playback.current_song_info is not None and self.playback.get_status() is SENTINELS.PLAYING:
                 path = self.playback.get_playing_info()['path']
-                pos = self.playback.engine.get_progress()['time']
+                pos = self.playback.get_progress()['time']
                 self.database.set_pos(path, pos, log=False)
             time.sleep(CONFIG.pos_memorize_interval)
 
@@ -297,7 +297,7 @@ class Backend:
         self.running = False
 
     def exit_(self, error=False, msg=None):
-        Thread(target=self.playback.engine.stop, daemon=True).start()
+        Thread(target=self.playback.stop, daemon=True).start()
         if msg is not None:
             if error:
                 logger.critical(msg)

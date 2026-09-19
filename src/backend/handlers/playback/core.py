@@ -39,7 +39,7 @@ def stop(ctx, request):
     return stop_player(ctx)
 
 def pause(ctx, request):
-    result = ctx.playback.engine.pause()
+    result = ctx.playback.pause()
     return {
         SENTINELS.SUCCESS: gen_response.Success('player paused'),
         SENTINELS.INVALID_PLAYER_STATE: gen_response.Failed('can not pause player because player is not playing'),
@@ -48,7 +48,7 @@ def pause(ctx, request):
     }[result]
 
 def resume(ctx, request):
-    result = ctx.playback.engine.resume()
+    result = ctx.playback.resume()
     return {
         SENTINELS.SUCCESS: gen_response.Success('player resumed'),
         SENTINELS.INVALID_PLAYER_STATE: gen_response.Failed('can not resume player because player is not paused'),
@@ -57,7 +57,7 @@ def resume(ctx, request):
     }[result]
 
 def toggle(ctx, request):
-    result = ctx.playback.engine.toggle()
+    result = ctx.playback.toggle()
     return {
         SENTINELS.SUCCESS: gen_response.Success('player toggled'),
         SENTINELS.INVALID_PLAYER_STATE: gen_response.NotPlayingPaused('toggle player'),
@@ -75,10 +75,10 @@ def volume(ctx, request):
         else:
             if volume.startswith('-'):
                 step = -step
-            target_vol = ctx.playback.engine.volume + step
+            target_vol = ctx.playback.get_volume() + step
             target_vol = max(min(target_vol, 100), 0)
-            ctx.playback.engine.set_volume(target_vol)
-            return gen_response.Success(f'set volume to {ctx.playback.engine.volume}%')
+            ctx.playback.set_volume(target_vol)
+            return gen_response.Success(f'set volume to {target_vol}%')
     else:
         try:
             volume = int(volume)
@@ -90,12 +90,13 @@ def volume(ctx, request):
             elif volume > 100:
                 return gen_response.PercentageTooHigh(volume)
             else:
-                ctx.playback.engine.set_volume(volume)
-                return gen_response.Success(f'set volume to {ctx.playback.engine.volume}%')
+                ctx.playback.set_volume(volume)
+                return gen_response.Success(f'set volume to {volume}%')
 
 def mute(ctx, request):
-    ctx.playback.engine.set_mute(not ctx.playback.engine.mute)
-    mode = {True: 'on', False: 'off'}[ctx.playback.engine.mute]
+    target_mute = not ctx.playback.get_mute()
+    ctx.playback.set_mute(target_mute)
+    mode = {True: 'on', False: 'off'}[target_mute]
     return gen_response.Success(f'turned mute mode {mode}')
 
 def lyric(ctx, request):
