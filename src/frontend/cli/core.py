@@ -163,6 +163,7 @@ def main():
                                         f'Loop: {output.loop}',
                                         f'Reverse: {output.reverse}',
                                         f'Online Lyric: {output.online_lyric}',
+                                        f'\nAudio Engine: {output.engine}',
                                         f'\nCADENCE backend has been running for {output.run_time}',
                         ))
 
@@ -282,7 +283,7 @@ def _start_backend(**kwargs):
     elif result is SENTINELS.BACKEND_ALREADY_RUNNING:
         print(f'CADENCE backend is already running')
     elif result is SENTINELS.FAILED_START_BACKEND:
-        print(f'Failed to start CADENCE backend')
+        print(f'Failed to start CADENCE backend. Examine log files for more information')
     return result, notifies
 
 def _cli_box(*args, **kwargs):

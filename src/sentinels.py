@@ -67,7 +67,7 @@ class Sentinels:
         self.PLAYER_INVALID = Sentinel('Player is in an Unexpected Status')
         self.PLAYER_EMPTY = Sentinel('Current playlist is empty')
         self.PLAYER_LOAD_EMPTY = Sentinel('Tried to load empty list of paths')
-        self.VLC_ERROR = Sentinel('A VLC error occurred')
+        self.ENGINE_ERROR = Sentinel('An audio engine error occurred')
         self.PLAYER_TIMEOUT = Sentinel('Timeout waiting for player action to complete')
         self.INVALID_PLAYER_STATE = Sentinel('This action can not be done under current player state')
         self.POS_TOO_LATE = Sentinel('Position is Later than Total Length')

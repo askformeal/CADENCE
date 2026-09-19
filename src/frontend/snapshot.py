@@ -29,6 +29,8 @@ class Snapshot:
         self.current_songs = self.empty
         
         self.player_status = self.empty
+
+        self.engine = self.empty
         
         self.duration = self.empty
         self.bitrate = self.empty
@@ -72,6 +74,8 @@ class Snapshot:
             self.current_num = self.get('current_num') # 0-based
             self.playlist_len = self.get('playlist_len')
             self.player_status = self.get('player_status')
+
+            self.engine = self.get('engine')
 
             self.duration = self.get('duration')
             self.bitrate = self.get('bitrate')

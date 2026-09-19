@@ -21,6 +21,7 @@ dependencies = [
     "pystray>=0.19",
     "pillow>=12.0",
     "syncedlyrics>=1.0",
+    "just_playback>=0.1.9",
 ]
 
 [project.scripts]

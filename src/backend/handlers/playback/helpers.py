@@ -49,6 +49,7 @@ def get_status(ctx):
         'online_lyric': ctx.playback.online_lyric,
         'playlist_len': playlist_len,
         'current_num': current_num,
+        'engine': ctx.playback.engine.name,
         'run_time': time.time() - ctx.start_time
     }
     progress = ctx.playback.engine.get_progress()
@@ -184,8 +185,9 @@ def switch_song(ctx, num) -> gen_response.Response:
     response = {
         SENTINELS.SUCCESS: gen_response.Success(f'switched to the {num+1}nd song in current playlist: {ctx.playback.get_current_display_name()}'),
         SENTINELS.PLAYER_EMPTY: gen_response.PlayerEmpty(f'switch to the {num+1}nd song in current playlist'),
-        SENTINELS.VLC_ERROR: gen_response.VLCError(f'switch to the {num+1}nd song in current playlist'),
+        SENTINELS.ENGINE_ERROR: gen_response.EngineError(f'switch to the {num+1}nd song in current playlist'),
         SENTINELS.PLAYER_TIMEOUT: gen_response.PlayerTimeout(f'switch to the {num+1}nd song in current playlist'),
+        SENTINELS.FILE_IO_FAILED: gen_response.InvalidAudioFile(f'switch to the {num+1}nd song in current playlist')
     }[result]
     if result is SENTINELS.SUCCESS:
         response += _jump_to_memorized_pos(ctx)
@@ -230,8 +232,9 @@ def _load_paths(ctx, paths, song, jump_to_mem=True) -> gen_response.Response:
     response = {
         SENTINELS.SUCCESS: gen_response.Success(f'opened song/playlist \"{song}\"'),
         SENTINELS.PLAYER_LOAD_EMPTY: gen_response.Failed('can not load empty list of songs'),
-        SENTINELS.VLC_ERROR: gen_response.VLCError('load path(s)'),
+        SENTINELS.ENGINE_ERROR: gen_response.EngineError('load path(s)'),
         SENTINELS.PLAYER_TIMEOUT: gen_response.PlayerTimeout('load path(s)'),
+        SENTINELS.FILE_IO_FAILED: gen_response.InvalidAudioFile('load path(s)')
     }[result]
     if jump_to_mem and result is SENTINELS.SUCCESS:
         response += _jump_to_memorized_pos(ctx)
@@ -241,7 +244,7 @@ def stop_player(ctx) -> gen_response.Response:
     result = ctx.playback.engine.stop()
     return {
         SENTINELS.SUCCESS: gen_response.Success('player stopped'),
-        SENTINELS.VLC_ERROR: gen_response.VLCError('stop player'),
+        SENTINELS.ENGINE_ERROR: gen_response.EngineError('stop player'),
         SENTINELS.PLAYER_TIMEOUT: gen_response.PlayerTimeout('stop player')
     }[result]
 
@@ -291,6 +294,7 @@ def loop_play(ctx):
     result = ctx.playback.engine.load_number(ctx.playback.engine.number)
     return {
         SENTINELS.SUCCESS: gen_response.Success('replayed current song'),
-        SENTINELS.VLC_ERROR: gen_response.VLCError('replayed current song'),
+        SENTINELS.ENGINE_ERROR: gen_response.EngineError('replayed current song'),
         SENTINELS.PLAYER_TIMEOUT: gen_response.PlayerTimeout('replayed current song'),
+        SENTINELS.FILE_IO_FAILED: gen_response.InvalidAudioFile('replayed current song')
     }[result]

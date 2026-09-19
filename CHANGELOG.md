@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## [Unreleased]
+
+### Added
+
+- **Swappable audio engine.** The player now sits behind an `Engine` interface (`src/backend/playback/`): `engine.py` declares the ABC (status, progress, media count, track switching, transport, volume, mute, shutdown), `vlc_engine.py` holds the former `vlc_player.Player` under the name `VLCEngine`, and `core.py` keeps the `Playback` session state. The new `engine` option (playback section, default `vlc`) picks the implementation. `status` and `poll` report the active engine as `engine`, and `cadence status` prints it on an `Audio Engine:` line.
+- **Miniaudio engine.** `engine = miniaudio` decodes through `just_playback`, a wrapper around [miniaudio](https://github.com/mackron/miniaudio), so no VLC installation is needed. It is a much smaller decoder than VLC: MP3, MP2, FLAC, WAV, AIFF and OGG Vorbis play; the AAC/M4A, WMA, Opus and AC3 families do not, nor do the lossless and less common containers. A song in an unsupported format still scans into the library (metadata is read with `mutagen`, not by the engine) and fails when it is opened, reported as "the audio file does not exist or is not valid". Because the engine has no end-of-stream event, it detects the end of a song by polling (new `PLAYER_END_POLL_INTERVAL` / `PLAYER_END_REDUNDANCY` constants). New runtime dependency: `just_playback` (a small wrapper around miniaudio, which brings `cffi` and `tinytag` with it).
+- `src/error.py` with `InitializationError`, raised when the database or the audio engine cannot be initialized.
+
+### Changed
+
+- The `VLC_ERROR` sentinel and the `VLCError` response class are renamed to `ENGINE_ERROR` / `EngineError` ("because an internal audio engine error occurred"), since the failing engine is no longer necessarily VLC.
+- `engine` is read when the backend constructs its player, so changing it needs a backend restart.
+
+### Fixed
+
+- **A backend that could not initialize died silently.** An unopenable database or a missing audio device raised out of `Backend.__init__`, and since the backend is spawned with `stdout` and `stderr` discarded, nothing at all was logged — `cadence start` only said the backend failed. Both constructions now raise `InitializationError`, which the backend logs at `CRITICAL` and turns into exit code 1, and the start failure message points at the log files.
+- A choice-type config value was accepted case-insensitively but returned as written, so `engine = VLC` passed validation and then failed the lookup that consumes it. `StrChoiceList` now returns the lowercased value.
+- **The backend could not start when the VLC runtime was unreachable, even with `engine = miniaudio`.** `vlc_engine.py` imported `vlc` at module level and the playback package imports it unconditionally, so a machine without `python-vlc`, or without a `libvlc.dll` that python-vlc can find (it looks at `PYTHON_VLC_LIB_PATH`, then the registry and the usual install directories, and finally at `.\libvlc.dll` relative to the working directory), died during import — before the engine was even chosen. The import is now guarded and the failure is reported as a failed initialization, so it is only fatal when the VLC engine is the one being constructed.
+
 ## [0.51.0] - 2026-09-17
 
 ### Added

@@ -90,14 +90,14 @@ class MainMixin:
 
         if self.snapshot.volume is EMPTY:
             bar = progress_bar(0, VOL_BAR_LEN)
-            vol_num = '?%'
+            vol_num = '[?%]'
         else:
             bar = progress_bar(VOL_BAR_LEN*self.snapshot.volume/100, VOL_BAR_LEN)
-            vol_num = f'{self.snapshot.volume}%'
+            vol_num = f'[{self.snapshot.volume}%]'
 
         if self.snapshot.mute and self.snapshot.mute is not EMPTY:
-            vol_num += ' [MUTE]'
-        volume = f'{bar} [{vol_num}]'
+            vol_num += ' [MUTE] '
+        volume = f'{bar} {vol_num}'
 
         online_lyric = {True: '[Ol Lyric] ', False: '', EMPTY: '?'}[self.snapshot.online_lyric]
         shuffle = {True: '[Shuffle] ', False: '', EMPTY: '?'}[self.snapshot.shuffle]

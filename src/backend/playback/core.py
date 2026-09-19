@@ -11,6 +11,7 @@ from src.config import CONFIG
 from src.sentinels import SENTINELS
 from .engine import Engine
 from .vlc_engine import VLCEngine
+from .mini_engine import MiniEngine
 from src.utils.misc import get_song_display_name, hash_bytes
 from src.utils.lyric import parse_lyric
 from src.utils.file_extract import extract_cover
@@ -23,7 +24,8 @@ class Playback:
         self.database = database
 
         engine = {
-            'vlc': VLCEngine
+            'vlc': VLCEngine,
+            'miniaudio': MiniEngine
         }[CONFIG.engine]
 
         self.engine: Engine = engine(logger, self.on_end)

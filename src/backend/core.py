@@ -23,6 +23,7 @@ from src.constants import (
     )
 from src.config import CONFIG
 from src.sentinels import SENTINELS
+from src.error import InitializationError
 from src.connection import recv_json, send_json
 from src import gen_response
 from src.backend.database.core import Database
@@ -57,11 +58,11 @@ class Backend:
 
         try:
             self.database = Database(database_path)
-        except RuntimeError as e:
-            logger.critical(e)
+            self.playback = Playback(self.buffer_request, self.database)
+        except InitializationError as e:
+            logger.exception('Failed to initialize one of backend\'s modules')
             self.running = False
         else:
-            self.playback = Playback(self.buffer_request, self.database)
             self.ctx = Context(
                 database=self.database,
                 playback=self.playback,

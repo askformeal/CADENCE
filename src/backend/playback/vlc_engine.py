@@ -1,21 +1,42 @@
-import vlc
 from time import sleep
+import os
+from pathlib import Path
+
+env_lib = os.environ.get('PYTHON_VLC_LIB_PATH', None)
+env_plugin = os.environ.get('PYTHON_VLC_MODULE_PATH', None)
+if env_lib is not None and not Path(env_lib).is_file():
+    vlc = None
+    vlc_error = FileNotFoundError(f'PYTHON_VLC_LIB_PATH points to a missing file: \"{env_lib}\"')
+elif env_plugin is not None and not Path(env_plugin).is_dir():
+    vlc = None    
+    vlc_error = FileNotFoundError(f'PYTHON_VLC_MODULE_PATH points to a missing directory: \"{env_plugin}\"')
+else:
+    try:
+        import vlc
+    except (Exception, SystemExit) as e:
+        vlc = None
+        vlc_error = e
+
 from src.constants import PLAYER_POLL_INTERVAL
 from src.config import CONFIG
 from src.sentinels import SENTINELS
+from src.error import InitializationError
 from .engine import Engine
 
 class VLCEngine(Engine):
     def __init__(self, logger, on_end_func):
-        super().__init__(logger, on_end_func)
-        self.instance = vlc.Instance('--no-video')
-        self.player = self.instance.media_player_new()
-        self.medias = []
-        self._attach_events()
-        self.logger.debug(f'{__name__} initiated')
+        super().__init__(logger, 'VLC', on_end_func)
+        if vlc is None:
+            raise InitializationError(f'Failed to access VLC backend: {str(vlc_error)}') from vlc_error
+        else:
+            self.instance = vlc.Instance('--no-video')
+            self.player = self.instance.media_player_new()
+            self.medias = []
+            self._attach_events()
+            self.logger.debug(f'{__name__} initiated')
 
     def _attach_events(self):
-        manager = self.player.event_manager() # I might need. Scratch that. I WILL need this.
+        manager = self.player.event_manager() # I might need... Scratch that. I WILL need this.
         manager.event_attach(vlc.EventType.MediaPlayerEndReached, lambda *_: self.on_end())
 
     def _wait_state(self, target_states):
@@ -41,8 +62,8 @@ class VLCEngine(Engine):
 
     def get_progress(self):
         length = self.player.get_length()
-        time = self.player.get_time()
-        return {'length': length, 'time': time}
+        time_ = self.player.get_time()
+        return {'length': length, 'time': time_}
 
     def switch_prev(self):
         return self.load_number(self.number - 1)
@@ -84,11 +105,10 @@ class VLCEngine(Engine):
             else:
                 self.logger.info(f'Opened {len(paths)} files: {", ".join(paths)}')
                 self.number = 0
-                self.player.set_media(self.medias[0])
-                return self.play()
+                return self.load_number(0)                 
 
             self.medias = []
-            return SENTINELS.VLC_ERROR
+            return SENTINELS.ENGINE_ERROR
 
     def stop(self):
         self.player.stop()
@@ -102,7 +122,7 @@ class VLCEngine(Engine):
         
         elif result == vlc.State.Error:
             self.logger.error('Failed to stop playing')
-            return SENTINELS.VLC_ERROR
+            return SENTINELS.ENGINE_ERROR
 
     def jump_pos(self, pos):
         if self.player.get_state() in (vlc.State.Playing, vlc.State.Paused):
@@ -129,7 +149,7 @@ class VLCEngine(Engine):
         
         elif result == vlc.State.Error:
             self.logger.error('Failed to start playing')
-            return SENTINELS.VLC_ERROR
+            return SENTINELS.ENGINE_ERROR
 
     def toggle(self):
         state = self.player.get_state()
@@ -154,7 +174,7 @@ class VLCEngine(Engine):
 
             elif result == vlc.State.Error:
                 self.logger.error('Failed to pause audio')
-                return SENTINELS.VLC_ERROR
+                return SENTINELS.ENGINE_ERROR
         else:
             self.logger.error('Failed to pause because player is not playing')
             return SENTINELS.INVALID_PLAYER_STATE
@@ -171,7 +191,7 @@ class VLCEngine(Engine):
 
             elif result == vlc.State.Error:
                 self.logger.info('Failed to resume audio')
-                return SENTINELS.VLC_ERROR
+                return SENTINELS.ENGINE_ERROR
         else:
             self.logger.error('Failed to resume because player is not paused')
             return SENTINELS.INVALID_PLAYER_STATE

@@ -61,7 +61,8 @@
   - [X] Cover cache
 - [X] Reload hotkey for dashboard
 - [X] Reverse playback sequence
-- [ ] Dual audio engine: miniaudio + VLC
+- [X] Dual audio engine: miniaudio + VLC
+- [ ] mpv engine
 - [ ] GUI configure editor
 - [ ] HTTP frontend
 - [ ] Bluetooth frontend

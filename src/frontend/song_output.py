@@ -101,6 +101,8 @@ class SongOutput:
         self.current_num = info.get('current_num', '?')
         if isinstance(self.current_num, int):
             self.current_num += 1
+
+        self.engine = info.get('engine', '?')
     
         self.run_time = format_time(info.get('run_time', -1), 'sec')
     

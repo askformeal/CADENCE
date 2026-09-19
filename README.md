@@ -25,11 +25,12 @@ Retrieves collections of mechanically-represented wave data from persistent stor
 - Dashboard frontend (`cadence dash`): interactive TUI with live status, playlist browsing and keyboard controls, including a poster mode that fills the screen with the album cover
 - Album cover art: read from the file's own tags (FLAC pictures, ID3 APIC, MP4 `covr`, Vorbis comments) or from a `cover.jpg` / `folder.jpg` next to it, downscaled by the backend and served to frontends
 - Lyric board frontend: floating always-on-top window showing the current lyric line, styled via config options and fading to semi-transparent until hovered
+- Pluggable audio engine: `vlc` (default, decodes everything VLC does) or `miniaudio` (needs no VLC installation, fewer formats) — see [Audio engines](#audio-engines)
 - Socket-based backend/frontend architecture (see [docs/protocol.md](docs/protocol.md))
 
 ## Installation
 
-Requires Python 3.12+ and [VLC](https://www.videolan.org/vlc/) 3.x installed. CADENCE uses `python-vlc`, which is only a binding — it needs a real VLC runtime (`libvlc.dll` + plugins) to decode audio, found via VLC's installer or registry.
+Requires Python 3.12+ and, for the default (`vlc`) audio engine, [VLC](https://www.videolan.org/vlc/) 3.x installed. CADENCE uses `python-vlc`, which is only a binding — it needs a real VLC runtime (`libvlc.dll` + plugins) to decode audio, found via VLC's installer or registry. The `miniaudio` engine decodes without VLC (see [Audio engines](#audio-engines)).
 
 There are two ways to install:
 
@@ -45,7 +46,7 @@ The `cadence` command will be available after installation. For development, run
 python -m src
 ```
 
-**You must install [VLC](https://www.videolan.org/vlc/) yourself.** CADENCE only ships the `python-vlc` binding; it locates the actual VLC runtime through VLC's installation.
+**With the default engine you must install [VLC](https://www.videolan.org/vlc/) yourself.** CADENCE only ships the `python-vlc` binding; it locates the actual VLC runtime through VLC's installation. With `engine = miniaudio` no VLC installation is needed.
 
 ### Option B — portable build (`build.sh`)
 
@@ -61,64 +62,64 @@ Builds a self-contained folder (plus a `.zip`) into `dist/cadence-<version>/`, b
 
 ### Lifecycle
 
-| Command                   | Description                          |
-| ------------------------- | ------------------------------------ |
-| `cadence start`           | Start the CADENCE backend (daemon)   |
-| `cadence start -c`        | Start backend and resume last session|
-| `cadence start --dev`     | Start backend with dev database      |
-| `cadence reboot`          | Restart the backend                  |
-| `cadence reboot -c`       | Restart and resume last session      |
-| `cadence exit`            | Stop the backend                     |
-| `cadence kill`            | Force-kill backend processes (last resort) |
-| `cadence status`          | Show current playback status         |
+| Command                 | Description                                |
+| ----------------------- | ------------------------------------------ |
+| `cadence start`       | Start the CADENCE backend (daemon)         |
+| `cadence start -c`    | Start backend and resume last session      |
+| `cadence start --dev` | Start backend with dev database            |
+| `cadence reboot`      | Restart the backend                        |
+| `cadence reboot -c`   | Restart and resume last session            |
+| `cadence exit`        | Stop the backend                           |
+| `cadence kill`        | Force-kill backend processes (last resort) |
+| `cadence status`      | Show current playback status               |
 
 ### Playback
 
-| Command                | Description                                            |
-| ---------------------- | ------------------------------------------------------ |
-| `cadence open <song>`  | Open a song, playlist, or file path                    |
-| `cadence play-all`     | Play all songs in the library                          |
-| `cadence reload`       | Re-open the last opened song or play-all session       |
-| `cadence pause`        | Pause playing media                                    |
-| `cadence resume`       | Resume paused media                                    |
-| `cadence toggle`       | Switch between playing and paused                      |
-| `cadence stop`         | Stop playing                                           |
-| `cadence prev`         | Switch to the previous song in current playlist        |
-| `cadence next`         | Switch to the next song in current playlist            |
-| `cadence list`         | Show current playlist                                  |
-| `cadence dice`         | Switch to a random song in current playlist            |
-| `cadence shuffle`      | Toggle shuffle mode                                    |
-| `cadence loop`         | Toggle loop mode                                       |
-| `cadence reverse`      | Toggle reverse playback mode                           |
-| `cadence lyric`        | Toggle lyric source (local `.lrc` / online)            |
-| `cadence switch <num>` | Switch to a song in current playlist via number        |
-| `cadence seek <time>`  | Jump to a specific time, or seek relative to the current position with a `+`/`-` prefix (e.g. `seek +10` forward, `seek -10` backward) |
-| `cadence jump <pct>`   | Jump to progress of the current song (percentage)      |
-| `cadence replay`       | Clear memorized progress and replay the current song   |
-| `cadence volume <pct>` | Set volume (0-100), or adjust relatively with a `+`/`-` prefix (e.g. `volume +5`, `volume -5`) |
-| `cadence mute`         | Toggle mute                                            |
+| Command                  | Description                                                                                                                                   |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cadence open <song>`  | Open a song, playlist, or file path                                                                                                           |
+| `cadence play-all`     | Play all songs in the library                                                                                                                 |
+| `cadence reload`       | Re-open the last opened song or play-all session                                                                                              |
+| `cadence pause`        | Pause playing media                                                                                                                           |
+| `cadence resume`       | Resume paused media                                                                                                                           |
+| `cadence toggle`       | Switch between playing and paused                                                                                                             |
+| `cadence stop`         | Stop playing                                                                                                                                  |
+| `cadence prev`         | Switch to the previous song in current playlist                                                                                               |
+| `cadence next`         | Switch to the next song in current playlist                                                                                                   |
+| `cadence list`         | Show current playlist                                                                                                                         |
+| `cadence dice`         | Switch to a random song in current playlist                                                                                                   |
+| `cadence shuffle`      | Toggle shuffle mode                                                                                                                           |
+| `cadence loop`         | Toggle loop mode                                                                                                                              |
+| `cadence reverse`      | Toggle reverse playback mode                                                                                                                  |
+| `cadence lyric`        | Toggle lyric source (local`.lrc` / online)                                                                                                  |
+| `cadence switch <num>` | Switch to a song in current playlist via number                                                                                               |
+| `cadence seek <time>`  | Jump to a specific time, or seek relative to the current position with a`+`/`-` prefix (e.g. `seek +10` forward, `seek -10` backward) |
+| `cadence jump <pct>`   | Jump to progress of the current song (percentage)                                                                                             |
+| `cadence replay`       | Clear memorized progress and replay the current song                                                                                          |
+| `cadence volume <pct>` | Set volume (0-100), or adjust relatively with a`+`/`-` prefix (e.g. `volume +5`, `volume -5`)                                         |
+| `cadence mute`         | Toggle mute                                                                                                                                   |
 
 Note: a negative seek time starts with `-`, which the command-line parser treats as an option flag — quote it to pass it through, e.g. `cadence seek "-1:30"`. Plain numbers like `seek -10` work without quotes.
 
 ### Library
 
-| Command                     | Description                                        |
-| --------------------------- | -------------------------------------------------- |
-| `cadence lib list`          | Show all songs in library (`-a` aliases, `-p` playlists, `-t` tech metadata) |
-| `cadence lib info <song>...`| Show detailed info of songs (`-a` aliases, `-p` playlists, `-t` tech) |
-| `cadence lib search <kw>...`| Search songs by name/artist/album/alias (`-o` any-keyword match) |
-| `cadence lib add <path>...`| Add new songs to library (`-a/--aliases` to bind aliases, `--loose-path` to allow missing paths, `--skip-meta`/`--skip-alias`/`--skip-lyric` to disable auto-detection) |
-| `cadence lib del <song>...`| Delete songs from library (path, alias or ID)          |
-| `cadence lib scan <dir>`    | Scan a directory for audio files and add them (`-d` dry run, `--skip-meta`/`--skip-alias`/`--skip-lyric`) |
-| `cadence lib prune`         | Delete all songs whose file no longer exists (`-d` dry run)  |
-| `cadence lib reset`         | Reset library and delete all data (confirmation)   |
-| `cadence lib meta set`      | Set metadata of a song (use `""` to clear)         |
-| `cadence lib meta read-file`| Set metadata of a song from its file tags (`--all` for every field) |
-| `cadence lib lyric set`     | Set the lyric file of a song (use `""` to unset)   |
-| `cadence lib lyric offset <song> <ms>` | Set a per-song lyric time offset in milliseconds (positive delays the lyric, negative brings it earlier) |
-| `cadence lib lyric fetch <song>...` | Fetch lyrics for songs from online sources (see `proxy` / `netease_skip_proxy` below) |
-| `cadence lib alias ...`     | List/bind/unbind aliases (`bind <song> <alias>...`, `unbind <alias>...`) |
-| `cadence lib playlist ...`  | List/create/add/kick/delete playlists (`lib playlist list` supports `-a`/`-p`/`-t`) |
+| Command                                  | Description                                                                                                                                                                       |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cadence lib list`                     | Show all songs in library (`-a` aliases, `-p` playlists, `-t` tech metadata)                                                                                                |
+| `cadence lib info <song>...`           | Show detailed info of songs (`-a` aliases, `-p` playlists, `-t` tech)                                                                                                       |
+| `cadence lib search <kw>...`           | Search songs by name/artist/album/alias (`-o` any-keyword match)                                                                                                                |
+| `cadence lib add <path>...`            | Add new songs to library (`-a/--aliases` to bind aliases, `--loose-path` to allow missing paths, `--skip-meta`/`--skip-alias`/`--skip-lyric` to disable auto-detection) |
+| `cadence lib del <song>...`            | Delete songs from library (path, alias or ID)                                                                                                                                     |
+| `cadence lib scan <dir>`               | Scan a directory for audio files and add them (`-d` dry run, `--skip-meta`/`--skip-alias`/`--skip-lyric`)                                                                 |
+| `cadence lib prune`                    | Delete all songs whose file no longer exists (`-d` dry run)                                                                                                                     |
+| `cadence lib reset`                    | Reset library and delete all data (confirmation)                                                                                                                                  |
+| `cadence lib meta set`                 | Set metadata of a song (use`""` to clear)                                                                                                                                       |
+| `cadence lib meta read-file`           | Set metadata of a song from its file tags (`--all` for every field)                                                                                                             |
+| `cadence lib lyric set`                | Set the lyric file of a song (use`""` to unset)                                                                                                                                 |
+| `cadence lib lyric offset <song> <ms>` | Set a per-song lyric time offset in milliseconds (positive delays the lyric, negative brings it earlier)                                                                          |
+| `cadence lib lyric fetch <song>...`    | Fetch lyrics for songs from online sources (see`proxy` / `netease_skip_proxy` below)                                                                                          |
+| `cadence lib alias ...`                | List/bind/unbind aliases (`bind <song> <alias>...`, `unbind <alias>...`)                                                                                                      |
+| `cadence lib playlist ...`             | List/create/add/kick/delete playlists (`lib playlist list` supports `-a`/`-p`/`-t`)                                                                                       |
 
 `cadence lib lyric fetch` downloads each song's lyric from an online source. Fetching several songs at once is slow and can exceed the frontend execution timeout (`execution_timeout`) — note that even if the request times out, the backend keeps downloading in the background and still writes the files. If you hit timeouts, raise `execution_timeout`; and keep to at most 4 songs per call, since downloads run with 4-way parallelism — beyond 4 they queue up instead of completing together.
 
@@ -128,64 +129,80 @@ If a song's lyric is slightly out of sync with the audio, you can shift it with 
 
 ### Configuration
 
-| Command                        | Description                                            |
-| ------------------------------ | ------------------------------------------------------ |
-| `cadence config list` | Show information of all options |
-| `cadence config show <option>` | Show information of an option |
-| `cadence config set <option> <value>` | Write an option to the config file (`--overwrite-corrupt` to replace a corrupted file) |
-| `cadence config unset <option>` | Remove an option from the config file (falls back to default) |
-| `cadence config open` | Open the config file with the system's default application (creates an empty one if missing) |
-| `cadence config path` | Show the path of the config file |
+| Command                                 | Description                                                                                  |
+| --------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `cadence config list`                 | Show information of all options                                                              |
+| `cadence config show <option>`        | Show information of an option                                                                |
+| `cadence config set <option> <value>` | Write an option to the config file (`--overwrite-corrupt` to replace a corrupted file)     |
+| `cadence config unset <option>`       | Remove an option from the config file (falls back to default)                                |
+| `cadence config open`                 | Open the config file with the system's default application (creates an empty one if missing) |
+| `cadence config path`                 | Show the path of the config file                                                             |
 
 `config` commands accept `-d/--direct` to bypass the backend and edit the config file locally (works when the backend is not running).
 
-Config file: `%LOCALAPPDATA%\cadence\cadence\config.toml` (Windows). Options:
+Config file: `%LOCALAPPDATA%\cadence\cadence\config.toml` (Windows). It groups options into TOML sections — `[network]`, `[service]`, `[playback]`, `[dash]`, `[appearance]` and `[lyric]` — with `username` at the root of the file; `config set` writes into the right section for you. Options:
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `username` | `J. Doe` | Name shown in the welcome message |
-| `backend_token` | *(empty)* | Token the backend verifies requests with; empty disables auth |
-| `frontend_token` | *(empty)* | Token frontends send with requests |
-| `backend_host` / `backend_port` | `127.0.0.1` / `17891` | Address the backend listens on |
-| `frontend_host` / `frontend_port` | `127.0.0.1` / `17891` | Address the frontend sends requests to |
-| `connection_timeout` | `3` | Timeout of frontend waiting for the backend's acknowledge (seconds) |
-| `execution_timeout` | `30` | Timeout of frontend waiting for the backend's response (seconds) |
-| `proxy` | *(empty)* | Proxy used when fetching lyrics online; empty uses the system default |
-| `netease_skip_proxy` | `false` | Connect to the NetEase lyric source directly, ignoring `proxy` |
-| `hotkey` | `true` | Start the hotkey frontend with the backend |
-| `tray` | `true` | Start the tray icon frontend with the backend |
-| `lyric` | `true` | Start the lyric board frontend with the backend |
-| `default_volume` | `100` | Volume on start (0~100) |
-| `default_shuffle` | `false` | Shuffle mode on start |
-| `default_online_lyric` | `false` | Use the online lyric source on start |
-| `player_timeout` | `1` | Timeout of backend waiting for a player action (seconds) |
-| `pos_memorize_interval` | `5` | Interval of memorized position updates (seconds) |
-| `dash_volume_step` | `5` | Volume increase/decrease step on the dashboard |
-| `dash_pos_step` | `5` | Position forward/backward step on the dashboard |
-| `dash_poster_width` | `80` | Width of the album cover in the dashboard's poster mode (columns) |
-| `dash_poster_height` | `64` | Height of the album cover in poster mode (pixels, 2 per terminal row) |
-| `escape_char` | `true` | Use ANSI escape codes (colors) in the CLI and dashboard output |
-| `cli_box_style` | `rounded` | Box style of the CLI |
-| `dash_box_style` | `rounded` | Box style of the dashboard |
-| `dash_screen_buffer` | `true` | Use the terminal alt-screen buffer for the dashboard |
-| `auto_dash_height` | `true` | Size the dashboard height from the terminal height |
-| `pause_hide_lyric` | `true` | Hide the lyric board when playback is paused |
-| `lyric_trans_bg` | `false` | Use a fully transparent window background (keyed out) instead of an opaque backdrop on the lyric board |
-| `lyric_hover_solid` | `true` | Turn the lyric board fully opaque with a solid background when hovered (can be turned off) |
-| `lyric_height` | `70` | Height of the lyric board (pixels) |
-| `lyric_x_offset` | `0` | Horizontal offset of the lyric board from screen center (negative = left, positive = right) |
-| `lyric_font_family` | *(empty → system default)* | Font family of the lyric board |
-| `lyric_font_size` | `20` | Font size of the lyric board |
-| `lyric_font_bold` | `false` | Use a bold font on the lyric board |
-| `lyric_font_color` | `#797979` | Font color of the lyric board (hex) |
-| `lyric_bg_color` | `#111111` | Solid background color of the lyric board shown on hover (hex) |
-| `lyric_opacity` | `40` | Lyric board opacity when not hovered (0~100, 100 = fully opaque) |
+| Option                                | Default                       | Description                                                                                            |
+| ------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `username`                          | `J. Doe`                    | Name shown in the welcome message                                                                      |
+| `backend_token`                     | *(empty)*                   | Token the backend verifies requests with; empty disables auth                                          |
+| `frontend_token`                    | *(empty)*                   | Token frontends send with requests                                                                     |
+| `backend_host` / `backend_port`   | `127.0.0.1` / `17891`     | Address the backend listens on                                                                         |
+| `frontend_host` / `frontend_port` | `127.0.0.1` / `17891`     | Address the frontend sends requests to                                                                 |
+| `connection_timeout`                | `3`                         | Timeout of frontend waiting for the backend's acknowledge (seconds)                                    |
+| `execution_timeout`                 | `30`                        | Timeout of frontend waiting for the backend's response (seconds)                                       |
+| `proxy`                             | *(empty)*                   | Proxy used when fetching lyrics online; empty uses the system default                                  |
+| `netease_skip_proxy`                | `false`                     | Connect to the NetEase lyric source directly, ignoring`proxy`                                        |
+| `hotkey`                            | `true`                      | Start the hotkey frontend with the backend                                                             |
+| `tray`                              | `true`                      | Start the tray icon frontend with the backend                                                          |
+| `lyric`                             | `true`                      | Start the lyric board frontend with the backend                                                        |
+| `engine`                            | `vlc`                       | Audio engine:`vlc` or `miniaudio` (see [Audio engines](#audio-engines))                             |
+| `default_volume`                    | `100`                       | Volume on start (0~100)                                                                                |
+| `default_shuffle`                   | `false`                     | Shuffle mode on start                                                                                  |
+| `default_online_lyric`              | `false`                     | Use the online lyric source on start                                                                   |
+| `player_timeout`                    | `1`                         | Timeout of backend waiting for a player action (seconds)                                               |
+| `pos_memorize_interval`             | `5`                         | Interval of memorized position updates (seconds)                                                       |
+| `dash_volume_step`                  | `5`                         | Volume increase/decrease step on the dashboard                                                         |
+| `dash_pos_step`                     | `5`                         | Position forward/backward step on the dashboard                                                        |
+| `dash_poster_width`                 | `80`                        | Width of the album cover in the dashboard's poster mode (columns)                                      |
+| `dash_poster_height`                | `64`                        | Height of the album cover in poster mode (pixels, 2 per terminal row)                                  |
+| `escape_char`                       | `true`                      | Use ANSI escape codes (colors) in the CLI and dashboard output                                         |
+| `cli_box_style`                     | `rounded`                   | Box style of the CLI                                                                                   |
+| `dash_box_style`                    | `rounded`                   | Box style of the dashboard                                                                             |
+| `dash_screen_buffer`                | `true`                      | Use the terminal alt-screen buffer for the dashboard                                                   |
+| `auto_dash_height`                  | `true`                      | Size the dashboard height from the terminal height                                                     |
+| `pause_hide_lyric`                  | `true`                      | Hide the lyric board when playback is paused                                                           |
+| `lyric_trans_bg`                    | `false`                     | Use a fully transparent window background (keyed out) instead of an opaque backdrop on the lyric board |
+| `lyric_hover_solid`                 | `true`                      | Turn the lyric board fully opaque with a solid background when hovered (can be turned off)             |
+| `lyric_height`                      | `70`                        | Height of the lyric board (pixels)                                                                     |
+| `lyric_x_offset`                    | `0`                         | Horizontal offset of the lyric board from screen center (negative = left, positive = right)            |
+| `lyric_font_family`                 | *(empty → system default)* | Font family of the lyric board                                                                         |
+| `lyric_font_size`                   | `20`                        | Font size of the lyric board                                                                           |
+| `lyric_font_bold`                   | `false`                     | Use a bold font on the lyric board                                                                     |
+| `lyric_font_color`                  | `#797979`                   | Font color of the lyric board (hex)                                                                    |
+| `lyric_bg_color`                    | `#111111`                   | Solid background color of the lyric board shown on hover (hex)                                         |
+| `lyric_opacity`                     | `40`                        | Lyric board opacity when not hovered (0~100, 100 = fully opaque)                                       |
 
 Values are validated on write; invalid ones are rejected. The default value is used when an option is not set or the stored value is invalid. Most options take effect on the next backend start; the timeout / interval / step options are read live on every use.
 
 > **Note for users on mainland China networks:** when fetching lyrics online, it is recommended to enable `netease_skip_proxy`. The NetEase source is reachable directly from China, while proxy-only sources (LRCLIB, Musixmatch, etc.) sit behind the wall — so let NetEase connect directly and route the rest through `proxy`.
 
 Besides downloading lyrics with `lib lyric fetch`, you can play with **live online lyrics**: toggle the lyric source to online (`cadence lyric`, or `z` in the dashboard) and, whenever the song being played has no local `.lrc`, its lyrics are fetched on the fly from online sources and shown as it plays — a `[Loading ...]` placeholder appears while a fetch is in flight. Live online lyrics are keyed by the song's path, so they work for non-library songs too, and are shown on both the floating lyric board and the dashboard. The startup source is controlled by `default_online_lyric`.
+
+### Audio engines
+
+The player sits behind an engine interface; the `engine` option selects the implementation and is read when the backend builds its player, so changing it needs a restart (`cadence config set engine miniaudio`, then `cadence reboot`).
+
+| Engine                | Requires                                             | Decodes                                                          |
+| --------------------- | ---------------------------------------------------- | ---------------------------------------------------------------- |
+| `vlc` *(default)* | VLC 3.x installed —`python-vlc` is only a binding | everything VLC does, i.e. every extension in`AUDIO_EXTENSIONS` |
+| `miniaudio`         | nothing beyond the Python dependencies               | MP3, MP2, FLAC, WAV, AIFF, OGG Vorbis                            |
+
+`miniaudio` goes through `just_playback`, a wrapper around [miniaudio](https://github.com/mackron/miniaudio), which makes CADENCE able to play without a VLC installation — but through a much smaller decoder. The AAC/M4A, WMA, Opus and AC3 families are not decodable, and neither are the lossless and rarer containers (APE, DSD, WavPack, ...). A song in one of those formats still scans into the library, because the library reads tags with `mutagen` and never asks the engine; it fails at the moment it is opened, reported as "the audio file does not exist or is not valid".
+
+VLC is the safer choice for a general library; `miniaudio` is for installations that cannot or will not have VLC. The active engine is reported as `engine` by `status` / `poll` and printed on the `Audio Engine:` line of `cadence status`.
+
+`python-vlc` locates the VLC runtime the moment it is imported: it honours `PYTHON_VLC_LIB_PATH` (full path to `libvlc.dll`) and `PYTHON_VLC_MODULE_PATH` (plugin directory), then looks for an installed VLC through the registry and the usual `Program Files\VideoLAN\VLC` locations, and as a last resort tries `libvlc.dll` next to the working directory. If none of that works, the backend fails to start and `cadence.log` carries the reason — `Failed to access VLC backend`. A message about `Could not find module … (or one of its dependencies)` means `libvlccore.dll`, or the Microsoft Visual C++ 2015+ Redistributable it needs, is missing next to `libvlc.dll`. The portable build sets both environment variables itself and ships the runtime in `vlc/`, so moving that folder out of the bundle is a way to produce this.
 
 ### Tray icon
 
@@ -229,35 +246,35 @@ Screenshot:
 
 Keys (defined in `DASH_KEY_MAP` in `src/constants/`):
 
-| Key | Action |
-| --- | --- |
-| `Space` | Play / pause |
-| `Ctrl+A` | Play all songs in the library |
-| `Ctrl+R` | Reload the last opened song or play-all session |
-| `o` | Open a song — prompts for a song name, library ID, file path or playlist name |
-| `/` | Filter the playlist — prompts for text, matches against song name and artist; highlights matches and shows remaining counts above/below |
-| `g` | Jump to a specific time — prompts for `HH:MM:SS` |
-| `n` / `p` | Next / previous song |
-| `j` / `k`, `↑` / `↓` | Move selection up / down |
-| `PgUp` / `PgDn` | Page selection up / down |
-| `Home` / `End` | Jump to top / bottom of the list |
-| `c` | Jump selection to the currently playing song |
-| `Enter` | Play the selected song |
-| `x` / `d` | Stop / random song jump |
-| `s` / `r` | Toggle shuffle / loop |
-| `b` | Toggle reverse playback |
-| `z` | Toggle the lyric source (local `.lrc` / online) |
-| `]` / `[` | Nudge the current lyric later / earlier (live overlay, step `100ms`; not persisted) |
-| `\` | Reset the live lyric offset overlay |
-| `f` | Toggle poster mode (full-screen album cover) |
-| `=` / `-` | Volume up / down (step from `dash_volume_step`) |
-| `m` | Mute |
-| `,` / `h`, `←` | Jump backward (step from `dash_pos_step`) |
-| `.` / `l`, `→` | Jump forward (step from `dash_pos_step`) |
-| `t` / `T` | Next / previous box style (runtime only, not persisted) |
-| `?` / `F1` | Toggle the key map help screen |
-| `Ctrl+L`, `F5` | Redraw the screen |
-| `q`, `Ctrl+C`, `Ctrl+Z` | Quit the dashboard |
+| Key                            | Action                                                                                                                                   |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `Space`                      | Play / pause                                                                                                                             |
+| `Ctrl+A`                     | Play all songs in the library                                                                                                            |
+| `Ctrl+R`                     | Reload the last opened song or play-all session                                                                                          |
+| `o`                          | Open a song — prompts for a song name, library ID, file path or playlist name                                                           |
+| `/`                          | Filter the playlist — prompts for text, matches against song name and artist; highlights matches and shows remaining counts above/below |
+| `g`                          | Jump to a specific time — prompts for`HH:MM:SS`                                                                                       |
+| `n` / `p`                  | Next / previous song                                                                                                                     |
+| `j` / `k`, `↑` / `↓` | Move selection up / down                                                                                                                 |
+| `PgUp` / `PgDn`            | Page selection up / down                                                                                                                 |
+| `Home` / `End`             | Jump to top / bottom of the list                                                                                                         |
+| `c`                          | Jump selection to the currently playing song                                                                                             |
+| `Enter`                      | Play the selected song                                                                                                                   |
+| `x` / `d`                  | Stop / random song jump                                                                                                                  |
+| `s` / `r`                  | Toggle shuffle / loop                                                                                                                    |
+| `b`                          | Toggle reverse playback                                                                                                                  |
+| `z`                          | Toggle the lyric source (local`.lrc` / online)                                                                                         |
+| `]` / `[`                  | Nudge the current lyric later / earlier (live overlay, step`100ms`; not persisted)                                                     |
+| `\`                          | Reset the live lyric offset overlay                                                                                                      |
+| `f`                          | Toggle poster mode (full-screen album cover)                                                                                             |
+| `=` / `-`                  | Volume up / down (step from`dash_volume_step`)                                                                                         |
+| `m`                          | Mute                                                                                                                                     |
+| `,` / `h`, `←`          | Jump backward (step from`dash_pos_step`)                                                                                               |
+| `.` / `l`, `→`          | Jump forward (step from`dash_pos_step`)                                                                                                |
+| `t` / `T`                  | Next / previous box style (runtime only, not persisted)                                                                                  |
+| `?` / `F1`                 | Toggle the key map help screen                                                                                                           |
+| `Ctrl+L`, `F5`             | Redraw the screen                                                                                                                        |
+| `q`, `Ctrl+C`, `Ctrl+Z`  | Quit the dashboard                                                                                                                       |
 
 ### Lyric board
 
@@ -265,7 +282,7 @@ The lyric board is a floating always-on-top window that shows the current lyric 
 
 ## Architecture
 
-- **Backend** (`src/backend/`) — owns the VLC player (`vlc_player.py`) and the SQLite database (`database/`, split into per-domain mixins), listens on `127.0.0.1:17891` for JSON requests over a socket. Action handlers live in `handlers/` and dispatch through a `ROUTER` table keyed by action name; playback state is held in the `Playback` class and injected into handlers via a `Context`.
+- **Backend** (`src/backend/`) — owns the audio engine (`playback/`: an `Engine` interface in `engine.py`, with `vlc_engine.py` and `mini_engine.py` implementations, selected by the `engine` config option) and the SQLite database (`database/`, split into per-domain mixins), listens on `127.0.0.1:17891` for JSON requests over a socket. Action handlers live in `handlers/` and dispatch through a `ROUTER` table keyed by action name; playback state is held in the `Playback` class and injected into handlers via a `Context`.
 - **Frontends** (`src/frontend/`) — `cli/` (the `cadence` CLI), `hotkey.py` (media key hotkeys), `tray.py` (system tray icon), `dash/` (interactive dashboard), `lyric.py` (floating lyric board). They send action requests to the backend and format responses. All frontends share `client.py` and `song_output.py`.
 - **Protocol** — all communication is JSON over a length-prefixed socket connection. See [docs/protocol.md](docs/protocol.md).
 
@@ -273,7 +290,7 @@ The lyric board is a floating always-on-top window that shows the current lyric 
 
 - Database: `%LOCALAPPDATA%\cadence\cadence\cadence.db` (Windows) — managed by platformdirs
 - Dev database: `%LOCALAPPDATA%\cadence\cadence\cadence-dev.db` (Windows) — used when the backend is started with `--dev`
-- Audio formats: FLAC, MP3, WAV, and other common formats (see `AUDIO_EXTENSIONS` in `src/constants/`)
+- Audio formats: FLAC, MP3, WAV, and other common formats (see `AUDIO_EXTENSIONS` in `src/constants/`) — which of them actually decode depends on the engine ([Audio engines](#audio-engines))
 
 ## Logs
 

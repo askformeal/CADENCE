@@ -60,7 +60,7 @@ Request keys: none. In particular no `cwd` — a frontend that only displays the
 
 Success response attachment: a dictionary combining
 
-- the playback status fields, the same ones the `status` action returns: `id`, `path`, `name`, `artist`, `album`, `duration` (milliseconds), `bitrate`, `sample_rate`, `channels`, `lyric_path`, `in_library`, `player_status`, `volume`, `mute`, `shuffle`, `loop`, `reverse`, `online_lyric`, `playlist_len`, `current_num` (0-based number in the current playlist), `run_time` (seconds), `length` and `time` (milliseconds, -1 when unknown), `dev`
+- the playback status fields, the same ones the `status` action returns: `id`, `path`, `name`, `artist`, `album`, `duration` (milliseconds), `bitrate`, `sample_rate`, `channels`, `lyric_path`, `in_library`, `player_status`, `volume`, `mute`, `shuffle`, `loop`, `reverse`, `online_lyric`, `engine` (the engine in use, `vlc` or `miniaudio`), `playlist_len`, `current_num` (0-based number in the current playlist), `run_time` (seconds), `length` and `time` (milliseconds, -1 when unknown), `dev`
 - the library information of the current song: `aliases` (a list of strings) and `added_playlists` (the names of the playlists holding it). Both are `null` when the current song is not in the library.
 - the lyric state of the current song: `lyric` (a list of `[position in milliseconds, text]` pairs), `lyric_loading` (true while an online lyric is being fetched), `lyric_offset` (the offset stored for this song in the library) and `offset_overlay` (the offset the user adjusted on the fly)
 - `current_songs`, the current playlist as a list of song info dictionaries (empty when nothing is playing)
@@ -91,6 +91,8 @@ Read and modify the configuration file. These actions operate on the options def
 
 #### Options
 
+Options are grouped into TOML sections in `config.toml` — `[network]`, `[service]`, `[playback]`, `[dash]`, `[appearance]` and `[lyric]` — except `username`, which sits at the root of the file. The table below lists every option in the order `config.list` returns them.
+
 | Option | Type | Section | Default | Description |
 |---|---|---|---|---|
 | `username` | string | (root) | `J. Doe` | Name shown in the welcome message |
@@ -101,24 +103,44 @@ Read and modify the configuration file. These actions operate on the options def
 | `frontend_port` | port (int > 0) | network | `17891` | Port for frontend to send requests to |
 | `frontend_host` | string | network | `127.0.0.1` | Host for frontend to send requests to |
 | `connection_timeout` | positive float | network | `3` | Timeout of frontend waiting for the backend's acknowledge (seconds) |
-| `execution_timeout` | positive float | network | `30` | Timeout of frontend waiting for the backend's response (seconds) |
+| `execution_timeout` | positive float | network | `30` | Timeout of frontend waiting for the backend's response (seconds); keep it above `player_timeout` |
+| `proxy` | string | network | `` | Proxy used when fetching lyrics online; empty uses the system default |
+| `netease_skip_proxy` | boolean | network | `false` | Connect to the NetEase lyric source directly, ignoring `proxy` |
 | `hotkey` | boolean | service | `true` | Whether to start the hotkey service on backend start |
 | `tray` | boolean | service | `true` | Whether to start the system tray icon service on backend start |
+| `lyric` | boolean | service | `true` | Whether to start the lyric board service on backend start |
+| `engine` | choice (`vlc`, `miniaudio`) | playback | `vlc` | Audio engine used for playback. See the README's "Audio engines" section |
 | `default_volume` | percentage (0~100) | playback | `100` | Volume on start |
 | `default_shuffle` | boolean | playback | `false` | Shuffle mode on start |
+| `default_online_lyric` | boolean | playback | `false` | Use the online lyric source on start |
 | `pos_memorize_interval` | positive float | playback | `5` | Interval of memorized position updates (seconds) |
-| `player_timeout` | positive float | playback | `1` | Timeout of backend waiting for a player action (seconds) |
+| `player_timeout` | positive float | playback | `1` | Timeout of backend waiting for a player action (seconds); keep it below `execution_timeout` |
 | `dash_volume_step` | positive int | dash | `5` | Step of volume increase/decrease on dashboard |
 | `dash_pos_step` | positive int | dash | `5` | Step of position forward/backward on dashboard |
-| `dash_poster_width` | positive int | appearance | `80` | Width of album cover on dashboard (columns) |
-| `dash_poster_height` | positive int | appearance | `64` | Height of album cover on dashboard (pixels / 2 rows) |
 | `escape_char` | boolean | appearance | `true` | Whether the CLI and dashboard output uses ANSI escape codes (colors) |
 | `cli_box_style` | box style | appearance | `rounded` | Box style of CLI (`ascii`, `at`, `rounded`, `square`, `double-corner`, `heavy-corner`, `double`, `heavy`) |
 | `dash_box_style` | box style | appearance | `rounded` | Box style of dashboard |
+| `dash_poster_width` | positive int | appearance | `80` | Width of album cover on dashboard (columns) |
+| `dash_poster_height` | positive int | appearance | `64` | Height of album cover on dashboard (pixels / 2 rows) |
+| `dash_screen_buffer` | boolean | appearance | `true` | Whether to use the alt screen buffer for the dashboard |
+| `auto_dash_height` | boolean | appearance | `true` | Whether to size the dashboard height from the terminal height |
+| `pause_hide_lyric` | boolean | lyric | `true` | Whether to hide the lyric board when playback is paused |
+| `lyric_hover_solid` | boolean | appearance | `true` | Whether the lyric board turns fully opaque with a solid background when hovered |
+| `lyric_trans_bg` | boolean | appearance | `false` | Whether to use a fully transparent (color-keyed) window background instead of an opaque backdrop |
+| `lyric_height` | non-negative int | appearance | `70` | Height of the lyric board (pixels) |
+| `lyric_x_offset` | int | appearance | `0` | Horizontal offset of the lyric board from screen center (pixels, negative = left, positive = right) |
+| `lyric_font_family` | string | appearance | `` | Font family of the lyric board (empty = system default) |
+| `lyric_font_size` | non-negative int | appearance | `20` | Font size of the lyric board |
+| `lyric_font_bold` | boolean | appearance | `false` | Whether to use a bold font on the lyric board |
+| `lyric_font_color` | hex color | appearance | `#797979` | Font color of the lyric board (hex) |
+| `lyric_bg_color` | hex color | appearance | `#111111` | Solid background color of the lyric board shown on hover (hex) |
+| `lyric_opacity` | percentage (0~100) | appearance | `40` | Lyric board opacity when not hovered (100 = fully opaque) |
 
-The default value does not go through the type converter; values from the file are validated against the option type and fall back to the default if invalid.
+Types are enforced by the converters in `src/types.py`; a value that does not satisfy its type is rejected on `config.set` and falls back to the default when read from a hand-edited file. The default value itself does not go through the converter.
 
-Effective timing differs per option. `host` and `port` are read when the backend binds its socket; `default_volume`, `default_shuffle` and `username` are read at backend construction — changes to these need a backend restart. `connection_timeout` (waiting for the ACK) and `execution_timeout` (waiting for the response) are read on every request, `player_timeout` on every player action, and `pos_memorize_interval` on every loop iteration — changes take effect without restart.
+Effective timing differs per option. Every access re-reads the config file, so an option that is consulted while running (the timeouts, `player_timeout`, `pos_memorize_interval`, the dashboard steps) takes effect immediately. What is read once, while something is being built, keeps its value until that component is restarted: the hosts and ports when the backend binds its socket, `engine`, `default_volume`, `default_shuffle`, `default_online_lyric` and `username` when the backend constructs its player, the service switches (`hotkey`, `tray`, `lyric`) when the CLI starts the frontends, and the lyric board's font, size and geometry when its window is created.
+
+The CLI can also operate on the config file without the backend, with `cadence config … --direct`; the actions above are the backend-side path, which is what a remote frontend uses.
 
 #### config.list
 

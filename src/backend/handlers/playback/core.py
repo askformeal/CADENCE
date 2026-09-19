@@ -43,7 +43,7 @@ def pause(ctx, request):
     return {
         SENTINELS.SUCCESS: gen_response.Success('player paused'),
         SENTINELS.INVALID_PLAYER_STATE: gen_response.Failed('can not pause player because player is not playing'),
-        SENTINELS.VLC_ERROR: gen_response.VLCError('pause player'),
+        SENTINELS.ENGINE_ERROR: gen_response.EngineError('pause player'),
         SENTINELS.PLAYER_TIMEOUT: gen_response.PlayerTimeout('pause player')
     }[result]
 
@@ -52,7 +52,7 @@ def resume(ctx, request):
     return {
         SENTINELS.SUCCESS: gen_response.Success('player resumed'),
         SENTINELS.INVALID_PLAYER_STATE: gen_response.Failed('can not resume player because player is not paused'),
-        SENTINELS.VLC_ERROR: gen_response.VLCError('resume player'),
+        SENTINELS.ENGINE_ERROR: gen_response.EngineError('resume player'),
         SENTINELS.PLAYER_TIMEOUT: gen_response.PlayerTimeout('resume player')
     }[result]
 
@@ -61,7 +61,7 @@ def toggle(ctx, request):
     return {
         SENTINELS.SUCCESS: gen_response.Success('player toggled'),
         SENTINELS.INVALID_PLAYER_STATE: gen_response.NotPlayingPaused('toggle player'),
-        SENTINELS.VLC_ERROR: gen_response.VLCError('toggle player'),
+        SENTINELS.ENGINE_ERROR: gen_response.EngineError('toggle player'),
         SENTINELS.PLAYER_TIMEOUT: gen_response.PlayerTimeout('toggle player')
     }[result]
 

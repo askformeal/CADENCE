@@ -3,6 +3,7 @@ import threading
 
 from .logger import logger
 from src.constants import SILENT_LOG_LEVEL
+from src.error import InitializationError
 from .misc import MiscMixin
 from .song import SongMixin
 from .alias import AliasMixin
@@ -16,9 +17,13 @@ class Database(MiscMixin, SongMixin, AliasMixin, PlaylistMixin, PosMixin, Settin
         self.database_path = database_path
         self.old_level = logger.level
         self._local = threading.local()
-        self._get_connection()
-        self._init_database()
-        logger.debug(f'{__name__} initiated')
+        try:
+            self._get_connection()
+            self._init_database()
+        except sqlite3.Error as e:
+            raise InitializationError(f'Failed to connect to database file: {str(e)}')
+        else:
+            logger.debug(f'{__name__} initiated')
 
     def _new_connection(self):
         connection = sqlite3.connect(self.database_path, isolation_level=None)

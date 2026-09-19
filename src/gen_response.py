@@ -134,9 +134,13 @@ class NotPlayingPaused(Failed):
     def __init__(self, action, attachment=None, failed=None):
         super().__init__(f'can not {action} because the player is neither playing nor paused', attachment, failed)
 
-class VLCError(Failed):
+class InvalidAudioFile(Failed):
     def __init__(self, action, attachment=None, failed=None):
-        super().__init__(f'can not {action} because an internal VLC error occurred', attachment, failed)
+        super().__init__(f'can not {action} because the audio file does not exist or is not valid', attachment, failed)
+
+class EngineError(Failed):
+    def __init__(self, action, attachment=None, failed=None):
+        super().__init__(f'can not {action} because an internal audio engine error occurred', attachment, failed)
 
 class PlayerTimeout(Failed):
     def __init__(self, action, attachment=None, failed=None):

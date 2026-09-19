@@ -4,15 +4,16 @@ from src.sentinels import Sentinel
 from src.config import CONFIG
 
 class Engine(ABC):
-    def __init__(self, logger, on_end_func):
+    def __init__(self, logger, name, on_end_func):
         self.logger = logger
+        self.name = name
         self.on_end = on_end_func
         self.number: int = 0
         self.volume: int = CONFIG.default_volume
         self.mute: bool = False
 
     @abstractmethod
-    def get_status(self) -> Sentinel | None:
+    def get_status(self) -> Sentinel:
         ...
 
     @abstractmethod

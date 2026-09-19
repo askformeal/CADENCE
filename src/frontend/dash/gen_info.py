@@ -30,7 +30,9 @@ class InfoMixin:
             f'  {aliases}',
             '',
             'Playlists:',
-            f'  {playlists}'
+            f'  {playlists}',
+            '',
+            f'Audio Engine: {self.snapshot.engine}'
         ]
 
         text = '\n'.join(lines)

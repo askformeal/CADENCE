@@ -54,8 +54,9 @@ def dice(ctx, request):
         return {
             SENTINELS.SUCCESS: gen_response.Success(f'diced to the {num+1}nd song in current playlist: {ctx.playback.get_current_display_name()}'),
             SENTINELS.PLAYER_EMPTY: gen_response.PlayerEmpty(f'switch to the {num+1}nd song in current playlist'),
-            SENTINELS.VLC_ERROR: gen_response.VLCError(f'switch to the {num+1}nd song in current playlist'),
+            SENTINELS.ENGINE_ERROR: gen_response.EngineError(f'switch to the {num+1}nd song in current playlist'),
             SENTINELS.PLAYER_TIMEOUT: gen_response.PlayerTimeout(f'switch to the {num+1}nd song in current playlist'),
+            SENTINELS.FILE_IO_FAILED: gen_response.InvalidAudioFile(f'switch to the {num+1}nd song in current playlist')
         }[result]
 
 def switch(ctx, request):
@@ -86,8 +87,9 @@ def prev(ctx, request):
         response = {
             SENTINELS.SUCCESS: gen_response.Success(f'switched to previous song: {ctx.playback.get_current_display_name()}'),
             SENTINELS.PLAYER_EMPTY: gen_response.PlayerEmpty('switch to previous song'),
-            SENTINELS.VLC_ERROR: gen_response.VLCError('switch to previous song'),
-            SENTINELS.PLAYER_TIMEOUT: gen_response.PlayerTimeout('switch to previous song')
+            SENTINELS.ENGINE_ERROR: gen_response.EngineError('switch to previous song'),
+            SENTINELS.PLAYER_TIMEOUT: gen_response.PlayerTimeout('switch to previous song'),
+            SENTINELS.FILE_IO_FAILED: gen_response.InvalidAudioFile(f'switch to the previous song'),
         }[result]
         if result is SENTINELS.SUCCESS:
             response += replay_song(ctx)
@@ -113,8 +115,9 @@ def next_(ctx, request):
         response = {
             SENTINELS.SUCCESS: gen_response.Success(f'switched to next song: {ctx.playback.get_current_display_name()}'),
             SENTINELS.PLAYER_EMPTY: gen_response.PlayerEmpty('switch to next song'),
-            SENTINELS.VLC_ERROR: gen_response.VLCError('switch to next song'),
-            SENTINELS.PLAYER_TIMEOUT: gen_response.PlayerTimeout('switch to next song')
+            SENTINELS.ENGINE_ERROR: gen_response.EngineError('switch to next song'),
+            SENTINELS.PLAYER_TIMEOUT: gen_response.PlayerTimeout('switch to next song'),
+            SENTINELS.FILE_IO_FAILED: gen_response.InvalidAudioFile(f'switch to the next song')
         }[result]
         if result is SENTINELS.SUCCESS:
             response += replay_song(ctx)

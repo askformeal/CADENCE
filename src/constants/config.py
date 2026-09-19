@@ -91,10 +91,10 @@ CONFIG_SCHEME = {
         'description': 'Whether to start lyric board service on start backend'
     },
     'engine': {
-        'type': StrChoiceList(('vlc',)),
+        'type': StrChoiceList(('vlc', 'miniaudio')),
         'section': 'playback',
-        'default': 'vlc',
-        'description': 'Which audio engine to use'
+        'default': 'miniaudio',
+        'description': 'Which audio engine to use (vlc, miniaudio)'
     },
     'default_volume': {
         'type': CONVERTER.percentage,
