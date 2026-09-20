@@ -51,7 +51,7 @@ class Converter:
         
     def timeout(self, value):
         value = float(value)
-        from src.constants import MIN_TIMEOUT
+        from src.constants.misc import MIN_TIMEOUT
         if value < MIN_TIMEOUT:
             raise ValueError
         else:
@@ -59,7 +59,7 @@ class Converter:
 
     def box_style(self, value):
         value = str(value)
-        from src.constants import BOX_STYLES
+        from src.constants.misc import BOX_STYLES
         if value not in BOX_STYLES.keys():
             raise ValueError
         else:
@@ -91,7 +91,7 @@ def get_type_name(obj):
     elif isinstance(obj, StrChoiceList):
         return f'A string that is one of: {', '.join(obj.choices)} (case-insensitive)'
     else:
-        from src.constants import READABLE_TYPE_NAMES
+        from src.constants.misc import READABLE_TYPE_NAMES
         return READABLE_TYPE_NAMES.get(obj, getattr(obj, '__name__', str(obj)))
         
 CONVERTER = Converter()

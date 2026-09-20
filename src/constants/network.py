@@ -1,10 +1,6 @@
 from src.types import IterType
 from src.sentinels import SENTINELS
 
-HEARTBEAT_POLL_INTERVAL = 3
-DEATH_CONFIRM_INTERVAL = 0.3
-DEATH_CONFIRM_NUMBER = 10
-
 SERVER_TIMEOUT = 0.5
 BACKLOG = 5
 HEADER_LEN = 4
@@ -22,6 +18,10 @@ SOURCES = {
     'lyric': 'lyric board service service',
     'alive': 'alive test',
     'heartbeat': 'heartbeat test',
+}
+
+ACK = {
+    'msg': 'Copy that'
 }
 
 # 'key name': (type, is_required, default_value)
@@ -186,19 +186,3 @@ NON_ACTION_KEYS = {
     'silent',
     'notify_support'
 }
-
-ATTACHMENT_REQUIRED_ACTIONS = [
-    'status',
-    'list',
-    'lib.info',
-    'lib.list',
-    'lib.search',
-    'lib.prune',
-    'lib.scan',
-    'lib.alias.list',
-    'lib.lyric.show',
-    'lib.playlist.list',
-    'config.list',
-    'config.show',
-    'config.path'
-]

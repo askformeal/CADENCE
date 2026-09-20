@@ -5,7 +5,7 @@ import re
 from wcwidth import wcswidth
 from PIL import Image, ImageOps
 
-from src.constants import BOX_STYLES
+from src.constants.misc import BOX_STYLES
 
 ESCAPE_PATTERN = re.compile(r'\x1b\[[0-?]*[ -/]*[@-~]')
 

@@ -2,8 +2,9 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from src.log import setup_logger
-from src.constants import BACKEND_LOG_PATH
-from src.constants import ENCODING, LYRIC_FETCH_MAX_WORKERS
+from src.constants.paths import BACKEND_LOG_PATH
+from src.constants.misc import ENCODING
+from src.constants.backend import LYRIC_FETCH_MAX_WORKERS
 from src.sentinels import SENTINELS
 from src import gen_response
 from src.utils.misc import get_song_display_name

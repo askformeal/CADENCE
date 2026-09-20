@@ -1,12 +1,13 @@
 import logging
 from pathlib import Path
 
-from src.constants import (
-    FILE_LOG_LEVEL, 
-    CONSOLE_LOG_LEVEL, 
-    ENCODING, 
+from src.constants.misc import ENCODING
+
+from src.constants.log import (
+    LOG_FILE_MAX_BYTES, 
     LOG_MAX_LENGTH,
-    LOG_FILE_MAX_BYTES
+    FILE_LOG_LEVEL,
+    CONSOLE_LOG_LEVEL
     )
 
 class TruncateFilter(logging.Filter):

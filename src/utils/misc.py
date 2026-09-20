@@ -8,7 +8,7 @@ import sys
 import base64
 import hashlib
 
-from src.constants import WINDOWS_ILLEGAL, WINDOWS_RESERVED, AUDIO_EXTENSIONS
+from src.constants.misc import WINDOWS_ILLEGAL, WINDOWS_RESERVED, AUDIO_EXTENSIONS
 from src.sentinels import SENTINELS
 
 def squeeze(number, highest, lowest=0):

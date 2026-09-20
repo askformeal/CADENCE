@@ -7,12 +7,12 @@ All communications between frontend and backend are sent in the format of JSON v
 ### Keys
 
 - `action` The action to be conducted by the backend
-- `source` The frontend that send this request. See complete list at constants.py:SOURCES
+- `source` The frontend that send this request. See complete list at src/constants/network.py:SOURCES
 - `cwd` The current working directory of frontend. The missing of this key may cause error of a relative path is sent to back
 - `token` Required when the backend has a non-empty `backend_token`. Frontends read it from `frontend_token`. See the `config` section below.
 - `silent` Optional. When true, the backend skips routine INFO logging for this request and its response. Intended for high-frequency polling (the tray polls `status`/`list` with it); errors are still logged.
 - `notify_support` Optional. When true, the backend attaches any pending notifies to this request's response and clears them. Only frontends that consume notifies should set it (the CLI does; the tray and hotkey explicitly don't).
-- Other keys depending on the action. A list of keys for each action can be seen at constants.py:ACTION_KEYS
+- Other keys depending on the action. A list of keys for each action can be seen at src/constants/network.py:ACTION_KEYS
 
 ### Acknowledge (ACK)
 
@@ -77,7 +77,7 @@ Hand over the current song's cover art. Request keys: none — the cover belongs
 
 Success response attachment: `{"cover": <base64 of a JPEG image>}`.
 
-The backend reads the cover when the playing song changes (from the file's own tags, or from a `cover.jpg` / `folder.jpg` / `album.jpg` / `albumart.jpg` / `front.jpg` next to it) and keeps it in memory, so repeated requests cost no disk access. Before serving it, the image is downscaled so that its longest side is at most `MAX_COVER_SIDE` (512 px, `constants.py`) and re-encoded as JPEG at `COVER_QUALITY` (85) — a 1400x1400 cover shrinks from ~170 KB to ~48 KB, which is what a frontend actually needs: the dashboard's poster mode draws it as 80x64 half-block cells. A cover already smaller than the limit is passed through untouched, never upscaled.
+The backend reads the cover when the playing song changes (from the file's own tags, or from a `cover.jpg` / `folder.jpg` / `album.jpg` / `albumart.jpg` / `front.jpg` next to it) and keeps it in memory, so repeated requests cost no disk access. Before serving it, the image is downscaled so that its longest side is at most `MAX_COVER_SIDE` (512 px, src/constants/backend.py) and re-encoded as JPEG at `COVER_QUALITY` (85) — a 1400x1400 cover shrinks from ~170 KB to ~48 KB, which is what a frontend actually needs: the dashboard's poster mode draws it as 80x64 half-block cells. A cover already smaller than the limit is passed through untouched, never upscaled.
 
 Failure responses: the current song has no cover, or the cover could not be decoded (a corrupt, truncated or unsupported image — a `cover.jpg` that is not really an image gets here). Frontends are expected to fall back to a placeholder of their own in both cases; the dashboard bundles one in `res/no_cover.txt`.
 
@@ -87,7 +87,7 @@ The cover is remembered even when playback stops — there is no current song wh
 
 ### config
 
-Read and modify the configuration file. These actions operate on the options defined in `constants.py:CONFIG_SCHEME`, stored in `config.toml`.
+Read and modify the configuration file. These actions operate on the options defined in `src/constants/config.py:CONFIG_SCHEME`, stored in `config.toml`.
 
 #### Options
 

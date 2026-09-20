@@ -3,7 +3,7 @@ from io import BytesIO
 from PIL import Image
 
 from .logger import logger
-from src.constants import MAX_COVER_SIDE, COVER_QUALITY
+from src.constants.backend import MAX_COVER_SIDE, COVER_QUALITY
 from src.utils.misc import hash_bytes
 from src.utils.file_extract import extract_cover
 

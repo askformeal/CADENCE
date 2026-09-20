@@ -3,7 +3,7 @@ import random
 from pathlib import Path
 
 from src.log import setup_logger
-from src.constants import BACKEND_LOG_PATH
+from src.constants.paths import BACKEND_LOG_PATH
 
 from src.sentinels import SENTINELS
 from src import gen_response

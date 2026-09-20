@@ -17,7 +17,7 @@ else:
         vlc = None
         vlc_error = e
 
-from src.constants import PLAYER_POLL_INTERVAL
+from src.constants.backend import PLAYER_POLL_INTERVAL
 from src.config import CONFIG
 from src.sentinels import SENTINELS
 from src.error import InitializationError

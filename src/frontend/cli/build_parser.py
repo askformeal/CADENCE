@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 
 from src import __version__
-from src.constants import REPO_LINK
+from src.constants.misc import REPO_LINK
 
 def _path(val):
     return str(Path(val).absolute())

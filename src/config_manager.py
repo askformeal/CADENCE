@@ -1,5 +1,6 @@
 from src.config import CONFIG
-from src.constants import CONFIG_SCHEME, CONFIG_PATH
+from src.constants.config import CONFIG_SCHEME
+from src.constants.paths import CONFIG_PATH
 from src.sentinels import SENTINELS
 from src import gen_response
 from src.utils.misc import open_file

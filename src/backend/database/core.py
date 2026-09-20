@@ -2,7 +2,7 @@ import sqlite3
 import threading
 
 from .logger import logger
-from src.constants import SILENT_LOG_LEVEL
+from src.constants.log import SILENT_LOG_LEVEL
 from src.error import InitializationError
 from .misc import MiscMixin
 from .song import SongMixin

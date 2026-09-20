@@ -3,8 +3,8 @@ import tomli_w
 
 from src.log import setup_logger
 
-from src.constants import CONFIG_PATH, CONFIG_SCHEME
-from src.constants import CONFIG_LOG_PATH
+from src.constants.config import CONFIG_SCHEME
+from src.constants.paths import CONFIG_PATH, CONFIG_LOG_PATH
 from src.sentinels import SENTINELS
 from src.types import get_type_name
 

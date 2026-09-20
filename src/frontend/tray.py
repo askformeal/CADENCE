@@ -8,15 +8,15 @@ from pystray import Icon, Menu, MenuItem
 from PIL import Image
 
 from src.log import setup_logger
-from src.constants import (
+
+from src.constants.paths import (
     TRAY_LOG_PATH,
-    ICON_PATH, 
-    ERROR_ICON_PATH, 
-    HEARTBEAT_POLL_INTERVAL, 
-    TRAY_POLL_INTERVAL, 
-    TRAY_ERROR_DISPLAY_TIME, 
-    AUDIO_FILE_TYPES
-    )
+    ICON_PATH,
+    ERROR_ICON_PATH,
+)
+from src.constants.frontend import HEARTBEAT_POLL_INTERVAL
+from src.constants.tray import TRAY_POLL_INTERVAL, TRAY_ERROR_DISPLAY_TIME
+from src.constants.misc import AUDIO_FILE_TYPES
 from src.frontend.client import send_request, test_heartbeat, handle_code
 from src.frontend.snapshot import Snapshot
 from src.utils.misc import get_song_display_name

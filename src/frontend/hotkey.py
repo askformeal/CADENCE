@@ -4,8 +4,9 @@ from threading import Thread
 from pynput import keyboard
 
 from src.log import setup_logger
-from src.constants import HOTKEY_LOG_PATH
-from src.constants import HEARTBEAT_POLL_INTERVAL, HOTKEY_COOL_DOWN, MEDIA_KEY_TO_ACTION
+from src.constants.paths import HOTKEY_LOG_PATH
+from src.constants.frontend import HEARTBEAT_POLL_INTERVAL
+from src.constants.hotkey import HOTKEY_COOL_DOWN, MEDIA_KEY_TO_ACTION
 from src.frontend.client import test_heartbeat, send_request, handle_code
 
 logger = setup_logger(__name__, HOTKEY_LOG_PATH)

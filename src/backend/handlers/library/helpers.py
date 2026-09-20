@@ -3,7 +3,7 @@ from pathlib import Path
 import syncedlyrics
 
 from src.log import setup_logger
-from src.constants import BACKEND_LOG_PATH
+from src.constants.paths import BACKEND_LOG_PATH
 from src import gen_response
 from src.sentinels import SENTINELS
 from src.utils.file_extract import extract_file_meta

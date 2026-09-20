@@ -7,7 +7,8 @@ from src.config import CONFIG
 from src.sentinels import SENTINELS
 from src.frontend.client import send_request, test_alive
 from src.process import start, kill
-from src.constants import RESTART_NUM, RESTART_POLL_INTERVAL, ATTACHMENT_REQUIRED_ACTIONS
+from src.constants.process import RESTART_NUM, RESTART_POLL_INTERVAL
+from src.constants.frontend import ATTACHMENT_REQUIRED_ACTIONS
 from src.config_manager import CONFIG_MANAGER
 from src.frontend.song_output import SongOutput
 from src.utils.escape_code import ESCAPE_CODE as EC

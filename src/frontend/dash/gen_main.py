@@ -1,7 +1,12 @@
 import time
 
 from src import __version__
-from src.constants import MAX_SHOW_LYRIC, MIN_WIDTH, VOL_BAR_LEN, TOAST_TIME
+from src.constants.dash import (
+    MAX_SHOW_LYRIC, 
+    MIN_WIDTH,
+    VOL_BAR_LEN,
+    TOAST_TIME
+    )
 from src.sentinels import SENTINELS
 from src.utils.lyric import get_lyric_line
 from src.utils.escape_code import ESCAPE_CODE as EC

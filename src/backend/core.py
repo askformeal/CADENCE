@@ -8,19 +8,22 @@ import time
 
 from src import __version__
 from src.log import setup_logger
-from src.constants import BACKEND_LOG_PATH, SILENT_LOG_LEVEL
-from src.constants import (
-    DATABASE_PATH, 
+from src.constants.log import SILENT_LOG_LEVEL
+from src.constants.backend import LOOP_INTERVAL, PLAY_DEAD_TIME
+from src.constants.paths import (
+    BACKEND_LOG_PATH,
+    DATABASE_PATH,
     DATABASE_DEV_PATH,
-    BACKLOG, ACTION_KEYS, 
-    NON_ACTION_KEYS, 
-    IterType, 
-    SERVER_TIMEOUT, 
-    ACK,
-    LOOP_INTERVAL, 
-    PLAY_DEAD_TIME, 
-    SOURCES
-    )
+)
+from src.constants.network import (
+    BACKLOG,
+    ACTION_KEYS,
+    NON_ACTION_KEYS,
+    SERVER_TIMEOUT,
+    SOURCES,
+    ACK
+)
+
 from src.config import CONFIG
 from src.sentinels import SENTINELS
 from src.error import InitializationError
@@ -30,7 +33,7 @@ from src.backend.database.core import Database
 from src.backend.playback.core import Playback
 from src.backend.context import Context
 from src.backend.handlers import ROUTER
-from src.types import get_type_name
+from src.types import IterType, get_type_name
 from src.pid import add_pid, remove_pid
 
 logger = setup_logger(__name__, BACKEND_LOG_PATH)

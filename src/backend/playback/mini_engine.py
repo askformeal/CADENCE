@@ -5,7 +5,7 @@ from threading import Thread
 import just_playback # basically a wrapped version of miniaudio
 from just_playback.ma_result import MiniaudioError
 
-from src.constants import (
+from src.constants.backend import (
     PLAYER_END_POLL_INTERVAL as END_POLL_INTERVAL,
     PLAYER_END_REDUNDANCY as END_REDUNDANCY
     )

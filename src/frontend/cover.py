@@ -1,7 +1,7 @@
 import random
 
 from src.utils.misc import base642bytes, hash_bytes
-from src.constants import MAX_COVER_CACHE
+from src.constants.frontend import MAX_COVER_CACHE
 
 class Cover:
     def __init__(self, requester, placeholder, logger):

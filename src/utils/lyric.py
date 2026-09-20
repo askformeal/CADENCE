@@ -1,6 +1,6 @@
 import re
 
-from src.constants import ENCODING_CHAIN
+from src.constants.misc import ENCODING_CHAIN
 from src.sentinels import SENTINELS
 
 def parse_lyric(path='', content=None):

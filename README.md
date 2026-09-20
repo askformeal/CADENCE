@@ -244,7 +244,7 @@ Screenshot:
 ╰──────────────────────────┴────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────╯
 ```
 
-Keys (defined in `DASH_KEY_MAP` in `src/constants/`):
+Keys (defined in `DASH_KEY_MAP` in `src/constants/dash.py`):
 
 | Key                            | Action                                                                                                                                   |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
@@ -290,7 +290,7 @@ The lyric board is a floating always-on-top window that shows the current lyric 
 
 - Database: `%LOCALAPPDATA%\cadence\cadence\cadence.db` (Windows) — managed by platformdirs
 - Dev database: `%LOCALAPPDATA%\cadence\cadence\cadence-dev.db` (Windows) — used when the backend is started with `--dev`
-- Audio formats: FLAC, MP3, WAV, and other common formats (see `AUDIO_EXTENSIONS` in `src/constants/`) — which of them actually decode depends on the engine ([Audio engines](#audio-engines))
+- Audio formats: FLAC, MP3, WAV, and other common formats (see `AUDIO_EXTENSIONS` in `src/constants/misc.py`) — which of them actually decode depends on the engine ([Audio engines](#audio-engines))
 
 ## Logs
 

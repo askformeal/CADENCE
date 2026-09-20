@@ -1,8 +1,8 @@
 import json
 
 from src.log import setup_logger
-from src.constants import SOCKET_LOG_PATH
-from src.constants import HEADER_LEN, CONNECTION_ENCODING, MAX_JSON_SIZE
+from src.constants.paths import SOCKET_LOG_PATH
+from src.constants.network import HEADER_LEN, CONNECTION_ENCODING, MAX_JSON_SIZE
 from src.sentinels import SENTINELS
 from src.gen_response import Response
 

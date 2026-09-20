@@ -2,8 +2,11 @@ from .logger import logger
 
 import readchar
 
-from src.constants import DASH_KEY_MAP as KEY_MAP
-from src.constants import MAX_SHOW_BIND, OFFSET_OVERLAY_STEP
+from src.constants.dash import (
+    MAX_SHOW_BIND,
+    OFFSET_OVERLAY_STEP,
+    DASH_KEY_MAP as KEY_MAP
+    )
 from src.config import CONFIG
 
 class HotkeyMixin:

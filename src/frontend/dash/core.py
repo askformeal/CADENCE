@@ -9,17 +9,17 @@ from threading import Thread
 from src import __version__
 
 from .logger import logger
-from src.constants import (
-    NO_COVER_PATH,
-    ENCODING,
-    HEARTBEAT_POLL_INTERVAL, 
-    POLL_INTERVAL, 
-    MAX_SHOW_SONG, 
-    MAX_SHOW_BIND, 
-    BOX_STYLES,
+from src.constants.paths import NO_COVER_PATH
+from src.constants.misc import ENCODING, BOX_STYLES
+from src.constants.frontend import HEARTBEAT_POLL_INTERVAL
+from src.constants.dash import (
+    POLL_INTERVAL,
+    MAX_SHOW_BIND,
+    MAX_SHOW_SONG,
     POSTER_TOP_PAD,
     DASH_KEY_MAP as KEY_MAP
     )
+
 from src.config import CONFIG
 from src.frontend.client import test_heartbeat, handle_code, send_request
 from src.utils.escape_code import ESCAPE_CODE as EC

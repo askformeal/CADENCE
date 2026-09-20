@@ -18,7 +18,8 @@ import mutagen.wave
 import pytest
 from PIL import Image
 
-from src.constants import MAX_COVER_CACHE, MAX_COVER_SIDE
+from src.constants.backend import MAX_COVER_SIDE
+from src.constants.frontend import MAX_COVER_CACHE
 from src.frontend.cover import Cover
 from src.frontend.dash import core as dash_core
 from src.utils.file_extract import _pick_front, extract_cover

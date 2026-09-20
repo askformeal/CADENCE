@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [Unreleased]
+
+### Changed
+
+- **Imports now name their constants module.** `src/constants/` stopped re-exporting everything through its `__init__.py`: every import site names the submodule it needs (`from src.constants.network import ACTION_KEYS`) instead of reading attributes off the package. Importing one group no longer pulls in the others, and a moved constant is a missing name instead of a silently equal duplicate. Two submodules were added — `log.py` (log levels, log line and file size limits) and `frontend.py` (values shared by the daemon-like frontends: heartbeat and death-confirm intervals, the cover cache size, and the list of actions the CLI renders from an attachment). Constants moved to the module that consumes them: `ACK` to `network.py`, `AUDIO_FILE_TYPES` to `misc.py`, and the cover resize constants to `backend.py` (`MAX_COVER_SIDE` / `COVER_QUALITY`, while the frontend-side `MAX_COVER_CACHE` sits in `frontend.py`).
+
 ## [0.52.0] - 2026-09-19
 
 ### Added

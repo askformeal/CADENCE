@@ -1,5 +1,5 @@
 from src.log import setup_logger
-from src.constants import BACKEND_LOG_PATH
+from src.constants.paths import BACKEND_LOG_PATH
 from src.config_manager import CONFIG_MANAGER
 
 logger = setup_logger(__name__, BACKEND_LOG_PATH)

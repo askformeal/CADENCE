@@ -9,7 +9,7 @@ import mutagen.ogg
 
 from .logger import logger
 
-from src.constants import FILE_META, COVER_NAMES, COVER_EXTENSIONS
+from src.constants.backend import FILE_META, COVER_NAMES, COVER_EXTENSIONS
 
 def extract_file_meta(path):
     try:

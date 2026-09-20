@@ -1,5 +1,5 @@
 from .logger import logger
-from src.constants import METADATA
+from src.constants.backend import METADATA
 from src.sentinels import SENTINELS
 
 class SongMixin:

@@ -1,19 +1,9 @@
 from src.types import CONVERTER
 
-import logging
-
 REPO_LINK = 'https://github.com/askformeal/CADENCE'
 
 ENCODING = 'utf-8'
 ENCODING_CHAIN = ('utf-8', 'gb18030', 'big5', 'shift_jis', 'utf-16')
-
-LOG_FILE_MAX_BYTES = 20 * 1024 * 1024 # 20MB
-
-LOG_MAX_LENGTH = 500
-
-FILE_LOG_LEVEL = logging.DEBUG
-CONSOLE_LOG_LEVEL = logging.INFO
-SILENT_LOG_LEVEL = logging.WARNING
 
 READABLE_TYPE_NAMES = {
     str: 'string',
@@ -48,6 +38,42 @@ BOX_STYLES = {
     'heavy': ('┏', '┓', '┗', '┛', '┃', '━', '┳', '┻'),
 }
 
-MAX_COVER_SIDE = 512
-COVER_QUALITY = 85
-MAX_COVER_CACHE = 50
+# file type descriptions, kept short like those used in file selectors
+AUDIO_FILE_TYPES = (
+    ('MP3 Audio', '.mp3'),
+    ('FLAC Audio', '.flac'),
+    ('WAV Audio', '.wav'),
+    ('OGG Audio', '.ogg'),
+    ('Opus Audio', '.opus'),
+    ('OGG Audio', '.oga'),
+    ('M4A Audio', '.m4a'),
+    ('M4B Audio', '.m4b'),
+    ('AAC Audio', '.aac'),
+    ('MP4 Audio', '.mp4'),
+    ('M4P Audio', '.m4p'),
+    ('APE Audio', '.ape'),
+    ('WMA Audio', '.wma'),
+    ('AIFF Audio', '.aiff'),
+    ('AIF Audio', '.aif'),
+    ('AU Audio', '.au'),
+    ('AC3 Audio', '.ac3'),
+    ('DTS Audio', '.dts'),
+    ('DSF Audio', '.dsf'),
+    ('DSD Audio', '.dsd'),
+    ('DFF Audio', '.dff'),
+    ('MKA Audio', '.mka'),
+    ('WV Audio', '.wv'),
+    ('MPC Audio', '.mpc'),
+    ('TTA Audio', '.tta'),
+    ('TAK Audio', '.tak'),
+    ('RA Audio', '.ra'),
+    ('RM Audio', '.rm'),
+    ('AMR Audio', '.amr'),
+    ('3GP Audio', '.3gp'),
+    ('CAF Audio', '.caf'),
+    ('MIDI Audio', '.mid'),
+    ('MIDI Audio', '.midi'),
+    ('Speex Audio', '.spx'),
+)
+
+AUDIO_EXTENSIONS = set(map(lambda x: x[1], AUDIO_FILE_TYPES))

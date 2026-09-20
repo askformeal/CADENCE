@@ -7,7 +7,7 @@ from pathlib import Path
 import psutil
 
 from src.frontend.client import test_alive
-from src.constants import STARTER_RETRY, STARTER_CHECK_INTERVAL, TERMINATE_TIMEOUT
+from src.constants.process import STARTER_RETRY, STARTER_CHECK_INTERVAL, TERMINATE_TIMEOUT
 from src.config import CONFIG
 from src.sentinels import SENTINELS
 from src.pid import get_pid, remove_pid

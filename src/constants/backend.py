@@ -1,7 +1,3 @@
-ACK = {
-    'msg': 'Copy that'
-}
-
 LOOP_INTERVAL = 0.05
 PLAY_DEAD_TIME = 5
 
@@ -23,42 +19,5 @@ FILE_META = {
 COVER_NAMES = ('cover', 'folder', 'album', 'albumart', 'front')
 COVER_EXTENSIONS = ('.jpg', '.jpeg', '.png')
 
-# file type descriptions, kept short like those used in file selectors
-AUDIO_FILE_TYPES = (
-    ('MP3 Audio', '.mp3'),
-    ('FLAC Audio', '.flac'),
-    ('WAV Audio', '.wav'),
-    ('OGG Audio', '.ogg'),
-    ('Opus Audio', '.opus'),
-    ('OGG Audio', '.oga'),
-    ('M4A Audio', '.m4a'),
-    ('M4B Audio', '.m4b'),
-    ('AAC Audio', '.aac'),
-    ('MP4 Audio', '.mp4'),
-    ('M4P Audio', '.m4p'),
-    ('APE Audio', '.ape'),
-    ('WMA Audio', '.wma'),
-    ('AIFF Audio', '.aiff'),
-    ('AIF Audio', '.aif'),
-    ('AU Audio', '.au'),
-    ('AC3 Audio', '.ac3'),
-    ('DTS Audio', '.dts'),
-    ('DSF Audio', '.dsf'),
-    ('DSD Audio', '.dsd'),
-    ('DFF Audio', '.dff'),
-    ('MKA Audio', '.mka'),
-    ('WV Audio', '.wv'),
-    ('MPC Audio', '.mpc'),
-    ('TTA Audio', '.tta'),
-    ('TAK Audio', '.tak'),
-    ('RA Audio', '.ra'),
-    ('RM Audio', '.rm'),
-    ('AMR Audio', '.amr'),
-    ('3GP Audio', '.3gp'),
-    ('CAF Audio', '.caf'),
-    ('MIDI Audio', '.mid'),
-    ('MIDI Audio', '.midi'),
-    ('Speex Audio', '.spx'),
-)
-
-AUDIO_EXTENSIONS = set(map(lambda x: x[1], AUDIO_FILE_TYPES))
+MAX_COVER_SIDE = 512
+COVER_QUALITY = 85
