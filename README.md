@@ -316,6 +316,8 @@ Lyric icon: [Lyrics icons created by Aranagraphics - Flaticon](https://www.flati
 
 Cover placeholder: [Image-placeholder icons created by Graphics Plazza - Flaticon](https://www.flaticon.com/free-icons/image-placeholder)
 
+Uicons by [Flaticon](https://www.flaticon.com/uicons)
+
 ## License
 
 MIT License, because using it is your loss.
