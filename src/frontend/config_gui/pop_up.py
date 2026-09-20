@@ -22,7 +22,7 @@ class Popup(tk.Toplevel):
         self.source = info['source']
         self.desc = info['description']
 
-        self.title(self.name)
+        self.title(f'Edit \"{self.name}\"')
         x = master.winfo_x() + POP_UP_POS_X
         y = master.winfo_y() + POP_UP_POS_Y
         self.geometry(f'+{x}+{y}')

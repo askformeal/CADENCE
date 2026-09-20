@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## [Unreleased]
+
+### Changed
+
+- **The configure GUI lists options as rows instead of list entries.** Every option is its own row — name, value, a source chip and an edit button — inside a scrolling canvas, so a row can carry a button and a long value no longer stretches the window, and an empty value shows `<Empty>` instead of an empty chip. The window geometry, the fonts and every colour moved into `src/constants/config_gui.py` (the edit icon, `res/edit.png`, was added), and the pop-up is titled `Edit "<option>"`.
+
+### Fixed
+
+- The configure GUI's option list scrolled on the mouse wheel from anywhere in the window, including while the pointer sat over the pop-up's value field: the wheel handlers were bound application-wide and ignored the enter/leave flag the widget already kept. They only act while the pointer is over the list now.
+- Removed the configure GUI's leftover Listbox-era state: an unused `scrolledtext` import, a background colour that was stored and never read, and the selection guard that no longer had a selection to guard.
+
 ## [0.53.0] - 2026-09-20
 
 ### Added

@@ -285,9 +285,9 @@ The lyric board is a floating always-on-top window that shows the current lyric 
 
 ### Configure GUI
 
-The configure GUI is a small tkinter window over the config file. It lists every option in `CONFIG_SCHEME` as `name:  value  [SOURCE]`, where the source says whether the value comes from `config.toml` or is the built-in default. Double-clicking a row (or pressing `Enter`) opens a pop-up with the option's type, its source, its description and an editable value, plus `Confirm`, `Unset` and `Cancel`; `Escape` closes it. `F5` or the refresh button re-reads the options (the list keeps its scroll position and selection).
+The configure GUI is a fixed-size tkinter window over the config file. Every option in `CONFIG_SCHEME` gets a row — its name, its value, where that value comes from (a grey `default value` chip or a green `configure file` chip) and an edit button — inside a scrolling list; an option with no value shows a grey `<Empty>` in place of the chip. The mouse wheel scrolls the list while the pointer is over it, `F5` or the refresh button re-reads the options and keeps the scroll position, and `Escape` closes the window. The edit button opens a pop-up (`Edit "<option>"`) showing the option's type, source and description next to an editable value and the `Confirm`, `Unset` and `Cancel` buttons.
 
-It can read and write either through the backend or directly, toggled with `r` or the button in the top-right corner — **remote** (the default, shown as a sunken button) sends `config.list` / `config.set` / `config.unset`, so it edits the config file of the machine the backend runs on; **local** does the same in-process, like the CLI's `--direct`, and needs no backend at all. The two routes differ only in whose `config.toml` is written.
+It can read and write either through the backend or directly, toggled with `r` or the button in the top-right corner (green while remote, red while local) — **remote** (the default) sends `config.list` / `config.set` / `config.unset`, so it edits the config file of the machine the backend runs on; **local** does the same in-process, like the CLI's `--direct`, and needs no backend at all. The two routes differ only in whose `config.toml` is written.
 
 It is not spawned with the backend — start it yourself from the repo root:
 

@@ -62,7 +62,7 @@
 - [X] Reload hotkey for dashboard
 - [X] Reverse playback sequence
 - [X] Dual audio engine: miniaudio + VLC
-- [ ] GUI configure editor
+- [X] GUI configure editor
 - [ ] HTTP frontend
 - [ ] GUI frontend
 - [ ] mpv engine

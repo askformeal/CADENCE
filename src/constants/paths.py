@@ -8,6 +8,7 @@ LYRIC_ICON_PATH = str(files('res') / 'lyric_icon.ico')
 NO_COVER_PATH = str(files('res') / 'no_cover.txt')
 REMOTE_ICON_PATH = str(files('res') / 'remote.png')
 REFRESH_ICON_PATH = str(files('res') / 'refresh.png')
+EDIT_ICON_PATH = str(files('res') / 'edit.png')
 
 dirs = PlatformDirs('cadence', ensure_exists=True)
 
