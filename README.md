@@ -302,7 +302,7 @@ Log file location (platform-dependent, managed by platformdirs):
 | Linux    | `$XDG_STATE_HOME/cadence/log/cadence.log`, defaults to `~/.local/state/cadence/log/cadence.log` |
 | macOS    | `~/Library/Logs/cadence/cadence.log`                                                              |
 
-Log files: `cadence.log` (backend), `cadence-socket.log` (client/connection), `cadence-hotkey.log` (hotkey frontend), `cadence-tray.log` (tray frontend), `cadence-dash.log` (dashboard frontend), `cadence-lyric.log` (lyric board frontend), plus `cadence-config.log` and `cadence-pid.log`.
+Log files: `cadence.log` (backend), `cadence-socket.log` (client/connection), `cadence-hotkey.log` (hotkey frontend), `cadence-tray.log` (tray frontend), `cadence-dash.log` (dashboard frontend), `cadence-lyric.log` (lyric board frontend), plus `cadence-config.log`, `cadence-pid.log` and `cadence-util.log` (metadata and cover extraction from audio files).
 
 ## TODO
 
