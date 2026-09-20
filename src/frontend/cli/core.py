@@ -303,6 +303,7 @@ def _show_notifies(notifies=None):
 
 def _show_option_info(info):
     name = info.get('name', 'N/A')
+    type_ = info.get('type', 'N/A')
     value = info.get('value', 'N/A')
     source = info.get('source', 'N/A')
     default = info.get('default', 'N/A')
@@ -310,6 +311,7 @@ def _show_option_info(info):
     
     lines = [
         f'Name: {name}',
+        f'Type: {type_}',
         f'Value: {value}',
         f'Source: {source}',
         f'Default Value: {default}',

@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [Unreleased]
+
+### Added
+
+- **Configure GUI.** A tkinter window (`src/frontend/config_gui/`, started with `python -m src.frontend.config_gui`) over the configuration: it lists every option as `name:  value  [SOURCE]`, says whether each value comes from `config.toml` or is the built-in default, and opens a pop-up editor on a double click or `Enter` showing the option's type, source and description with an editable value next to `Confirm`, `Unset` and `Cancel`. `F5` or the refresh button re-reads the options and the list keeps its scroll position and selection. It can read and write either through the backend or in-process, toggled with `r` or the top-right button: remote (the default) sends `config.list` / `config.set` / `config.unset`, so it edits the config file of the machine the backend runs on, while local does the same without a backend, like `cadence config … --direct`. New log file: `cadence-config-gui.log`.
+- The `config.list` and `config.show` attachment carries the option's `type` — the value name a converter enforces — and `cadence config show` prints it on a `Type:` line.
+
 ## [0.52.1] - 2026-09-20
 
 ### Changed

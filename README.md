@@ -25,6 +25,7 @@ Retrieves collections of mechanically-represented wave data from persistent stor
 - Dashboard frontend (`cadence dash`): interactive TUI with live status, playlist browsing and keyboard controls, including a poster mode that fills the screen with the album cover
 - Album cover art: read from the file's own tags (FLAC pictures, ID3 APIC, MP4 `covr`, Vorbis comments) or from a `cover.jpg` / `folder.jpg` next to it, downscaled by the backend and served to frontends
 - Lyric board frontend: floating always-on-top window showing the current lyric line, styled via config options and fading to semi-transparent until hovered
+- Configure GUI frontend (tkinter): lists every config option with its value and where that value comes from, and edits or unsets them either through the backend or straight on the local config file
 - Pluggable audio engine: `vlc` (default, decodes everything VLC does) or `miniaudio` (needs no VLC installation, fewer formats) — see [Audio engines](#audio-engines)
 - Socket-based backend/frontend architecture (see [docs/protocol.md](docs/protocol.md))
 
@@ -185,6 +186,8 @@ Config file: `%LOCALAPPDATA%\cadence\cadence\config.toml` (Windows). It groups o
 
 Values are validated on write; invalid ones are rejected. The default value is used when an option is not set or the stored value is invalid. Most options take effect on the next backend start; the timeout / interval / step options are read live on every use.
 
+The same options can be edited in a window instead of the terminal — see [Configure GUI](#configure-gui).
+
 > **Note for users on mainland China networks:** when fetching lyrics online, it is recommended to enable `netease_skip_proxy`. The NetEase source is reachable directly from China, while proxy-only sources (LRCLIB, Musixmatch, etc.) sit behind the wall — so let NetEase connect directly and route the rest through `proxy`.
 
 Besides downloading lyrics with `lib lyric fetch`, you can play with **live online lyrics**: toggle the lyric source to online (`cadence lyric`, or `z` in the dashboard) and, whenever the song being played has no local `.lrc`, its lyrics are fetched on the fly from online sources and shown as it plays — a `[Loading ...]` placeholder appears while a fetch is in flight. Live online lyrics are keyed by the song's path, so they work for non-library songs too, and are shown on both the floating lyric board and the dashboard. The startup source is controlled by `default_online_lyric`.
@@ -280,10 +283,24 @@ Keys (defined in `DASH_KEY_MAP` in `src/constants/dash.py`):
 
 The lyric board is a floating always-on-top window that shows the current lyric line of the playing song. It starts with the backend (unless the `lyric` config option is off) and follows the backend's playback state (hidden while stopped, optionally hidden while paused via `pause_hide_lyric`). Its font, color, size and screen position are configurable (see the `lyric_*` options above). By default it rests at 40% opacity on a plain opaque backdrop and, when the mouse hovers over it (or within a 30 px ring around it), turns fully opaque with a solid background behind the text (`lyric_bg_color`), so it stays out of the way while you work and sharpens when you need it. Both the hover solidification (`lyric_hover_solid`) and the transparent backdrop (`lyric_trans_bg`) can be turned off.
 
+### Configure GUI
+
+The configure GUI is a small tkinter window over the config file. It lists every option in `CONFIG_SCHEME` as `name:  value  [SOURCE]`, where the source says whether the value comes from `config.toml` or is the built-in default. Double-clicking a row (or pressing `Enter`) opens a pop-up with the option's type, its source, its description and an editable value, plus `Confirm`, `Unset` and `Cancel`; `Escape` closes it. `F5` or the refresh button re-reads the options (the list keeps its scroll position and selection).
+
+It can read and write either through the backend or directly, toggled with `r` or the button in the top-right corner — **remote** (the default, shown as a sunken button) sends `config.list` / `config.set` / `config.unset`, so it edits the config file of the machine the backend runs on; **local** does the same in-process, like the CLI's `--direct`, and needs no backend at all. The two routes differ only in whose `config.toml` is written.
+
+It is not spawned with the backend — start it yourself from the repo root:
+
+```bash
+python -m src.frontend.config_gui
+```
+
+In a portable build, `runtime\python.exe -m src.frontend.config_gui` from the bundle root. It logs to `cadence-config-gui.log`.
+
 ## Architecture
 
 - **Backend** (`src/backend/`) — owns the audio engine (`playback/`: `base_engine.py` declares the `BaseEngine` ABC, `engine.py` holds the engine flow shared by both implementations as a mixin, and `vlc_engine.py` / `mini_engine.py` implement the decoding, selected by the `engine` config option; session state, lyrics and cover art live in their own mixins) and the SQLite database (`database/`, split into per-domain mixins), listens on `127.0.0.1:17891` for JSON requests over a socket. Action handlers live in `handlers/` and dispatch through a `ROUTER` table keyed by action name; playback state is held in the `Playback` class and injected into handlers via a `Context`.
-- **Frontends** (`src/frontend/`) — `cli/` (the `cadence` CLI), `hotkey.py` (media key hotkeys), `tray.py` (system tray icon), `dash/` (interactive dashboard), `lyric.py` (floating lyric board). They send action requests to the backend and format responses. All frontends share `client.py` and `song_output.py`.
+- **Frontends** (`src/frontend/`) — `cli/` (the `cadence` CLI), `hotkey.py` (media key hotkeys), `tray.py` (system tray icon), `dash/` (interactive dashboard), `lyric.py` (floating lyric board), `config_gui/` (configure GUI window). They send action requests to the backend and format responses. All frontends share `client.py` and `song_output.py`.
 - **Protocol** — all communication is JSON over a length-prefixed socket connection. See [docs/protocol.md](docs/protocol.md).
 
 ## Data
@@ -302,7 +319,7 @@ Log file location (platform-dependent, managed by platformdirs):
 | Linux    | `$XDG_STATE_HOME/cadence/log/cadence.log`, defaults to `~/.local/state/cadence/log/cadence.log` |
 | macOS    | `~/Library/Logs/cadence/cadence.log`                                                              |
 
-Log files: `cadence.log` (backend), `cadence-socket.log` (client/connection), `cadence-hotkey.log` (hotkey frontend), `cadence-tray.log` (tray frontend), `cadence-dash.log` (dashboard frontend), `cadence-lyric.log` (lyric board frontend), plus `cadence-config.log`, `cadence-pid.log` and `cadence-util.log` (metadata and cover extraction from audio files).
+Log files: `cadence.log` (backend), `cadence-socket.log` (client/connection), `cadence-hotkey.log` (hotkey frontend), `cadence-tray.log` (tray frontend), `cadence-dash.log` (dashboard frontend), `cadence-lyric.log` (lyric board frontend), plus `cadence-config.log`, `cadence-config-gui.log`, `cadence-pid.log` and `cadence-util.log` (metadata and cover extraction from audio files).
 
 ## TODO
 

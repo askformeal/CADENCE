@@ -152,7 +152,7 @@ Success response attachment: a list of option info dicts (one per option in `CON
 
 Request keys: `option` (string, required).
 
-Success response attachment: `{"name": <option name>, "value": <converted value>, "source": "default value" | "configure file", "default": <default value>, "description": <option description>}`. Unknown option is a failure.
+Success response attachment: `{"name": <option name>, "type": <type name>, "value": <converted value>, "source": "default value" | "configure file", "default": <default value>, "description": <option description>}`. Unknown option is a failure.
 
 #### config.set
 

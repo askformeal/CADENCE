@@ -6,6 +6,8 @@ ICON_PATH = str(files('res') / 'icon.ico')
 ERROR_ICON_PATH = str(files('res') / 'icon_error.ico')
 LYRIC_ICON_PATH = str(files('res') / 'lyric_icon.ico')
 NO_COVER_PATH = str(files('res') / 'no_cover.txt')
+REMOTE_ICON_PATH = str(files('res') / 'remote.png')
+REFRESH_ICON_PATH = str(files('res') / 'refresh.png')
 
 dirs = PlatformDirs('cadence', ensure_exists=True)
 
@@ -21,6 +23,7 @@ HOTKEY_LOG_PATH = LOG_DIR / 'cadence-hotkey.log'
 TRAY_LOG_PATH = LOG_DIR / 'cadence-tray.log'
 LYRIC_LOG_PATH = LOG_DIR / 'cadence-lyric.log'
 DASH_LOG_PATH = LOG_DIR / 'cadence-dash.log'
+CONFIG_GUI_LOG_PATH = LOG_DIR / 'cadence-config-gui.log'
 CONFIG_LOG_PATH = LOG_DIR / 'cadence-config.log'
 PID_LOG_PATH = LOG_DIR / 'cadence-pid.log'
 UTIL_LOG_PATH = LOG_DIR / 'cadence-util.log'

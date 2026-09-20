@@ -62,9 +62,10 @@
 - [X] Reload hotkey for dashboard
 - [X] Reverse playback sequence
 - [X] Dual audio engine: miniaudio + VLC
-- [ ] mpv engine
 - [ ] GUI configure editor
 - [ ] HTTP frontend
+- [ ] GUI frontend
+- [ ] mpv engine
 - [ ] Bluetooth frontend
 - [ ] Advanced library management
   - [ ] Regex matching (not now)
