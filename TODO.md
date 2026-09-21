@@ -33,11 +33,11 @@
 - [X] Verify request is dict
 - [X] Tray icon frontend
 - [X] TUI frontend
-  - [X] Interactive dashboard (`cadence dash`) — status display, playlist browsing, playback controls
+  - [X] Interactive dashboard (`cascade dash`) — status display, playlist browsing, playback controls
   - [X] Dashboard playback keys (volume, shuffle, loop, dice, stop, mute, page up/down), progress/volume bars, box style switching
   - [X] Dashboard seek keys (`./l/→`, `,/h/←`) and help screen (`?`/`F1`) on dashboard
   - [X] Dashboard open key (`o`) — prompt to open a song/alias/path/playlist
-  - [X] `cadence dash` subcommand to start the dashboard
+  - [X] `cascade dash` subcommand to start the dashboard
   - [X] Dashboard filter key (`/`) — filter playlist by name/artist with match highlighting and remaining counts
   - [X] Dashboard seek key (`g`) — prompt for a time to jump to
   - [X] Lyrics — `lib lyric set` to bind a `.lrc` file, dashboard shows the synchronized lyric line (encoding fallback chain for GBK/Big5/Shift_JIS)
@@ -63,6 +63,8 @@
 - [X] Reverse playback sequence
 - [X] Dual audio engine: miniaudio + VLC
 - [X] GUI configure editor
+- [ ] Audio visualization
+- [ ] PyInstaller packaging
 - [ ] HTTP frontend
 - [ ] GUI frontend
 - [ ] mpv engine
