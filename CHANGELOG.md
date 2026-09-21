@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## [Unreleased]
+
+> **⚠️ Breaking Changes**
+>
+> - **The project is renamed from CADENCE to CASCADE** — *Command-Line Audio Stream Capture And Decoding Engine*. The command is now `cascade`: the console script, every documented example and the program name in the log lines.
+> - **The data moved.** The platformdirs application name changed from `cadence` to `cascade`, so the database, the config file, the log directory and the PID file live under a new root — `%LOCALAPPDATA%\cascade\cascade\` on Windows, `~/.local/state/cascade/` on Linux, `~/Library/Logs/cascade/` on macOS. The database files are `cascade.db` / `cascade-dev.db` and every log file is `cascade*.log`. An existing installation has to move its `cadence` directory to the new name, database and log files included, or it starts with an empty library.
+> - The environment variables `CADENCE_DEV` / `CADENCE_CONTINUE` are now `CASCADE_DEV` / `CASCADE_CONTINUE`.
+> - The portable build now writes `dist/cascade-<version>/` and a `cascade.cmd` launcher.
+
+### Changed
+
+- The name follows through everywhere it was spelled out: the package and console-script name, the argparse program name, the tray and lyric-board titles, the dashboard header, the database and log file names, the save-file paths, the start/exit/status messages and the whole documentation.
+- The GitHub repository moved to [`askformeal/CASCADE`](https://github.com/askformeal/CASCADE) — the old URL redirects, and `REPO_LINK`, which the CLI prints in its `--help` epilog, points at the new one.
+
 ## [0.53.1] - 2026-09-20
 
 ### Changed
@@ -15,8 +29,8 @@
 
 ### Added
 
-- **Configure GUI.** A tkinter window (`src/frontend/config_gui/`, started with `python -m src.frontend.config_gui`) over the configuration: it lists every option as `name:  value  [SOURCE]`, says whether each value comes from `config.toml` or is the built-in default, and opens a pop-up editor on a double click or `Enter` showing the option's type, source and description with an editable value next to `Confirm`, `Unset` and `Cancel`. `F5` or the refresh button re-reads the options and the list keeps its scroll position and selection. It can read and write either through the backend or in-process, toggled with `r` or the top-right button: remote (the default) sends `config.list` / `config.set` / `config.unset`, so it edits the config file of the machine the backend runs on, while local does the same without a backend, like `cadence config … --direct`. New log file: `cadence-config-gui.log`.
-- The `config.list` and `config.show` attachment carries the option's `type` — the value name a converter enforces — and `cadence config show` prints it on a `Type:` line.
+- **Configure GUI.** A tkinter window (`src/frontend/config_gui/`, started with `python -m src.frontend.config_gui`) over the configuration: it lists every option as `name:  value  [SOURCE]`, says whether each value comes from `config.toml` or is the built-in default, and opens a pop-up editor on a double click or `Enter` showing the option's type, source and description with an editable value next to `Confirm`, `Unset` and `Cancel`. `F5` or the refresh button re-reads the options and the list keeps its scroll position and selection. It can read and write either through the backend or in-process, toggled with `r` or the top-right button: remote (the default) sends `config.list` / `config.set` / `config.unset`, so it edits the config file of the machine the backend runs on, while local does the same without a backend, like `cascade config … --direct`. New log file: `cascade-config-gui.log`.
+- The `config.list` and `config.show` attachment carries the option's `type` — the value name a converter enforces — and `cascade config show` prints it on a `Type:` line.
 
 ## [0.52.1] - 2026-09-20
 
@@ -40,7 +54,7 @@
 
 ### Fixed
 
-- **A backend that could not initialize died silently.** An unopenable database or a missing audio device raised out of `Backend.__init__`, and since the backend is spawned with `stdout` and `stderr` discarded, nothing at all was logged — `cadence start` only said the backend failed. Both constructions now raise `InitializationError`, which the backend logs at `CRITICAL` and turns into exit code 1, and the start failure message points at the log files.
+- **A backend that could not initialize died silently.** An unopenable database or a missing audio device raised out of `Backend.__init__`, and since the backend is spawned with `stdout` and `stderr` discarded, nothing at all was logged — `cascade start` only said the backend failed. Both constructions now raise `InitializationError`, which the backend logs at `CRITICAL` and turns into exit code 1, and the start failure message points at the log files.
 - A choice-type config value was accepted case-insensitively but returned as written, so `engine = VLC` passed validation and then failed the lookup that consumes it. `StrChoiceList` now returns the lowercased value.
 - **The backend could not start when the VLC runtime was unreachable, even with `engine = miniaudio`.** `vlc_engine.py` imported `vlc` at module level and the playback package imports it unconditionally, so a machine without `python-vlc`, or without a `libvlc.dll` that python-vlc can find (it looks at `PYTHON_VLC_LIB_PATH`, then the registry and the usual install directories, and finally at `.\libvlc.dll` relative to the working directory), died during import — before the engine was even chosen. The import is now guarded and the failure is reported as a failed initialization, so it is only fatal when the VLC engine is the one being constructed.
 
@@ -48,8 +62,8 @@
 
 ### Added
 
-- **Reverse playback.** `cadence reverse` (also `b` on the dashboard, and a `Reverse` item in the tray menu next to `Shuffle` and `Loop`) turns the playlist around: when a song ends, the backend moves to the previous one instead of the next, wrapping from the first song to the last. Only the end of a song is affected — manual `prev` / `next`, `switch` and `dice` still move forward — and it composes with loop, where the current song is replayed instead. The state is reported as `reverse` by `status` and `poll`.
-- **Reload hotkey on the dashboard.** `Ctrl+R` re-opens the last opened song or play-all session (`load_last`, the same action as `cadence reload`), so the library can be re-read without restarting the backend.
+- **Reverse playback.** `cascade reverse` (also `b` on the dashboard, and a `Reverse` item in the tray menu next to `Shuffle` and `Loop`) turns the playlist around: when a song ends, the backend moves to the previous one instead of the next, wrapping from the first song to the last. Only the end of a song is affected — manual `prev` / `next`, `switch` and `dice` still move forward — and it composes with loop, where the current song is replayed instead. The state is reported as `reverse` by `status` and `poll`.
+- **Reload hotkey on the dashboard.** `Ctrl+R` re-opens the last opened song or play-all session (`load_last`, the same action as `cascade reload`), so the library can be re-read without restarting the backend.
 - The dashboard now shows a toast for every playback action it triggers — open, reload, play all, play/pause, stop, seek, dice, the mode toggles, mute, volume and the lyric source — instead of only for the lyric offset.
 
 ### Changed
@@ -84,8 +98,8 @@ New config options `dash_poster_width` (default `80` columns) and `dash_poster_h
 
 - **ANSI colors.** The CLI now colors its `[Succeeded]` / `[Failed]` markers and the failed-action list, and the dashboard colors its `[MISSING]` placeholders and its toast. A new `escape_char` config option (default `true`) turns every escape code off, for terminals or logs that cannot handle them.
 - **Single-request frontend polling.** The dashboard, the tray icon and the floating lyric board now read everything they need from one keyless `poll` action — playback status, the playing song's library information, the lyric state, the current playlist and every playlist name — instead of running several requests on each refresh. The `get_lyric` action is gone, its state is part of the snapshot.
-- **`cadence reload`** re-opens the last opened song (or the last play-all session) without restarting the backend, and it re-reads the song from the library, so it also serves as a refresh after changing metadata or a lyric offset.
-- `cadence lib info` now shows the song's lyric offset.
+- **`cascade reload`** re-opens the last opened song (or the last play-all session) without restarting the backend, and it re-reads the song from the library, so it also serves as a refresh after changing metadata or a lyric offset.
+- `cascade lib info` now shows the song's lyric offset.
 
 ### Changed
 
@@ -96,15 +110,15 @@ New config options `dash_poster_width` (default `80` columns) and `dash_poster_h
 
 ### Fixed
 
-- **The backend could hard-crash with no log and leave its PID behind.** The database kept a single connection and a single cursor for every thread, and the lock covered only the statement execution, not the row fetching: the request thread and the position-memorizing thread could step and reset the same statement at the same time and take the whole process down with a native access violation inside `_sqlite3.pyd`. Windows logged it as exception `0xc0000005`, so nothing ever reached `cadence.log` and the PID cleanup never ran. Every thread now owns its connection, and cross-thread use fails loudly instead of corrupting memory.
+- **The backend could hard-crash with no log and leave its PID behind.** The database kept a single connection and a single cursor for every thread, and the lock covered only the statement execution, not the row fetching: the request thread and the position-memorizing thread could step and reset the same statement at the same time and take the whole process down with a native access violation inside `_sqlite3.pyd`. Windows logged it as exception `0xc0000005`, so nothing ever reached `cascade.log` and the PID cleanup never ran. Every thread now owns its connection, and cross-thread use fails loudly instead of corrupting memory.
 - Dashboard lines were truncated by raw character count, so a cut could land in the middle of an escape sequence (leaving half a sequence in the output) or leave a line wider than the terminal and wrap the layout. Lines are now truncated by display width (wide characters counted as two columns) and a whole trailing sequence is dropped instead of being split.
-- `cadence lib info` showed `?` for the lyric path of songs that do have a `.lrc` bound — the attachment key is `lyric` there, while `status` calls the same field `lyric_path`.
+- `cascade lib info` showed `?` for the lyric path of songs that do have a `.lrc` bound — the attachment key is `lyric` there, while `status` calls the same field `lyric_path`.
 
 ## [0.48.0] - 2026-09-09
 
 ### Added
 
-- **Lyric offset.** If a song's lyric is out of sync with the audio, you can now shift it in time. `cadence lib lyric offset <song> <ms>` persists a per-song offset in the library (positive delays the lyric line, negative brings it earlier). On the dashboard, `]` / `[` nudge a temporary *overlay* for the current song by `100ms` and `\` resets it — useful to find the right value live before committing it, since the persisted offset and the live overlay stack. Both the dashboard and the floating lyric board apply the offset when picking the current line.
+- **Lyric offset.** If a song's lyric is out of sync with the audio, you can now shift it in time. `cascade lib lyric offset <song> <ms>` persists a per-song offset in the library (positive delays the lyric line, negative brings it earlier). On the dashboard, `]` / `[` nudge a temporary *overlay* for the current song by `100ms` and `\` resets it — useful to find the right value live before committing it, since the persisted offset and the live overlay stack. Both the dashboard and the floating lyric board apply the offset when picking the current line.
 - The backend now owns the offset overlay (`set_offset_overlay` action, with an `autoincrement` option to accumulate or set), so it survives a dashboard restart and is shared across frontends instead of being a dashboard-local variable.
 - New action-level tests for `get_lyric` / `set_offset_overlay` (overlay served in `get_lyric`, autoincrement accumulate/overwrite, missing-key validation).
 
@@ -126,7 +140,7 @@ New config options `dash_poster_width` (default `80` columns) and `dash_poster_h
 
 ### Added
 
-- **Online lyric mode.** When the song being played has no local `.lrc` bound, lyrics can now be fetched live from online sources (LRCLIB, NetEase, Musixmatch, etc., via `syncedlyrics`) and shown while it plays. Toggle it at runtime with `cadence lyric` (or the dashboard's `z` key); set the startup state with the new `default_online_lyric` config option. Online lyrics are keyed by the song's path, so they work for non-library songs too, and are shown on both the floating lyric board and the dashboard. Fetches run in a background thread so playback is never blocked.
+- **Online lyric mode.** When the song being played has no local `.lrc` bound, lyrics can now be fetched live from online sources (LRCLIB, NetEase, Musixmatch, etc., via `syncedlyrics`) and shown while it plays. Toggle it at runtime with `cascade lyric` (or the dashboard's `z` key); set the startup state with the new `default_online_lyric` config option. Online lyrics are keyed by the song's path, so they work for non-library songs too, and are shown on both the floating lyric board and the dashboard. Fetches run in a background thread so playback is never blocked.
 - The dashboard and lyric board now distinguish *loading* (shows `[Loading ...]`) from *no lyric*, instead of collapsing both into "no lyric".
 - New `lib lyric show <song>` command to print a song's parsed lyric.
 - New config options `proxy` (proxy used for online lyric requests; empty = system default) and `netease_skip_proxy` (connect to the NetEase source directly regardless of `proxy`).
@@ -161,7 +175,7 @@ New config options `dash_poster_width` (default `80` columns) and `dash_poster_h
 
 ### Added
 
-- Portable build script (`build.sh`) — produces a self-contained folder + `.zip` under `dist/cadence-<version>/`, bundling a standalone CPython runtime (Astral python-build-standalone), all runtime dependencies, and a GUI-free subset of the VLC runtime (`vlc/`, no VLC install needed on the target). Launch with `cadence.cmd` in the bundle root. `VLC_SRC` overrides the VLC install the build copies from. See the README Installation section.
+- Portable build script (`build.sh`) — produces a self-contained folder + `.zip` under `dist/cascade-<version>/`, bundling a standalone CPython runtime (Astral python-build-standalone), all runtime dependencies, and a GUI-free subset of the VLC runtime (`vlc/`, no VLC install needed on the target). Launch with `cascade.cmd` in the bundle root. `VLC_SRC` overrides the VLC install the build copies from. See the README Installation section.
 - New config option `lyric_bg_color` (default `#3b3b3b`) — the solid background color shown behind the lyric text while the board is hovered.
 - Lyric board now shows a solid background (`lyric_bg_color`) with padding around the text on hover, instead of just the bare text over transparency.
 
@@ -271,7 +285,7 @@ New config options `dash_poster_width` (default `80` columns) and `dash_poster_h
 
 ### Added
 
-- Lyric support: `lyric` backend action returns the current song's parsed lyric lines; `cadence lib lyric set <song> <path>` binds a `.lrc` file to a song (empty string unsets).
+- Lyric support: `lyric` backend action returns the current song's parsed lyric lines; `cascade lib lyric set <song> <path>` binds a `.lrc` file to a song (empty string unsets).
 - Dashboard shows the current lyric line (synchronized to playback position via the LRC timestamps), fetched lazily when the song's lyric path changes.
 - Dashboard `Ctrl+A` play-all key.
 - `utils.parse_lyric()` / `utils.get_lyric_line()` — LRC parsing with an encoding fallback chain (`utf-8`, `gb18030`, `big5`, `shift_jis`, `utf-16`), multi-timestamp line merging, and position lookup.
@@ -308,7 +322,7 @@ New config options `dash_poster_width` (default `80` columns) and `dash_poster_h
 
 ### Added
 
-- `cadence dash` subcommand — start the dashboard directly from the CLI (previously only `python -m src.dash`).
+- `cascade dash` subcommand — start the dashboard directly from the CLI (previously only `python -m src.dash`).
 - Dashboard `o` key — open a song from the dashboard with a prompt (song name, library ID, file path or playlist name). The display pauses while typing, then resumes.
 
 ### Changed
@@ -369,9 +383,9 @@ New config options `dash_poster_width` (default `80` columns) and `dash_poster_h
 
 ### Added
 
-- Dashboard frontend (`cadence dash`) — interactive TUI with live status display, playlist browsing, keyboard controls and alternate-screen-buffer rendering (`src/dash.py`).
+- Dashboard frontend (`cascade dash`) — interactive TUI with live status display, playlist browsing, keyboard controls and alternate-screen-buffer rendering (`src/dash.py`).
 - `DASH_KEY_MAP` in constants — centralized keybindings (playback, selection, page up/down; volume/shuffle/loop/seek/dice/stop/mute declared but not wired yet).
-- `dash` source in `SOURCES`, `cadence-dash.log`, `DASH_POLL_INTERVAL`, `DASH_MAX_SHOW_SONG`.
+- `dash` source in `SOURCES`, `cascade-dash.log`, `DASH_POLL_INTERVAL`, `DASH_MAX_SHOW_SONG`.
 - `utils.center()` helper and `box()` padding arguments (`l_pad`/`r_pad`).
 - Tests for `box()` and `center()` (CJK width, padding, centering).
 
@@ -397,7 +411,7 @@ New config options `dash_poster_width` (default `80` columns) and `dash_poster_h
 ### Changed
 
 - `_open_song` fallback: absolute paths open without a `cwd`; a song that is neither alias, library ID, file path nor playlist name now reports that explicitly instead of the old "valid and existing path" error.
-- Log lines are capped at `LOG_MAX_LENGTH` (500 chars) via `TruncateFilter` — huge entries (e.g. playlist song info dumps) no longer bloat `cadence.log`.
+- Log lines are capped at `LOG_MAX_LENGTH` (500 chars) via `TruncateFilter` — huge entries (e.g. playlist song info dumps) no longer bloat `cascade.log`.
 - Icon paths moved to `ICON_PATH`/`ERROR_ICON_PATH` in constants (resolved via `importlib.resources`); tray no longer resolves them itself.
 - `res/icon_error.ico` regenerated as a multi-size set (16/24/32/48/64/256 px).
 
@@ -449,7 +463,7 @@ New config options `dash_poster_width` (default `80` columns) and `dash_poster_h
 - Received-request log now masks the `token` value (`*************`).
 - Frontend lifecycle unified in `client.handle_code`: hotkey and tray share the same death-detection logic; an authorization failure (code 5) now stops the frontend instead of retrying forever.
 - `MAIN_LOOP_INTERVAL` renamed to `LOOP_INTERVAL`; added `TRAY_POLL_INTERVAL` (1 s).
-- New `tray` source code in `SOURCES`; new `cadence-tray.log` log file.
+- New `tray` source code in `SOURCES`; new `cascade-tray.log` log file.
 
 ## [0.28.0] - 2026-08-24
 
@@ -458,15 +472,15 @@ New config options `dash_poster_width` (default `80` columns) and `dash_poster_h
 - Config options wired into runtime behavior: `backend_host`/`backend_port` (where the backend listens) and `frontend_host`/`frontend_port` (where frontends connect) are split; `ipc_timeout` applies per connection, `player_timeout` per player action, `default_volume`/`default_shuffle`/`username` at backend construction.
 - Token authentication: `backend_token` (empty = disabled, otherwise every request must carry a matching token) and `frontend_token` (what frontends send). Auth failures return code 5 (`AuthFailed`).
 - `config --direct` mode — operate on `config.toml` directly, bypassing the backend (works even when the backend is down or the port is taken).
-- `cadence config list`, `config open`, `config path` commands.
+- `cascade config list`, `config open`, `config path` commands.
 
 ## [0.27.0] - 2026-08-23
 
 ### Added
 
-- `cadence config show <option>` — show a config option's value and where it came from (`default value` or `configure file`)
-- `cadence config set <option> <value> [--overwrite-corrupt]` — write a config option to the TOML config file; invalid values are rejected with the option's expected type; `--overwrite-corrupt` replaces a corrupted config file
-- `cadence config unset <option>` — remove an option from the config file and fall back to its default value
+- `cascade config show <option>` — show a config option's value and where it came from (`default value` or `configure file`)
+- `cascade config set <option> <value> [--overwrite-corrupt]` — write a config option to the TOML config file; invalid values are rejected with the option's expected type; `--overwrite-corrupt` replaces a corrupted config file
+- `cascade config unset <option>` — remove an option from the config file and fall back to its default value
 - Config options are defined in `CONFIG_SCHEME` (name → type/section/default); currently `port` (network), `default_volume` and `default_shuffle` (playback). **Wiring note:** the backend/CLI still read the hardcoded constants — `config set` writes the file but does not change runtime behavior until the constants are linked to `CONFIG` (next step).
 - CLI response messages are now rendered inside the `box()` frame (success, failure, connect/exit codes).
 
@@ -492,7 +506,7 @@ New config options `dash_poster_width` (default `80` columns) and `dash_poster_h
 ### Added
 
 - PID file (`PID.json` in the data directory): the backend records its own PID on startup and removes it on clean exit. The hotkey process is not recorded — killing the backend makes it self-terminate via the existing heartbeat mechanism.
-- `cadence kill` — force-kill all recorded backend PIDs via psutil (`terminate()` then `kill()` after `TERMINATE_TIMEOUT`), bypassing the socket protocol entirely. Per-PID results are printed (`Gracefully Terminated` / `Forcefully Killed` / `Process Not Exist` / `PID Invalid` / `Access Denied`). `cadence exit` stays a clean socket-based shutdown.
+- `cascade kill` — force-kill all recorded backend PIDs via psutil (`terminate()` then `kill()` after `TERMINATE_TIMEOUT`), bypassing the socket protocol entirely. Per-PID results are printed (`Gracefully Terminated` / `Forcefully Killed` / `Process Not Exist` / `PID Invalid` / `Access Denied`). `cascade exit` stays a clean socket-based shutdown.
 - `psutil` runtime dependency (new) for cross-platform process management.
 - Backend startup log now includes its PID.
 
@@ -674,14 +688,14 @@ New config options `dash_poster_width` (default `80` columns) and `dash_poster_h
 
 ### Added
 
-- `cadence reboot -c/--continue` — resume playback after rebooting the backend, same as `start -c`
+- `cascade reboot -c/--continue` — resume playback after rebooting the backend, same as `start -c`
 - `play-all` now records `last_is_all` so `--continue` can resume an "all songs" session; `_play_all()` factored out and shared with `continue_last`
 
 ## [0.14.0] - 2026-08-20
 
 ### Added
 
-- `cadence start -c/--continue` — resume the last opened song/playlist on backend startup (reads `last_song` / `last_num` / `last_cwd` settings); open action is now factored into `_open_song()` and reused by both paths
+- `cascade start -c/--continue` — resume the last opened song/playlist on backend startup (reads `last_song` / `last_num` / `last_cwd` settings); open action is now factored into `_open_song()` and reused by both paths
 - `settings` table (key-value) in the database for persistent backend state; `last_song` stores the raw user input (alias/path/playlist name) so resume reproduces exactly how the song was opened
 - `current_song_num` is persisted via `_set_current_num()` on every navigation (prev/next/switch/dice), so the resume position stays in sync
 - `backend` source added to `SOURCES` for internal inter-process requests
@@ -793,7 +807,7 @@ New config options `dash_poster_width` (default `80` columns) and `dash_poster_h
 
 ### Added
 
-- Dev mode — `cadence start --dev` uses a separate development database (`cadence-dev.db`)
+- Dev mode — `cascade start --dev` uses a separate development database (`cascade-dev.db`)
 
 ## [0.5.0] - 2026-08-17
 

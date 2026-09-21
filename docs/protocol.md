@@ -26,7 +26,7 @@ Key: `code`
 
 - 0 OK. The main goal of the action successfully completed, though some additional goal (for example, auto set metadata of `lib add`) might have failed. In that case, the failed sub-goal should be visible in message.
 - 1 Failed. Backend can not conduct this action. More information should be available in message.
-- 2 Failed to connect to CADENCE backend. This response was not sent by backend but by client.py
+- 2 Failed to connect to CASCADE backend. This response was not sent by backend but by client.py
 - 3 Default code, should not be used under any circumstances. Receiving this code means gen_response.py:Response._response was accidentally called outside the class.
 - 4 Exiting. Daemon-like frontend should exit immediately after receiving this code.
 - 5 Authorization failed. The request token did not match the backend token. Sent by backend when `backend_token` is set and the request carries no or a wrong token.
@@ -140,7 +140,7 @@ Types are enforced by the converters in `src/types.py`; a value that does not sa
 
 Effective timing differs per option. Every access re-reads the config file, so an option that is consulted while running (the timeouts, `player_timeout`, `pos_memorize_interval`, the dashboard steps) takes effect immediately. What is read once, while something is being built, keeps its value until that component is restarted: the hosts and ports when the backend binds its socket, `engine`, `default_volume`, `default_shuffle`, `default_online_lyric` and `username` when the backend constructs its player, the service switches (`hotkey`, `tray`, `lyric`) when the CLI starts the frontends, and the lyric board's font, size and geometry when its window is created.
 
-The CLI can also operate on the config file without the backend, with `cadence config … --direct`; the actions above are the backend-side path, which is what a remote frontend uses.
+The CLI can also operate on the config file without the backend, with `cascade config … --direct`; the actions above are the backend-side path, which is what a remote frontend uses.
 
 #### config.list
 

@@ -34,13 +34,13 @@ def send_request(expect_reset=False, **kwargs):
         else:
             sock.close()
             if not expect_reset:
-                logger.error('Failed to send message to CADENCE backend')
-            return {'code': 2, 'msg': 'failed to send message to CADENCE backend', 'attachment': {}}
+                logger.error('Failed to send message to CASCADE backend')
+            return {'code': 2, 'msg': 'failed to send message to CASCADE backend', 'attachment': {}}
 
     except (ConnectionRefusedError, OSError) as e:
         return {
             'code': 2,
-            'msg': f'A socket error occurred while trying to connect to CADENCE backend: {e}',
+            'msg': f'A socket error occurred while trying to connect to CASCADE backend: {e}',
             'attachment': {}
         }
 

@@ -88,6 +88,6 @@ class DashKeyMap: # why not a dict? because this works better with my IDE's sugg
         self.prev_box = Bind('T', name='Switch to Previous Box Style')
         self.redraw = Bind(readchar.key.CTRL_L, readchar.key.F5, name='Redraw Interface')
 
-        self.quit = Bind('q', readchar.key.CTRL_C, readchar.key.CTRL_Z, name='Quit CADENCE Dashboard')
+        self.quit = Bind('q', readchar.key.CTRL_C, readchar.key.CTRL_Z, name='Quit CASCADE Dashboard')
 
 DASH_KEY_MAP = DashKeyMap()

@@ -19,21 +19,21 @@ def _percent(val):
             return val
 
 def build_parser():
-    parser = argparse.ArgumentParser(prog=f'CADENCE {__version__}', epilog=f'GitHub Repository: {REPO_LINK}')
+    parser = argparse.ArgumentParser(prog=f'CASCADE {__version__}', epilog=f'GitHub Repository: {REPO_LINK}')
 
     command_sub = parser.add_subparsers(dest='action', required=True)
 
-    start_parser = command_sub.add_parser('start', help='Start CADENCE backend')
+    start_parser = command_sub.add_parser('start', help='Start CASCADE backend')
     start_parser.add_argument('-c', '--continue', action='store_true', help='Continue playing last song')
     start_parser.add_argument('--dev', action='store_true', help='Start in development mode')
 
-    reboot_parser = command_sub.add_parser('reboot', help='Reboot CADENCE backend. Will fail if backend is not running')
+    reboot_parser = command_sub.add_parser('reboot', help='Reboot CASCADE backend. Will fail if backend is not running')
     reboot_parser.add_argument('--dev', action='store_true', help='Reboot in development mode')
     reboot_parser.add_argument('-c', '--continue', action='store_true', help='Continue playing last song')
 
     dash_parser = command_sub.add_parser('dash', help='Open Dashboard')
 
-    status_parser = command_sub.add_parser('status', help='Show CADENCE status')
+    status_parser = command_sub.add_parser('status', help='Show CASCADE status')
 
     open_parser = command_sub.add_parser('open', help='Open a song or playlist. Supports alias, file path and playlist name')
     open_parser.add_argument('song', type=str, help='Song to open')
@@ -203,14 +203,14 @@ def build_parser():
     config_parser = command_sub.add_parser('config', help='Manage configuration')
     config_sub = config_parser.add_subparsers(dest='config_action', required=True)
     config_parent = argparse.ArgumentParser(add_help=False)
-    config_parent.add_argument('-d', '--direct', action='store_true', help='Bypass CADENCE backend and operate on local configure file directly')
+    config_parent.add_argument('-d', '--direct', action='store_true', help='Bypass CASCADE backend and operate on local configure file directly')
 
     config_list_parser = config_sub.add_parser('list', parents=[config_parent], help='Show information all options')
 
     config_show_parser = config_sub.add_parser('show', parents=[config_parent], help='Show information of an option')
     config_show_parser.add_argument('option', type=str, help='Option to show')
 
-    config_set_parser = config_sub.add_parser('set', parents=[config_parent], help='Set value of an option. You might need to reboot CADENCE backend to make some options take effect')
+    config_set_parser = config_sub.add_parser('set', parents=[config_parent], help='Set value of an option. You might need to reboot CASCADE backend to make some options take effect')
     config_set_parser.add_argument('option', type=str, help='Option to set')
     config_set_parser.add_argument('value', type=str, help='Value to set')
     config_set_parser.add_argument('--overwrite-corrupt', action='store_true', help='Overwrite corrupted configure file.')
@@ -222,8 +222,8 @@ def build_parser():
 
     config_path_parser = config_sub.add_parser('path', parents=[config_parent], help='Show path of configure file')
 
-    exit_parser = command_sub.add_parser('exit', help='Exit CADENCE backend')
+    exit_parser = command_sub.add_parser('exit', help='Exit CASCADE backend')
 
-    kill_parser = command_sub.add_parser('kill', help='Kill all CADENCE backend processes. May cause unpredictable error')
+    kill_parser = command_sub.add_parser('kill', help='Kill all CASCADE backend processes. May cause unpredictable error')
 
     return parser

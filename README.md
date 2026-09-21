@@ -1,8 +1,8 @@
-# CADENCE
+# CASCADE
 
-**C**ommand-line **A**udio **D**ecoding **E**ngine with **N**avigation and **C**ontinuous **E**xecution
+**C**ommand-Line **A**udio **S**tream **C**apture **A**nd **D**ecoding **E**ngine
 
-![CADENCE logo](res/musical.png)
+![CASCADE logo](res/musical.png)
 
 Retrieves collections of mechanically-represented wave data from persistent storage, decompartmentalizes their format-specific encapsulation, reconstitutes the original waveform through algorithmic reconstruction, and transmits the resulting signal to a computer-connected mechanical wave generator. Controlled via a teletype-like interactive interface. Supports automatic transition to the next data set or the beginning of the current data set upon completion, based on a configured mode.
 
@@ -22,7 +22,7 @@ Retrieves collections of mechanically-represented wave data from persistent stor
 - Volume and mute control
 - Hotkey frontend (pynput)
 - Tray icon frontend (pystray): playback controls, song/playlist switching, volume presets, now-playing tooltip and error indicator
-- Dashboard frontend (`cadence dash`): interactive TUI with live status, playlist browsing and keyboard controls, including a poster mode that fills the screen with the album cover
+- Dashboard frontend (`cascade dash`): interactive TUI with live status, playlist browsing and keyboard controls, including a poster mode that fills the screen with the album cover
 - Album cover art: read from the file's own tags (FLAC pictures, ID3 APIC, MP4 `covr`, Vorbis comments) or from a `cover.jpg` / `folder.jpg` next to it, downscaled by the backend and served to frontends
 - Lyric board frontend: floating always-on-top window showing the current lyric line, styled via config options and fading to semi-transparent until hovered
 - Configure GUI frontend (tkinter): lists every config option with its value and where that value comes from, and edits or unsets them either through the backend or straight on the local config file
@@ -31,7 +31,7 @@ Retrieves collections of mechanically-represented wave data from persistent stor
 
 ## Installation
 
-Requires Python 3.12+ and, for the default (`vlc`) audio engine, [VLC](https://www.videolan.org/vlc/) 3.x installed. CADENCE uses `python-vlc`, which is only a binding — it needs a real VLC runtime (`libvlc.dll` + plugins) to decode audio, found via VLC's installer or registry. The `miniaudio` engine decodes without VLC (see [Audio engines](#audio-engines)).
+Requires Python 3.12+ and, for the default (`vlc`) audio engine, [VLC](https://www.videolan.org/vlc/) 3.x installed. CASCADE uses `python-vlc`, which is only a binding — it needs a real VLC runtime (`libvlc.dll` + plugins) to decode audio, found via VLC's installer or registry. The `miniaudio` engine decodes without VLC (see [Audio engines](#audio-engines)).
 
 There are two ways to install:
 
@@ -41,13 +41,13 @@ There are two ways to install:
 pip install .
 ```
 
-The `cadence` command will be available after installation. For development, run from the repo root:
+The `cascade` command will be available after installation. For development, run from the repo root:
 
 ```bash
 python -m src
 ```
 
-**With the default engine you must install [VLC](https://www.videolan.org/vlc/) yourself.** CADENCE only ships the `python-vlc` binding; it locates the actual VLC runtime through VLC's installation. With `engine = miniaudio` no VLC installation is needed.
+**With the default engine you must install [VLC](https://www.videolan.org/vlc/) yourself.** CASCADE only ships the `python-vlc` binding; it locates the actual VLC runtime through VLC's installation. With `engine = miniaudio` no VLC installation is needed.
 
 ### Option B — portable build (`build.sh`)
 
@@ -55,7 +55,7 @@ python -m src
 bash build.sh          # on Windows: from git-bash
 ```
 
-Builds a self-contained folder (plus a `.zip`) into `dist/cadence-<version>/`, bundling a standalone CPython runtime, all dependencies, **and the VLC runtime** (a GUI-free subset — see `VLC_SRC` in `build.sh`). Launch with `cadence.cmd` in the bundle root; it can be copied to another machine and run as-is.
+Builds a self-contained folder (plus a `.zip`) into `dist/cascade-<version>/`, bundling a standalone CPython runtime, all dependencies, **and the VLC runtime** (a GUI-free subset — see `VLC_SRC` in `build.sh`). Launch with `cascade.cmd` in the bundle root; it can be copied to another machine and run as-is.
 
 **No VLC installation needed** — the bundle ships its own. The target machine only needs the Microsoft Visual C++ 2015+ Redistributable (`vcruntime140.dll`), which most Windows systems already have.
 
@@ -65,83 +65,83 @@ Builds a self-contained folder (plus a `.zip`) into `dist/cadence-<version>/`, b
 
 | Command                 | Description                                |
 | ----------------------- | ------------------------------------------ |
-| `cadence start`       | Start the CADENCE backend (daemon)         |
-| `cadence start -c`    | Start backend and resume last session      |
-| `cadence start --dev` | Start backend with dev database            |
-| `cadence reboot`      | Restart the backend                        |
-| `cadence reboot -c`   | Restart and resume last session            |
-| `cadence exit`        | Stop the backend                           |
-| `cadence kill`        | Force-kill backend processes (last resort) |
-| `cadence status`      | Show current playback status               |
+| `cascade start`       | Start the CASCADE backend (daemon)         |
+| `cascade start -c`    | Start backend and resume last session      |
+| `cascade start --dev` | Start backend with dev database            |
+| `cascade reboot`      | Restart the backend                        |
+| `cascade reboot -c`   | Restart and resume last session            |
+| `cascade exit`        | Stop the backend                           |
+| `cascade kill`        | Force-kill backend processes (last resort) |
+| `cascade status`      | Show current playback status               |
 
 ### Playback
 
 | Command                  | Description                                                                                                                                   |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `cadence open <song>`  | Open a song, playlist, or file path                                                                                                           |
-| `cadence play-all`     | Play all songs in the library                                                                                                                 |
-| `cadence reload`       | Re-open the last opened song or play-all session                                                                                              |
-| `cadence pause`        | Pause playing media                                                                                                                           |
-| `cadence resume`       | Resume paused media                                                                                                                           |
-| `cadence toggle`       | Switch between playing and paused                                                                                                             |
-| `cadence stop`         | Stop playing                                                                                                                                  |
-| `cadence prev`         | Switch to the previous song in current playlist                                                                                               |
-| `cadence next`         | Switch to the next song in current playlist                                                                                                   |
-| `cadence list`         | Show current playlist                                                                                                                         |
-| `cadence dice`         | Switch to a random song in current playlist                                                                                                   |
-| `cadence shuffle`      | Toggle shuffle mode                                                                                                                           |
-| `cadence loop`         | Toggle loop mode                                                                                                                              |
-| `cadence reverse`      | Toggle reverse playback mode                                                                                                                  |
-| `cadence lyric`        | Toggle lyric source (local`.lrc` / online)                                                                                                  |
-| `cadence switch <num>` | Switch to a song in current playlist via number                                                                                               |
-| `cadence seek <time>`  | Jump to a specific time, or seek relative to the current position with a`+`/`-` prefix (e.g. `seek +10` forward, `seek -10` backward) |
-| `cadence jump <pct>`   | Jump to progress of the current song (percentage)                                                                                             |
-| `cadence replay`       | Clear memorized progress and replay the current song                                                                                          |
-| `cadence volume <pct>` | Set volume (0-100), or adjust relatively with a`+`/`-` prefix (e.g. `volume +5`, `volume -5`)                                         |
-| `cadence mute`         | Toggle mute                                                                                                                                   |
+| `cascade open <song>`  | Open a song, playlist, or file path                                                                                                           |
+| `cascade play-all`     | Play all songs in the library                                                                                                                 |
+| `cascade reload`       | Re-open the last opened song or play-all session                                                                                              |
+| `cascade pause`        | Pause playing media                                                                                                                           |
+| `cascade resume`       | Resume paused media                                                                                                                           |
+| `cascade toggle`       | Switch between playing and paused                                                                                                             |
+| `cascade stop`         | Stop playing                                                                                                                                  |
+| `cascade prev`         | Switch to the previous song in current playlist                                                                                               |
+| `cascade next`         | Switch to the next song in current playlist                                                                                                   |
+| `cascade list`         | Show current playlist                                                                                                                         |
+| `cascade dice`         | Switch to a random song in current playlist                                                                                                   |
+| `cascade shuffle`      | Toggle shuffle mode                                                                                                                           |
+| `cascade loop`         | Toggle loop mode                                                                                                                              |
+| `cascade reverse`      | Toggle reverse playback mode                                                                                                                  |
+| `cascade lyric`        | Toggle lyric source (local`.lrc` / online)                                                                                                  |
+| `cascade switch <num>` | Switch to a song in current playlist via number                                                                                               |
+| `cascade seek <time>`  | Jump to a specific time, or seek relative to the current position with a`+`/`-` prefix (e.g. `seek +10` forward, `seek -10` backward) |
+| `cascade jump <pct>`   | Jump to progress of the current song (percentage)                                                                                             |
+| `cascade replay`       | Clear memorized progress and replay the current song                                                                                          |
+| `cascade volume <pct>` | Set volume (0-100), or adjust relatively with a`+`/`-` prefix (e.g. `volume +5`, `volume -5`)                                         |
+| `cascade mute`         | Toggle mute                                                                                                                                   |
 
-Note: a negative seek time starts with `-`, which the command-line parser treats as an option flag — quote it to pass it through, e.g. `cadence seek "-1:30"`. Plain numbers like `seek -10` work without quotes.
+Note: a negative seek time starts with `-`, which the command-line parser treats as an option flag — quote it to pass it through, e.g. `cascade seek "-1:30"`. Plain numbers like `seek -10` work without quotes.
 
 ### Library
 
 | Command                                  | Description                                                                                                                                                                       |
 | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `cadence lib list`                     | Show all songs in library (`-a` aliases, `-p` playlists, `-t` tech metadata)                                                                                                |
-| `cadence lib info <song>...`           | Show detailed info of songs (`-a` aliases, `-p` playlists, `-t` tech)                                                                                                       |
-| `cadence lib search <kw>...`           | Search songs by name/artist/album/alias (`-o` any-keyword match)                                                                                                                |
-| `cadence lib add <path>...`            | Add new songs to library (`-a/--aliases` to bind aliases, `--loose-path` to allow missing paths, `--skip-meta`/`--skip-alias`/`--skip-lyric` to disable auto-detection) |
-| `cadence lib del <song>...`            | Delete songs from library (path, alias or ID)                                                                                                                                     |
-| `cadence lib scan <dir>`               | Scan a directory for audio files and add them (`-d` dry run, `--skip-meta`/`--skip-alias`/`--skip-lyric`)                                                                 |
-| `cadence lib prune`                    | Delete all songs whose file no longer exists (`-d` dry run)                                                                                                                     |
-| `cadence lib reset`                    | Reset library and delete all data (confirmation)                                                                                                                                  |
-| `cadence lib meta set`                 | Set metadata of a song (use`""` to clear)                                                                                                                                       |
-| `cadence lib meta read-file`           | Set metadata of a song from its file tags (`--all` for every field)                                                                                                             |
-| `cadence lib lyric set`                | Set the lyric file of a song (use`""` to unset)                                                                                                                                 |
-| `cadence lib lyric offset <song> <ms>` | Set a per-song lyric time offset in milliseconds (positive delays the lyric, negative brings it earlier)                                                                          |
-| `cadence lib lyric fetch <song>...`    | Fetch lyrics for songs from online sources (see`proxy` / `netease_skip_proxy` below)                                                                                          |
-| `cadence lib alias ...`                | List/bind/unbind aliases (`bind <song> <alias>...`, `unbind <alias>...`)                                                                                                      |
-| `cadence lib playlist ...`             | List/create/add/kick/delete playlists (`lib playlist list` supports `-a`/`-p`/`-t`)                                                                                       |
+| `cascade lib list`                     | Show all songs in library (`-a` aliases, `-p` playlists, `-t` tech metadata)                                                                                                |
+| `cascade lib info <song>...`           | Show detailed info of songs (`-a` aliases, `-p` playlists, `-t` tech)                                                                                                       |
+| `cascade lib search <kw>...`           | Search songs by name/artist/album/alias (`-o` any-keyword match)                                                                                                                |
+| `cascade lib add <path>...`            | Add new songs to library (`-a/--aliases` to bind aliases, `--loose-path` to allow missing paths, `--skip-meta`/`--skip-alias`/`--skip-lyric` to disable auto-detection) |
+| `cascade lib del <song>...`            | Delete songs from library (path, alias or ID)                                                                                                                                     |
+| `cascade lib scan <dir>`               | Scan a directory for audio files and add them (`-d` dry run, `--skip-meta`/`--skip-alias`/`--skip-lyric`)                                                                 |
+| `cascade lib prune`                    | Delete all songs whose file no longer exists (`-d` dry run)                                                                                                                     |
+| `cascade lib reset`                    | Reset library and delete all data (confirmation)                                                                                                                                  |
+| `cascade lib meta set`                 | Set metadata of a song (use`""` to clear)                                                                                                                                       |
+| `cascade lib meta read-file`           | Set metadata of a song from its file tags (`--all` for every field)                                                                                                             |
+| `cascade lib lyric set`                | Set the lyric file of a song (use`""` to unset)                                                                                                                                 |
+| `cascade lib lyric offset <song> <ms>` | Set a per-song lyric time offset in milliseconds (positive delays the lyric, negative brings it earlier)                                                                          |
+| `cascade lib lyric fetch <song>...`    | Fetch lyrics for songs from online sources (see`proxy` / `netease_skip_proxy` below)                                                                                          |
+| `cascade lib alias ...`                | List/bind/unbind aliases (`bind <song> <alias>...`, `unbind <alias>...`)                                                                                                      |
+| `cascade lib playlist ...`             | List/create/add/kick/delete playlists (`lib playlist list` supports `-a`/`-p`/`-t`)                                                                                       |
 
-`cadence lib lyric fetch` downloads each song's lyric from an online source. Fetching several songs at once is slow and can exceed the frontend execution timeout (`execution_timeout`) — note that even if the request times out, the backend keeps downloading in the background and still writes the files. If you hit timeouts, raise `execution_timeout`; and keep to at most 4 songs per call, since downloads run with 4-way parallelism — beyond 4 they queue up instead of completing together.
+`cascade lib lyric fetch` downloads each song's lyric from an online source. Fetching several songs at once is slow and can exceed the frontend execution timeout (`execution_timeout`) — note that even if the request times out, the backend keeps downloading in the background and still writes the files. If you hit timeouts, raise `execution_timeout`; and keep to at most 4 songs per call, since downloads run with 4-way parallelism — beyond 4 they queue up instead of completing together.
 
 `open` accepts a song alias, a library song name, a playlist name, or a file path.
 
-If a song's lyric is slightly out of sync with the audio, you can shift it with a **lyric offset**. `cadence lib lyric offset <song> <ms>` persists a per-song offset in the library: a positive value delays the lyric line, a negative one brings it earlier. The dashboard also lets you nudge the *current* song live without persisting anything — `]` / `[` step a temporary overlay by `100ms` and `\` resets it, handy for finding the right value before committing it with `lib lyric offset`. The persisted offset and the live overlay stack.
+If a song's lyric is slightly out of sync with the audio, you can shift it with a **lyric offset**. `cascade lib lyric offset <song> <ms>` persists a per-song offset in the library: a positive value delays the lyric line, a negative one brings it earlier. The dashboard also lets you nudge the *current* song live without persisting anything — `]` / `[` step a temporary overlay by `100ms` and `\` resets it, handy for finding the right value before committing it with `lib lyric offset`. The persisted offset and the live overlay stack.
 
 ### Configuration
 
 | Command                                 | Description                                                                                  |
 | --------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `cadence config list`                 | Show information of all options                                                              |
-| `cadence config show <option>`        | Show information of an option                                                                |
-| `cadence config set <option> <value>` | Write an option to the config file (`--overwrite-corrupt` to replace a corrupted file)     |
-| `cadence config unset <option>`       | Remove an option from the config file (falls back to default)                                |
-| `cadence config open`                 | Open the config file with the system's default application (creates an empty one if missing) |
-| `cadence config path`                 | Show the path of the config file                                                             |
+| `cascade config list`                 | Show information of all options                                                              |
+| `cascade config show <option>`        | Show information of an option                                                                |
+| `cascade config set <option> <value>` | Write an option to the config file (`--overwrite-corrupt` to replace a corrupted file)     |
+| `cascade config unset <option>`       | Remove an option from the config file (falls back to default)                                |
+| `cascade config open`                 | Open the config file with the system's default application (creates an empty one if missing) |
+| `cascade config path`                 | Show the path of the config file                                                             |
 
 `config` commands accept `-d/--direct` to bypass the backend and edit the config file locally (works when the backend is not running).
 
-Config file: `%LOCALAPPDATA%\cadence\cadence\config.toml` (Windows). It groups options into TOML sections — `[network]`, `[service]`, `[playback]`, `[dash]`, `[appearance]` and `[lyric]` — with `username` at the root of the file; `config set` writes into the right section for you. Options:
+Config file: `%LOCALAPPDATA%\cascade\cascade\config.toml` (Windows). It groups options into TOML sections — `[network]`, `[service]`, `[playback]`, `[dash]`, `[appearance]` and `[lyric]` — with `username` at the root of the file; `config set` writes into the right section for you. Options:
 
 | Option                                | Default                       | Description                                                                                            |
 | ------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------ |
@@ -190,22 +190,22 @@ The same options can be edited in a window instead of the terminal — see [Conf
 
 > **Note for users on mainland China networks:** when fetching lyrics online, it is recommended to enable `netease_skip_proxy`. The NetEase source is reachable directly from China, while proxy-only sources (LRCLIB, Musixmatch, etc.) sit behind the wall — so let NetEase connect directly and route the rest through `proxy`.
 
-Besides downloading lyrics with `lib lyric fetch`, you can play with **live online lyrics**: toggle the lyric source to online (`cadence lyric`, or `z` in the dashboard) and, whenever the song being played has no local `.lrc`, its lyrics are fetched on the fly from online sources and shown as it plays — a `[Loading ...]` placeholder appears while a fetch is in flight. Live online lyrics are keyed by the song's path, so they work for non-library songs too, and are shown on both the floating lyric board and the dashboard. The startup source is controlled by `default_online_lyric`.
+Besides downloading lyrics with `lib lyric fetch`, you can play with **live online lyrics**: toggle the lyric source to online (`cascade lyric`, or `z` in the dashboard) and, whenever the song being played has no local `.lrc`, its lyrics are fetched on the fly from online sources and shown as it plays — a `[Loading ...]` placeholder appears while a fetch is in flight. Live online lyrics are keyed by the song's path, so they work for non-library songs too, and are shown on both the floating lyric board and the dashboard. The startup source is controlled by `default_online_lyric`.
 
 ### Audio engines
 
-The player sits behind an engine interface; the `engine` option selects the implementation and is read when the backend builds its player, so changing it needs a restart (`cadence config set engine miniaudio`, then `cadence reboot`).
+The player sits behind an engine interface; the `engine` option selects the implementation and is read when the backend builds its player, so changing it needs a restart (`cascade config set engine miniaudio`, then `cascade reboot`).
 
 | Engine                | Requires                                             | Decodes                                                          |
 | --------------------- | ---------------------------------------------------- | ---------------------------------------------------------------- |
 | `vlc` *(default)* | VLC 3.x installed —`python-vlc` is only a binding | everything VLC does, i.e. every extension in`AUDIO_EXTENSIONS` |
 | `miniaudio`         | nothing beyond the Python dependencies               | MP3, MP2, FLAC, WAV, AIFF, OGG Vorbis                            |
 
-`miniaudio` goes through `just_playback`, a wrapper around [miniaudio](https://github.com/mackron/miniaudio), which makes CADENCE able to play without a VLC installation — but through a much smaller decoder. The AAC/M4A, WMA, Opus and AC3 families are not decodable, and neither are the lossless and rarer containers (APE, DSD, WavPack, ...). A song in one of those formats still scans into the library, because the library reads tags with `mutagen` and never asks the engine; it fails at the moment it is opened, reported as "the audio file does not exist or is not valid".
+`miniaudio` goes through `just_playback`, a wrapper around [miniaudio](https://github.com/mackron/miniaudio), which makes CASCADE able to play without a VLC installation — but through a much smaller decoder. The AAC/M4A, WMA, Opus and AC3 families are not decodable, and neither are the lossless and rarer containers (APE, DSD, WavPack, ...). A song in one of those formats still scans into the library, because the library reads tags with `mutagen` and never asks the engine; it fails at the moment it is opened, reported as "the audio file does not exist or is not valid".
 
-VLC is the safer choice for a general library; `miniaudio` is for installations that cannot or will not have VLC. The active engine is reported as `engine` by `status` / `poll` and printed on the `Audio Engine:` line of `cadence status`.
+VLC is the safer choice for a general library; `miniaudio` is for installations that cannot or will not have VLC. The active engine is reported as `engine` by `status` / `poll` and printed on the `Audio Engine:` line of `cascade status`.
 
-`python-vlc` locates the VLC runtime the moment it is imported: it honours `PYTHON_VLC_LIB_PATH` (full path to `libvlc.dll`) and `PYTHON_VLC_MODULE_PATH` (plugin directory), then looks for an installed VLC through the registry and the usual `Program Files\VideoLAN\VLC` locations, and as a last resort tries `libvlc.dll` next to the working directory. If none of that works, the backend fails to start and `cadence.log` carries the reason — `Failed to access VLC backend`. A message about `Could not find module … (or one of its dependencies)` means `libvlccore.dll`, or the Microsoft Visual C++ 2015+ Redistributable it needs, is missing next to `libvlc.dll`. The portable build sets both environment variables itself and ships the runtime in `vlc/`, so moving that folder out of the bundle is a way to produce this.
+`python-vlc` locates the VLC runtime the moment it is imported: it honours `PYTHON_VLC_LIB_PATH` (full path to `libvlc.dll`) and `PYTHON_VLC_MODULE_PATH` (plugin directory), then looks for an installed VLC through the registry and the usual `Program Files\VideoLAN\VLC` locations, and as a last resort tries `libvlc.dll` next to the working directory. If none of that works, the backend fails to start and `cascade.log` carries the reason — `Failed to access VLC backend`. A message about `Could not find module … (or one of its dependencies)` means `libvlccore.dll`, or the Microsoft Visual C++ 2015+ Redistributable it needs, is missing next to `libvlc.dll`. The portable build sets both environment variables itself and ships the runtime in `vlc/`, so moving that folder out of the bundle is a way to produce this.
 
 ### Tray icon
 
@@ -221,13 +221,13 @@ The tray icon starts with the backend (unless the `tray` config option is off) a
 
 ### Dashboard
 
-The dashboard (`cadence dash`) is an interactive terminal UI. It shows the current song, a progress bar with elapsed/total time, volume bar and playback state, the current lyric line (the song's local lyric if one is set via `cadence lib lyric set`, or its live online lyric in online mode), the playlist (with the playing song and your selection highlighted), and is controlled entirely from the keyboard. A left column shows library information for the current song (duration, metadata, tech fields, aliases and playlists). It starts its own frontend process and uses the same socket protocol as the other frontends. Pressing `f` switches to poster mode: the whole layout is replaced by the current song's album cover, drawn as colored half-blocks sized to `dash_poster_width` × `dash_poster_height` and clamped to the terminal. The cover comes from the backend (see `get_cover` in [docs/protocol.md](docs/protocol.md)), which reads it once per song from the file's tags or from a cover image next to it; songs without one show a bundled placeholder.
+The dashboard (`cascade dash`) is an interactive terminal UI. It shows the current song, a progress bar with elapsed/total time, volume bar and playback state, the current lyric line (the song's local lyric if one is set via `cascade lib lyric set`, or its live online lyric in online mode), the playlist (with the playing song and your selection highlighted), and is controlled entirely from the keyboard. A left column shows library information for the current song (duration, metadata, tech fields, aliases and playlists). It starts its own frontend process and uses the same socket protocol as the other frontends. Pressing `f` switches to poster mode: the whole layout is replaced by the current song's album cover, drawn as colored half-blocks sized to `dash_poster_width` × `dash_poster_height` and clamped to the terminal. The cover comes from the backend (see `get_cover` in [docs/protocol.md](docs/protocol.md)), which reads it once per song from the file's tags or from a cover image next to it; songs without one show a bundled placeholder.
 
 Screenshot:
 
 ```
 ╭──────────────────────────┬────────────────────────────────────────────────────────┬─────────────────────────────────────────────────────────────────╮
-│  Information             │               CADENCE 0.43.0 Dashboard                 │  Playlist                                                       │
+│  Information             │               CASCADE 0.43.0 Dashboard                 │  Playlist                                                       │
 │                          │  ==================================================    │                                                           0 ↑   │
 │  Duration: 00:04:26      │                                                        │  -[ Night Witches - Sabaton ]-                                  │
 │                          │                  Inmate 4859 [4/13]                    │  No Bullets Fly - Sabaton                                       │
@@ -295,18 +295,18 @@ It is not spawned with the backend — start it yourself from the repo root:
 python -m src.frontend.config_gui
 ```
 
-In a portable build, `runtime\python.exe -m src.frontend.config_gui` from the bundle root. It logs to `cadence-config-gui.log`.
+In a portable build, `runtime\python.exe -m src.frontend.config_gui` from the bundle root. It logs to `cascade-config-gui.log`.
 
 ## Architecture
 
 - **Backend** (`src/backend/`) — owns the audio engine (`playback/`: `base_engine.py` declares the `BaseEngine` ABC, `engine.py` holds the engine flow shared by both implementations as a mixin, and `vlc_engine.py` / `mini_engine.py` implement the decoding, selected by the `engine` config option; session state, lyrics and cover art live in their own mixins) and the SQLite database (`database/`, split into per-domain mixins), listens on `127.0.0.1:17891` for JSON requests over a socket. Action handlers live in `handlers/` and dispatch through a `ROUTER` table keyed by action name; playback state is held in the `Playback` class and injected into handlers via a `Context`.
-- **Frontends** (`src/frontend/`) — `cli/` (the `cadence` CLI), `hotkey.py` (media key hotkeys), `tray.py` (system tray icon), `dash/` (interactive dashboard), `lyric.py` (floating lyric board), `config_gui/` (configure GUI window). They send action requests to the backend and format responses. All frontends share `client.py` and `song_output.py`.
+- **Frontends** (`src/frontend/`) — `cli/` (the `cascade` CLI), `hotkey.py` (media key hotkeys), `tray.py` (system tray icon), `dash/` (interactive dashboard), `lyric.py` (floating lyric board), `config_gui/` (configure GUI window). They send action requests to the backend and format responses. All frontends share `client.py` and `song_output.py`.
 - **Protocol** — all communication is JSON over a length-prefixed socket connection. See [docs/protocol.md](docs/protocol.md).
 
 ## Data
 
-- Database: `%LOCALAPPDATA%\cadence\cadence\cadence.db` (Windows) — managed by platformdirs
-- Dev database: `%LOCALAPPDATA%\cadence\cadence\cadence-dev.db` (Windows) — used when the backend is started with `--dev`
+- Database: `%LOCALAPPDATA%\cascade\cascade\cascade.db` (Windows) — managed by platformdirs
+- Dev database: `%LOCALAPPDATA%\cascade\cascade\cascade-dev.db` (Windows) — used when the backend is started with `--dev`
 - Audio formats: FLAC, MP3, WAV, and other common formats (see `AUDIO_EXTENSIONS` in `src/constants/misc.py`) — which of them actually decode depends on the engine ([Audio engines](#audio-engines))
 
 ## Logs
@@ -315,11 +315,11 @@ Log file location (platform-dependent, managed by platformdirs):
 
 | Platform | Path                                                                                                |
 | -------- | --------------------------------------------------------------------------------------------------- |
-| Windows  | `%LOCALAPPDATA%\cadence\cadence\Logs\cadence.log`                                                 |
-| Linux    | `$XDG_STATE_HOME/cadence/log/cadence.log`, defaults to `~/.local/state/cadence/log/cadence.log` |
-| macOS    | `~/Library/Logs/cadence/cadence.log`                                                              |
+| Windows  | `%LOCALAPPDATA%\cascade\cascade\Logs\cascade.log`                                                 |
+| Linux    | `$XDG_STATE_HOME/cascade/log/cascade.log`, defaults to `~/.local/state/cascade/log/cascade.log` |
+| macOS    | `~/Library/Logs/cascade/cascade.log`                                                              |
 
-Log files: `cadence.log` (backend), `cadence-socket.log` (client/connection), `cadence-hotkey.log` (hotkey frontend), `cadence-tray.log` (tray frontend), `cadence-dash.log` (dashboard frontend), `cadence-lyric.log` (lyric board frontend), plus `cadence-config.log`, `cadence-config-gui.log`, `cadence-pid.log` and `cadence-util.log` (metadata and cover extraction from audio files).
+Log files: `cascade.log` (backend), `cascade-socket.log` (client/connection), `cascade-hotkey.log` (hotkey frontend), `cascade-tray.log` (tray frontend), `cascade-dash.log` (dashboard frontend), `cascade-lyric.log` (lyric board frontend), plus `cascade-config.log`, `cascade-config-gui.log`, `cascade-pid.log` and `cascade-util.log` (metadata and cover extraction from audio files).
 
 ## TODO
 

@@ -25,11 +25,11 @@ def main():
     args = translate(args)
 
     if args['action'] == 'start':
-        notifies = _start_backend(CADENCE_DEV=int(args['dev']), CADENCE_CONTINUE=int(args['continue']))[1]
+        notifies = _start_backend(CASCADE_DEV=int(args['dev']), CASCADE_CONTINUE=int(args['continue']))[1]
         _show_notifies(notifies)
 
     elif args['action'] == 'kill':
-        print(f'Killing CADENCE backend processes...')
+        print(f'Killing CASCADE backend processes...')
         result = kill()
         for pid, process_result in result:
             msg = {
@@ -117,7 +117,7 @@ def main():
         _show_notifies(notifies)
 
         if code is None or msg is None:
-            print('[Failed]: Invalid response received from CADENCE backend')
+            print('[Failed]: Invalid response received from CASCADE backend')
 
         elif code == 0:
             print(_cli_box(f'{EC.bold}{EC.green}[Succeeded]{EC.rs}: {response['msg']}'))
@@ -133,7 +133,7 @@ def main():
                     return 1
                     
                 print('Starting backend...')
-                notifies = _start_backend(CADENCE_DEV=int(args['dev']), CADENCE_CONTINUE=int(args['continue']))[1]
+                notifies = _start_backend(CASCADE_DEV=int(args['dev']), CASCADE_CONTINUE=int(args['continue']))[1]
 
                 _show_notifies(notifies)
 
@@ -143,7 +143,7 @@ def main():
 
             elif action in ATTACHMENT_REQUIRED_ACTIONS:
                 if attachment is None and not (action == 'lib.scan' and not args['dry_run']):
-                    print(f'[Failed]: action {action} was expecting an attachment but none was received from CADENCE backend')
+                    print(f'[Failed]: action {action} was expecting an attachment but none was received from CASCADE backend')
                 else:
                     # these actions will be expecting an attachment
                     if action == 'status':
@@ -165,7 +165,7 @@ def main():
                                         f'Reverse: {output.reverse}',
                                         f'Online Lyric: {output.online_lyric}',
                                         f'\nAudio Engine: {output.engine}',
-                                        f'\nCADENCE backend has been running for {output.run_time}',
+                                        f'\nCASCADE backend has been running for {output.run_time}',
                         ))
 
                         if output.dev:
@@ -247,13 +247,13 @@ def main():
                 print('Failed to exit backend, rebooting aborted')
 
         elif code == 2:
-            print(_cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs} Failed to connect to CADENCE backend. You can try to use the start subcommand to start it'))
+            print(_cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs} Failed to connect to CASCADE backend. You can try to use the start subcommand to start it'))
 
         elif code == 3:
-            print(_cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs}: received an unexpected default response code from CADENCE backend which is not to be used under any circumstances. Please report this error'))
+            print(_cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs}: received an unexpected default response code from CASCADE backend which is not to be used under any circumstances. Please report this error'))
 
         elif code == 4:
-            print(_cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs}: CADENCE backend is exiting'))
+            print(_cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs}: CASCADE backend is exiting'))
 
         elif code == 5:
             print(_cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs}: Token rejected, authorization failed'))
@@ -279,12 +279,12 @@ def _start_backend(**kwargs):
     result = start(**kwargs)
     notifies = []
     if result is SENTINELS.BACKEND_STARTED:
-        print(f'CADENCE backend is now up and running')
+        print(f'CASCADE backend is now up and running')
         notifies = send_request(**_wrap_request({'action':'get_notifies'})).get('notifies', [])
     elif result is SENTINELS.BACKEND_ALREADY_RUNNING:
-        print(f'CADENCE backend is already running')
+        print(f'CASCADE backend is already running')
     elif result is SENTINELS.FAILED_START_BACKEND:
-        print(f'Failed to start CADENCE backend. Examine log files for more information')
+        print(f'Failed to start CASCADE backend. Examine log files for more information')
     return result, notifies
 
 def _cli_box(*args, **kwargs):
@@ -296,7 +296,7 @@ def _show_notifies(notifies=None):
 
     if len(notifies) > 0:
         lines = [
-            f'Notifies from CADENCE backend ({len(notifies)}):'
+            f'Notifies from CASCADE backend ({len(notifies)}):'
         ]
         lines += list(map(lambda x: f'  {x}', notifies))
         print(_cli_box('\n'.join(lines)))

@@ -43,8 +43,8 @@ class Backend:
         self.pid = str(os.getpid())
         add_pid(self.pid)
 
-        self.dev = {'0': False, '1': True}.get(os.environ.get('CADENCE_DEV', '0'), False)
-        self.continue_last = {'0': False, '1': True}.get(os.environ.get('CADENCE_CONTINUE', '0'), False)
+        self.dev = {'0': False, '1': True}.get(os.environ.get('CASCADE_DEV', '0'), False)
+        self.continue_last = {'0': False, '1': True}.get(os.environ.get('CASCADE_CONTINUE', '0'), False)
 
         if self.dev:
             logger.info('DEVELOPMENT MODE ON')
@@ -74,7 +74,7 @@ class Backend:
                 dev=self.dev
             )
 
-            self.notifies.append(f'{CONFIG.username}, welcome to Command-line Audio Decoding Engine with Navigation and Continuous Execution') # just for fun
+            self.notifies.append(f'{CONFIG.username}, welcome to Command-Line Audio Stream Capture And Decoding Engine') # just for fun
 
             if CONFIG.proxy != '':
                 os.environ['HTTP_PROXY'] = CONFIG.proxy
@@ -92,7 +92,7 @@ class Backend:
 
     def run(self):
         if self.running:
-            logger.info(f'Command-line Audio Decoding Engine with Navigation and Continuous Execution {__version__} started, PID: {self.pid}')
+            logger.info(f'Command-Line Audio Stream Capture And Decoding Engine {__version__} started, PID: {self.pid}')
 
             Thread(target=self._listen, daemon=True).start()
             Thread(target=self._memorize_pos, daemon=True).start()
@@ -163,7 +163,7 @@ class Backend:
                     response = self.dispatch(request)
                 except Exception as e:
                     logger.exception(f'Exception raised when dispatching request')
-                    response = gen_response.Failed(f'a CADENCE backend error occurred during dispatching of request: \"{e}\"')
+                    response = gen_response.Failed(f'a CASCADE backend error occurred during dispatching of request: \"{e}\"')
 
 
 

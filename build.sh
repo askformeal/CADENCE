@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build a portable (green) distribution of CADENCE.
+# Build a portable (green) distribution of CASCADE.
 #
 # Runtime = Astral python-build-standalone (PBS): a self-contained CPython that
 # ships python.exe + stdlib + pip + dynamic tkinter (Tcl/Tk split out since the
@@ -10,7 +10,7 @@
 #   Run from git-bash:  bash build.sh            (uses cached download if present)
 #                       DOWNLOAD=1 bash build.sh (force re-download)
 #
-# Output:  dist/cadence-<version>.zip  and  dist/cadence-<version>/  (unzipped)
+# Output:  dist/cascade-<version>.zip  and  dist/cascade-<version>/  (unzipped)
 
 set -euo pipefail
 
@@ -50,7 +50,7 @@ if [[ -z "$VERSION" ]]; then
     exit 1
 fi
 
-DIST="dist/cadence-${VERSION}"
+DIST="dist/cascade-${VERSION}"
 DOWNLOAD_DIR="downloads"
 PBS_ARCHIVE="${DOWNLOAD_DIR}/${PBS_FILE}"
 RUNTIME="${DIST}/runtime"
@@ -154,8 +154,8 @@ fi
 #    backend/hotkey/tray/lyric/dash spawns resolve via sys.executable inside the
 #    bundle, so everything stays self-contained. Force CRLF for cmd.
 # ---------------------------------------------------------------------------
-echo ">> Writing launcher cadence.cmd ..."
-cat > "$DIST/cadence.cmd" <<'EOF'
+echo ">> Writing launcher cascade.cmd ..."
+cat > "$DIST/cascade.cmd" <<'EOF'
 @echo off
 cd /d "%~dp0"
 set PYTHONNOUSERSITE=1
@@ -169,7 +169,7 @@ set "PYTHON_VLC_LIB_PATH=%~dp0vlc\libvlc.dll"
 set "VLC_PLUGIN_PATH=%~dp0vlc\plugins"
 "%~dp0runtime\python.exe" -m src %*
 EOF
-sed -i 's/$/\r/' "$DIST/cadence.cmd"
+sed -i 's/$/\r/' "$DIST/cascade.cmd"
 
 # ---------------------------------------------------------------------------
 # 7. Zip it. git-bash has no `zip`; use Python stdlib (zipfile) — present in

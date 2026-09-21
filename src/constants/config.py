@@ -215,7 +215,7 @@ CONFIG_SCHEME = {
     'lyric_font_family': {
         'type': str,
         'section': 'appearance',
-        'default': '', # Sentinels won't go though socket. cadence config list will fail
+        'default': '', # Sentinels won't go though socket. cascade config list will fail
         'description': 'Font family of lyric board'
     },
     'lyric_font_size': {

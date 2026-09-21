@@ -1,5 +1,5 @@
 INIT_REMOTE = True
-TITLE = 'CADENCE Configure'
+TITLE = 'CASCADE Configure'
 WIDTH = 700
 HEIGHT = 800
 POS_X = 300

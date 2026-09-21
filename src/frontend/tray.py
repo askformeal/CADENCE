@@ -33,7 +33,7 @@ class Tray(Icon):
         self.ok_icon = Image.open(Path(ICON_PATH).open('rb'))
         self.error_icon = Image.open(Path(ERROR_ICON_PATH).open('rb'))
 
-        super().__init__('cadence', self.ok_icon)
+        super().__init__('cascade', self.ok_icon)
         self._last_sig = None
         self.error_time = 0
         self.is_error_icon = False
@@ -44,7 +44,7 @@ class Tray(Icon):
             try:
                 self.snapshot.poll()
                 
-                title = 'CADENCE'
+                title = 'CASCADE'
                 
                 playlists_sub_menu = [MenuItem('[Play All]', lambda *_: self._send_tray_request('play-all'))]
 
@@ -113,7 +113,7 @@ class Tray(Icon):
                     )),
                     Menu.SEPARATOR,
                     MenuItem('Quit Tray', lambda *_: self.exit()),
-                    MenuItem('Exit CADENCE', lambda *_: self._send_tray_request('exit')),
+                    MenuItem('Exit CASCADE', lambda *_: self._send_tray_request('exit')),
                 )
 
                 if self.title != title:

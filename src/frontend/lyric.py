@@ -94,9 +94,9 @@ class Lyric(tk.Tk):
         )
 
         self.icon = Icon(
-            'cadence_lyric', 
+            'cascade_lyric', 
             Image.open(LYRIC_ICON_PATH),
-            'CADENCE Lyric Board',
+            'CASCADE Lyric Board',
             menu=menu
             )
 

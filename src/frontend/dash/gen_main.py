@@ -73,7 +73,7 @@ class MainMixin:
 
         max_len = max(max(map(strlen, lines)), MIN_WIDTH)
 
-        title = center(f'{EC.bold}{EC.cyan}CADENCE {__version__} Dashboard{EC.rs}', max_len)
+        title = center(f'{EC.bold}{EC.cyan}CASCADE {__version__} Dashboard{EC.rs}', max_len)
         separator = '='*max_len
         current = self.snapshot.current_num
         if current is not EMPTY:
