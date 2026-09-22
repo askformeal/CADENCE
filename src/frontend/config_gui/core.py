@@ -1,5 +1,4 @@
 import tkinter as tk
-from tkinter import messagebox
 import tkinter.font as tkfont
 
 from PIL import Image, ImageTk
@@ -9,7 +8,9 @@ from src.constants.paths import (
     ICON_PATH, 
     REMOTE_ICON_PATH,
     REFRESH_ICON_PATH,
-    EDIT_ICON_PATH
+    EDIT_ICON_PATH,
+    OPEN_FILE_ICON_PATH,
+    COPY_PATH_ICON_PATH
     )
 from src.constants.config_gui import (
     INIT_REMOTE,
@@ -24,6 +25,8 @@ from src.constants.config_gui import (
     REMOTE_ON_COLOR,
     REMOTE_OFF_COLOR,
     REFRESH_COLOR,
+    OPEN_COLOR,
+    COPY_COLOR,
     RESIZE,
     ICON_SIZE,
     FONT_SIZE
@@ -32,8 +35,10 @@ from src.config_manager import CONFIG_MANAGER
 from src.frontend.client import send_request
 from .scrolled_frame import ScrolledFrame
 from .pop_up import Popup
+from .balloon import Balloon
+from .handler import HandlerMixin
 
-class ConfigGUI(tk.Tk):
+class ConfigGUI(tk.Tk, HandlerMixin):
     def __init__(self):
         super().__init__()
         self.withdraw()
@@ -50,6 +55,8 @@ class ConfigGUI(tk.Tk):
         self.remote = INIT_REMOTE
         self.options = {}
 
+        self.balloon = Balloon(self)
+
         self._build_window()
         logger.debug(f'{__name__} initialized')
 
@@ -60,6 +67,8 @@ class ConfigGUI(tk.Tk):
         self.remote_image = self._get_icon(REMOTE_ICON_PATH)
         self.refresh_image = self._get_icon(REFRESH_ICON_PATH)
         self.edit_image = self._get_icon(EDIT_ICON_PATH)
+        self.open_image = self._get_icon(OPEN_FILE_ICON_PATH)
+        self.copy_image = self._get_icon(COPY_PATH_ICON_PATH)
 
         self.remote_button = tk.Button(
             button_frame,
@@ -74,10 +83,33 @@ class ConfigGUI(tk.Tk):
             bg=REFRESH_COLOR,
             activebackground=REFRESH_COLOR
             )
+
+        self.open_button = tk.Button(
+            button_frame,
+            command=self.open_file,
+            image=self.open_image,
+            bg=OPEN_COLOR,
+            activebackground=OPEN_COLOR
+            )
+        self.copy_button = tk.Button(
+            button_frame,
+            command=self.copy_path,
+            image=self.copy_image,
+            bg=COPY_COLOR,
+            activebackground=COPY_COLOR
+            )
+
         self._update_remote_button()
 
         self.remote_button.pack(side='right', padx=(0, 20))
         self.refresh_button.pack(side='right', padx=(0, 20))
+        self.open_button.pack(side='left', padx=(20, 0))
+        self.copy_button.pack(side='left', padx=(20, 0))
+
+        self.balloon.bind_widget(self.remote_button, 'Toggle remote mode')
+        self.balloon.bind_widget(self.refresh_button, 'Refresh')
+        self.balloon.bind_widget(self.open_button, 'Open configure file')
+        self.balloon.bind_widget(self.copy_button, 'Copy configure file path')
 
         main_frame = tk.Frame(self)
         main_frame.pack(padx=10, pady=10, fill='both', expand=True)
@@ -195,6 +227,7 @@ class ConfigGUI(tk.Tk):
                 )
 
             edit_button.pack(side='right', padx=(20,10))
+            self.balloon.bind_widget(edit_button, f'Edit \"{name}\"')
 
             option_frame.pack(fill='x', pady=5)
 
@@ -224,43 +257,6 @@ class ConfigGUI(tk.Tk):
         info = self.options[name]
         Popup(self, info)
 
-    def set_value(self, name, value, overwrite_corrupt=False):
-        logger.info(f'Set \"{name}\" to \"{value}\", overwrite corrupted: {overwrite_corrupt}')
-        if self.remote:
-            response = self._send_config_request(
-                'config.set', 
-                option=name, 
-                value=value,
-                overwrite_corrupt=overwrite_corrupt
-                )
-        else:
-            response = dict(CONFIG_MANAGER.set_option_value(
-                name=name,
-                value=value,
-                overwrite_corrupt=overwrite_corrupt
-            ))
-
-        self._handle_response(response)
-
-    def unset(self, name):
-        logger.info(f'Unset: {name}')
-        if self.remote:
-            response = self._send_config_request('config.unset', option=name)
-        else:
-            response = CONFIG_MANAGER.unset_option(name)
-        self._handle_response(response)
-
-    def _handle_response(self, response):
-        if response['code'] == 0:
-            self._update_options()
-        else:
-            msg = response['msg']
-            messagebox.showerror(
-                'Failed', 
-                message='Unsuccessful response',
-                detail=msg
-                )
-
     def _send_config_request(self, action, **kwargs):
         request = {'action': action, 'source': 'config_gui', 'notify_support': False, **kwargs}
         response = send_request(**request)
@@ -270,7 +266,10 @@ class ConfigGUI(tk.Tk):
     def run(self):
         self.deiconify()
         logger.info('Start main loop')
-        self.mainloop()
+        try:
+            self.mainloop()
+        except KeyboardInterrupt:
+            ...
 
 if __name__ == '__main__':
     ConfigGUI().run()

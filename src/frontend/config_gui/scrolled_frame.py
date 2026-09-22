@@ -5,8 +5,6 @@ class ScrolledFrame(tk.Frame):
         
         super().__init__(*args, **kwargs)
 
-        self.scroll_on = False
-
         scroll_bar = tk.Scrollbar(self, orient='vertical')
         scroll_bar.pack(side='right', fill='y')
 
@@ -22,9 +20,6 @@ class ScrolledFrame(tk.Frame):
 
         self.frame.bind('<Configure>', self._on_frame_config)
         self.canvas.bind('<Configure>', self._on_canvas_config)
-
-        self.bind('<Enter>', lambda *_: self._set_scroll(True))
-        self.bind('<Leave>', lambda *_: self._set_scroll(False))
 
         self.bind_all('<MouseWheel>', self._on_scroll)
         self.bind_all('<Button-5>', self._on_scroll)
@@ -42,9 +37,6 @@ class ScrolledFrame(tk.Frame):
             child.destroy()
         self.yview_moveto(0)
 
-    def _set_scroll(self, scroll):
-        self.scroll_on = scroll
-
     def _on_frame_config(self, *_):
         self.canvas.config(scrollregion=self.canvas.bbox('all'))
 
@@ -52,7 +44,13 @@ class ScrolledFrame(tk.Frame):
         self.canvas.itemconfig(self.window, width=event.width)
 
     def _on_scroll(self, event):
-        if self.scroll_on:
+        x_left = self.winfo_rootx()
+        x_right = x_left + self.winfo_width()
+        y_up = self.winfo_rooty()
+        y_down = y_up + self.winfo_height()
+        pointer_x, pointer_y = self.winfo_pointerxy()
+
+        if pointer_x in range(x_left, x_right+1) and pointer_y in range(y_up, y_down+1):
             if event.num == 4:
                 step = -1
             elif event.num == 5:

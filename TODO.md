@@ -63,10 +63,10 @@
 - [X] Reverse playback sequence
 - [X] Dual audio engine: miniaudio + VLC
 - [X] GUI configure editor
-- [ ] Audio visualization
-- [ ] PyInstaller packaging
 - [ ] HTTP frontend
 - [ ] GUI frontend
+- [ ] Audio visualization
+- [ ] PyInstaller packaging
 - [ ] mpv engine
 - [ ] Bluetooth frontend
 - [ ] Advanced library management

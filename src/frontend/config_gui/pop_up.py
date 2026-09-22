@@ -7,7 +7,10 @@ from src.constants.config_gui import (
     POP_UP_POS_X, 
     POP_UP_POS_Y, 
     DESC_WRAP_LEN,
-    FONT_SIZE
+    FONT_SIZE,
+    CONFIRM_COLOR,
+    CANCEL_COLOR,
+    UNSET_COLOR
     )
 
 class Popup(tk.Toplevel):
@@ -149,7 +152,9 @@ class Popup(tk.Toplevel):
             button_frame, 
             text='Confirm',
             font=self.font,
-            command=self._on_confirm
+            command=self._on_confirm,
+            bg=CONFIRM_COLOR,
+            activebackground=CONFIRM_COLOR
             )
         confirm_button.pack(side='right')
         
@@ -157,7 +162,9 @@ class Popup(tk.Toplevel):
             button_frame, 
             text='Cancel',
             font=self.font,
-            command=lambda *_: self.destroy()
+            command=lambda *_: self.destroy(),
+            bg=CANCEL_COLOR,
+            activebackground=CANCEL_COLOR
             )
         cancel_button.pack(side='right', padx=(0, 10))
 
@@ -165,7 +172,9 @@ class Popup(tk.Toplevel):
             button_frame, 
             text='Unset',
             font=self.font,
-            command=self._unset 
+            command=self._unset,
+            bg=UNSET_COLOR,
+            activebackground=UNSET_COLOR
             )
         unset_button.pack(side='right', padx=(0, 10))
 
