@@ -42,7 +42,7 @@
 
 ### Added
 
-- **Swappable audio engine.** The new `engine` option (playback section, default `vlc`) selects the decoder: `vlc` or `miniaudio`. `status` / `poll` report the active engine as `engine`, the CLI prints it on an `Audio Engine:` line and the dashboard in its info panel.
+- **Swappable audio engine.** The new `engine` option (playback section, default `miniaudio`) selects the decoder: `vlc` or `miniaudio`. `status` / `poll` report the active engine as `engine`, the CLI prints it on an `Audio Engine:` line and the dashboard in its info panel.
 - **Miniaudio engine.** `engine = miniaudio` decodes through `just_playback`, a wrapper around [miniaudio](https://github.com/mackron/miniaudio), so no VLC installation is needed. It is a much smaller decoder than VLC: MP3, MP2, FLAC, WAV, AIFF and OGG Vorbis play; the AAC/M4A, WMA, Opus and AC3 families do not, nor do the lossless and less common containers. A song in an unsupported format still scans into the library (metadata is read with `mutagen`, not by the engine) and fails when it is opened, reported as "the audio file does not exist or is not valid". Because the engine has no end-of-stream event, it detects the end of a song by polling (new `PLAYER_END_POLL_INTERVAL` / `PLAYER_END_REDUNDANCY` constants). New runtime dependency: `just_playback` (a small wrapper around miniaudio, which brings `cffi` and `tinytag` with it).
 - `src/error.py` with `InitializationError`, raised when the database or the audio engine cannot be initialized.
 

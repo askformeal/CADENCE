@@ -14,40 +14,51 @@ Retrieves collections of mechanically-represented wave data from persistent stor
 - Library with metadata (including duration), aliases, and playlists (persisted in SQLite)
 - Auto metadata extraction and alias binding from file tags
 - Memorized playback position — resume where you left off
-- Shuffle mode
-- Loop mode — replay the current song on end
-- Reverse mode — walk the playlist backwards when a song ends
+- Shuffle & Loop mode — Random or repeat
 - Random song jump (`dice`)
 - Dev mode — isolated development database
 - Volume and mute control
-- Hotkey frontend (pynput)
-- Tray icon frontend (pystray): playback controls, song/playlist switching, volume presets, now-playing tooltip and error indicator
+- Media key control
+- Tray icon: playback controls, song/playlist switching, volume presets, now-playing tooltip
 - Dashboard frontend (`cascade dash`): interactive TUI with live status, playlist browsing and keyboard controls, including a poster mode that fills the screen with the album cover
-- Album cover art: read from the file's own tags (FLAC pictures, ID3 APIC, MP4 `covr`, Vorbis comments) or from a `cover.jpg` / `folder.jpg` next to it, downscaled by the backend and served to frontends
-- Lyric board frontend: floating always-on-top window showing the current lyric line, styled via config options and fading to semi-transparent until hovered
-- Configure GUI frontend (tkinter): lists every config option with its value and where that value comes from, and edits or unsets them either through the backend or straight on the local config file
-- Pluggable audio engine: `vlc` (default, decodes everything VLC does) or `miniaudio` (needs no VLC installation, fewer formats) — see [Audio engines](#audio-engines)
+- Use local or online lyric sources
+- Download lyrics from online sources
+- Lyric board: floating always-on-top window showing the current lyric line
+- Configure GUI: edit configurations through an easy-to-use desktop window
+- Pluggable audio engine: `vlc` (decodes everything VLC does) or `miniaudio` (default, needs no VLC installation, fewer formats) — see [Audio engines](#audio-engines)
 - Socket-based backend/frontend architecture (see [docs/protocol.md](docs/protocol.md))
 
 ## Installation
 
-Requires Python 3.12+ and, for the default (`vlc`) audio engine, [VLC](https://www.videolan.org/vlc/) 3.x installed. CASCADE uses `python-vlc`, which is only a binding — it needs a real VLC runtime (`libvlc.dll` + plugins) to decode audio, found via VLC's installer or registry. The `miniaudio` engine decodes without VLC (see [Audio engines](#audio-engines)).
+Requires Python 3.12+. The default `miniaudio` engine needs no VLC; the `vlc` engine needs [VLC](https://www.videolan.org/vlc/) 3.x installed. CASCADE uses `python-vlc`, which is only a binding — it needs a real VLC runtime (`libvlc.dll` + plugins) to decode audio, found via VLC's installer or registry (see [Audio engines](#audio-engines)).
 
 There are two ways to install:
 
 ### Option A — pip (recommended)
 
+Install straight from the repository (needs `git`):
+
 ```bash
+pip install git+https://github.com/askformeal/CASCADE.git
+```
+
+Or from a downloaded copy — a clone, or an unpacked ZIP — install it from the project directory:
+
+```bash
+git clone https://github.com/askformeal/CASCADE.git
+cd CASCADE
 pip install .
 ```
 
-The `cascade` command will be available after installation. For development, run from the repo root:
+The `cascade` command will be available after installation. **Install it into a dedicated virtual environment**: the package ships a top-level `src` package, which collides with anything else that does the same in a shared interpreter.
+
+For development, run from the repo root instead of installing:
 
 ```bash
 python -m src
 ```
 
-**With the default engine you must install [VLC](https://www.videolan.org/vlc/) yourself.** CASCADE only ships the `python-vlc` binding; it locates the actual VLC runtime through VLC's installation. With `engine = miniaudio` no VLC installation is needed.
+**With the `vlc` engine you must install [VLC](https://www.videolan.org/vlc/) yourself; the default `miniaudio` engine needs none.** CASCADE only ships the `python-vlc` binding; it locates the actual VLC runtime through VLC's installation.
 
 ### Option B — portable build (`build.sh`)
 
@@ -100,7 +111,7 @@ Builds a self-contained folder (plus a `.zip`) into `dist/cascade-<version>/`, b
 | `cascade volume <pct>` | Set volume (0-100), or adjust relatively with a`+`/`-` prefix (e.g. `volume +5`, `volume -5`)                                         |
 | `cascade mute`         | Toggle mute                                                                                                                                   |
 
-Note: a negative seek time starts with `-`, which the command-line parser treats as an option flag — quote it to pass it through, e.g. `cascade seek "-1:30"`. Plain numbers like `seek -10` work without quotes.
+Note: the command-line parser treats a negative seek time, which starts with `-`, as an option flag. You can quote it to pass it through, e.g. `cascade seek "-1:30"`. Plain numbers like `seek -10` work without quotes.
 
 ### Library
 
@@ -124,9 +135,11 @@ Note: a negative seek time starts with `-`, which the command-line parser treats
 
 `cascade lib lyric fetch` downloads each song's lyric from an online source. Fetching several songs at once is slow and can exceed the frontend execution timeout (`execution_timeout`) — note that even if the request times out, the backend keeps downloading in the background and still writes the files. If you hit timeouts, raise `execution_timeout`; and keep to at most 4 songs per call, since downloads run with 4-way parallelism — beyond 4 they queue up instead of completing together.
 
+> **Note for users on mainland China networks:** when fetching lyrics online, it is recommended to enable `netease_skip_proxy`. The NetEase source is reachable directly from China, while proxy-only sources (LRCLIB, Musixmatch, etc.) sit behind the wall — so let NetEase connect directly and route the rest through `proxy`.
+
 `open` accepts a song alias, a library song name, a playlist name, or a file path.
 
-If a song's lyric is slightly out of sync with the audio, you can shift it with a **lyric offset**. `cascade lib lyric offset <song> <ms>` persists a per-song offset in the library: a positive value delays the lyric line, a negative one brings it earlier. The dashboard also lets you nudge the *current* song live without persisting anything — `]` / `[` step a temporary overlay by `100ms` and `\` resets it, handy for finding the right value before committing it with `lib lyric offset`. The persisted offset and the live overlay stack.
+If a song's lyric is slightly out of sync with the audio, you can shift it with a **lyric offset**. `cascade lib lyric offset <song> <ms>` persists a per-song offset in the library: a positive value delays the lyric line, a negative one brings it earlier. The dashboard also lets you nudge the *current* song live without persisting anything — `]` / `[` step a temporary overlay by `100ms` and `\` resets it. The persisted offset and the live overlay stack.
 
 ### Configuration
 
@@ -139,73 +152,20 @@ If a song's lyric is slightly out of sync with the audio, you can shift it with 
 | `cascade config open`                 | Open the config file with the system's default application (creates an empty one if missing) |
 | `cascade config path`                 | Show the path of the config file                                                             |
 
-`config` commands accept `-d/--direct` to bypass the backend and edit the config file locally (works when the backend is not running).
+`config` commands accept `-d/--direct` to bypass the backend and edit the config file locally (works when the backend is not running, but cannot edit config files of remote backends).
 
-Config file: `%LOCALAPPDATA%\cascade\cascade\config.toml` (Windows). It groups options into TOML sections — `[network]`, `[service]`, `[playback]`, `[dash]`, `[appearance]` and `[lyric]` — with `username` at the root of the file; `config set` writes into the right section for you. Options:
-
-| Option                                | Default                       | Description                                                                                            |
-| ------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `username`                          | `J. Doe`                    | Name shown in the welcome message                                                                      |
-| `backend_token`                     | *(empty)*                   | Token the backend verifies requests with; empty disables auth                                          |
-| `frontend_token`                    | *(empty)*                   | Token frontends send with requests                                                                     |
-| `backend_host` / `backend_port`   | `127.0.0.1` / `17891`     | Address the backend listens on                                                                         |
-| `frontend_host` / `frontend_port` | `127.0.0.1` / `17891`     | Address the frontend sends requests to                                                                 |
-| `connection_timeout`                | `3`                         | Timeout of frontend waiting for the backend's acknowledge (seconds)                                    |
-| `execution_timeout`                 | `30`                        | Timeout of frontend waiting for the backend's response (seconds)                                       |
-| `proxy`                             | *(empty)*                   | Proxy used when fetching lyrics online; empty uses the system default                                  |
-| `netease_skip_proxy`                | `false`                     | Connect to the NetEase lyric source directly, ignoring`proxy`                                        |
-| `hotkey`                            | `true`                      | Start the hotkey frontend with the backend                                                             |
-| `tray`                              | `true`                      | Start the tray icon frontend with the backend                                                          |
-| `lyric`                             | `true`                      | Start the lyric board frontend with the backend                                                        |
-| `engine`                            | `vlc`                       | Audio engine:`vlc` or `miniaudio` (see [Audio engines](#audio-engines))                             |
-| `default_volume`                    | `100`                       | Volume on start (0~100)                                                                                |
-| `default_shuffle`                   | `false`                     | Shuffle mode on start                                                                                  |
-| `default_online_lyric`              | `false`                     | Use the online lyric source on start                                                                   |
-| `player_timeout`                    | `1`                         | Timeout of backend waiting for a player action (seconds)                                               |
-| `pos_memorize_interval`             | `5`                         | Interval of memorized position updates (seconds)                                                       |
-| `dash_volume_step`                  | `5`                         | Volume increase/decrease step on the dashboard                                                         |
-| `dash_pos_step`                     | `5`                         | Position forward/backward step on the dashboard                                                        |
-| `dash_poster_width`                 | `80`                        | Width of the album cover in the dashboard's poster mode (columns)                                      |
-| `dash_poster_height`                | `64`                        | Height of the album cover in poster mode (pixels, 2 per terminal row)                                  |
-| `escape_char`                       | `true`                      | Use ANSI escape codes (colors) in the CLI and dashboard output                                         |
-| `cli_box_style`                     | `rounded`                   | Box style of the CLI                                                                                   |
-| `dash_box_style`                    | `rounded`                   | Box style of the dashboard                                                                             |
-| `dash_screen_buffer`                | `true`                      | Use the terminal alt-screen buffer for the dashboard                                                   |
-| `auto_dash_height`                  | `true`                      | Size the dashboard height from the terminal height                                                     |
-| `pause_hide_lyric`                  | `true`                      | Hide the lyric board when playback is paused                                                           |
-| `lyric_trans_bg`                    | `false`                     | Use a fully transparent window background (keyed out) instead of an opaque backdrop on the lyric board |
-| `lyric_hover_solid`                 | `true`                      | Turn the lyric board fully opaque with a solid background when hovered (can be turned off)             |
-| `lyric_height`                      | `70`                        | Height of the lyric board (pixels)                                                                     |
-| `lyric_x_offset`                    | `0`                         | Horizontal offset of the lyric board from screen center (negative = left, positive = right)            |
-| `lyric_font_family`                 | *(empty → system default)* | Font family of the lyric board                                                                         |
-| `lyric_font_size`                   | `20`                        | Font size of the lyric board                                                                           |
-| `lyric_font_bold`                   | `false`                     | Use a bold font on the lyric board                                                                     |
-| `lyric_font_color`                  | `#797979`                   | Font color of the lyric board (hex)                                                                    |
-| `lyric_bg_color`                    | `#111111`                   | Solid background color of the lyric board shown on hover (hex)                                         |
-| `lyric_opacity`                     | `40`                        | Lyric board opacity when not hovered (0~100, 100 = fully opaque)                                       |
-
-Values are validated on write; invalid ones are rejected. The default value is used when an option is not set or the stored value is invalid. Most options take effect on the next backend start; the timeout / interval / step options are read live on every use.
-
-The same options can be edited in a window instead of the terminal — see [Configure GUI](#configure-gui).
-
-> **Note for users on mainland China networks:** when fetching lyrics online, it is recommended to enable `netease_skip_proxy`. The NetEase source is reachable directly from China, while proxy-only sources (LRCLIB, Musixmatch, etc.) sit behind the wall — so let NetEase connect directly and route the rest through `proxy`.
-
-Besides downloading lyrics with `lib lyric fetch`, you can play with **live online lyrics**: toggle the lyric source to online (`cascade lyric`, or `z` in the dashboard) and, whenever the song being played has no local `.lrc`, its lyrics are fetched on the fly from online sources and shown as it plays — a `[Loading ...]` placeholder appears while a fetch is in flight. Live online lyrics are keyed by the song's path, so they work for non-library songs too, and are shown on both the floating lyric board and the dashboard. The startup source is controlled by `default_online_lyric`.
+See [docs/configuration.md](docs/configuration.md) for the config file and every option.
 
 ### Audio engines
 
-The player sits behind an engine interface; the `engine` option selects the implementation and is read when the backend builds its player, so changing it needs a restart (`cascade config set engine miniaudio`, then `cascade reboot`).
+| Engine                      | Requires                               | Decodes                               |
+| --------------------------- | -------------------------------------- | ------------------------------------- |
+| `vlc`                     | VLC 3.x installed                      | everything VLC does                   |
+| `miniaudio` *(default)* | nothing beyond the Python dependencies | MP3, MP2, FLAC, WAV, AIFF, OGG Vorbis |
 
-| Engine                | Requires                                             | Decodes                                                          |
-| --------------------- | ---------------------------------------------------- | ---------------------------------------------------------------- |
-| `vlc` *(default)* | VLC 3.x installed —`python-vlc` is only a binding | everything VLC does, i.e. every extension in`AUDIO_EXTENSIONS` |
-| `miniaudio`         | nothing beyond the Python dependencies               | MP3, MP2, FLAC, WAV, AIFF, OGG Vorbis                            |
+[miniaudio](https://github.com/mackron/miniaudio) lets CASCADE play without a VLC installation — but through a much smaller decoder. The AAC/M4A, WMA, Opus and AC3 families are not decodable, and neither are the lossless and rarer containers (APE, DSD, WavPack, ...). A song in one of those formats still scans into the library, and will fail at the moment it is opened, reported as "the audio file does not exist or is not valid".
 
-`miniaudio` goes through `just_playback`, a wrapper around [miniaudio](https://github.com/mackron/miniaudio), which makes CASCADE able to play without a VLC installation — but through a much smaller decoder. The AAC/M4A, WMA, Opus and AC3 families are not decodable, and neither are the lossless and rarer containers (APE, DSD, WavPack, ...). A song in one of those formats still scans into the library, because the library reads tags with `mutagen` and never asks the engine; it fails at the moment it is opened, reported as "the audio file does not exist or is not valid".
-
-VLC is the safer choice for a general library; `miniaudio` is for installations that cannot or will not have VLC. The active engine is reported as `engine` by `status` / `poll` and printed on the `Audio Engine:` line of `cascade status`.
-
-`python-vlc` locates the VLC runtime the moment it is imported: it honours `PYTHON_VLC_LIB_PATH` (full path to `libvlc.dll`) and `PYTHON_VLC_MODULE_PATH` (plugin directory), then looks for an installed VLC through the registry and the usual `Program Files\VideoLAN\VLC` locations, and as a last resort tries `libvlc.dll` next to the working directory. If none of that works, the backend fails to start and `cascade.log` carries the reason — `Failed to access VLC backend`. A message about `Could not find module … (or one of its dependencies)` means `libvlccore.dll`, or the Microsoft Visual C++ 2015+ Redistributable it needs, is missing next to `libvlc.dll`. The portable build sets both environment variables itself and ships the runtime in `vlc/`, so moving that folder out of the bundle is a way to produce this.
+`python-vlc` locates the VLC runtime the moment it is imported: it honours `PYTHON_VLC_LIB_PATH` (full path to `libvlc.dll`) and `PYTHON_VLC_MODULE_PATH` (plugin directory), then looks for an installed VLC through the registry and the usual `Program Files\VideoLAN\VLC` locations, and as a last resort tries `libvlc.dll` next to the working directory. If none of that works, the backend fails to start and `cascade.log` carries the reason — `Failed to access VLC backend`. A message about `Could not find module … (or one of its dependencies)` means `libvlccore.dll`, or the Microsoft Visual C++ 2015+ Redistributable it needs, is missing next to `libvlc.dll`. The portable build sets both environment variables itself and ships the runtime in `vlc/`, so moving that folder out of the bundle reproduces this error.
 
 ### Tray icon
 
@@ -213,15 +173,17 @@ The tray icon starts with the backend (unless the `tray` config option is off) a
 
 - Now-playing label and dynamic tooltip (song name + player status)
 - Open — pick a song file with a file dialog (all supported audio types)
-- Play/Pause (double-click), Previous/Next, Stop, Dice, Replay
+- Play/Pause (single-click), Previous/Next, Stop, Dice, Replay
 - Switch submenu — jump to any song in the current playlist
 - Playlists submenu — open any library playlist by name (plus `[Play All]`)
 - Volume presets (0/25/50/75/100%), Mute, checkable Shuffle/Loop states
 - The icon switches to an error variant for 1.5 s after a failed request
 
+![Tray icon menu](res/tray_screenshot.png)
+
 ### Dashboard
 
-The dashboard (`cascade dash`) is an interactive terminal UI. It shows the current song, a progress bar with elapsed/total time, volume bar and playback state, the current lyric line (the song's local lyric if one is set via `cascade lib lyric set`, or its live online lyric in online mode), the playlist (with the playing song and your selection highlighted), and is controlled entirely from the keyboard. A left column shows library information for the current song (duration, metadata, tech fields, aliases and playlists). It starts its own frontend process and uses the same socket protocol as the other frontends. Pressing `f` switches to poster mode: the whole layout is replaced by the current song's album cover, drawn as colored half-blocks sized to `dash_poster_width` × `dash_poster_height` and clamped to the terminal. The cover comes from the backend (see `get_cover` in [docs/protocol.md](docs/protocol.md)), which reads it once per song from the file's tags or from a cover image next to it; songs without one show a bundled placeholder.
+The dashboard (`cascade dash`) is an interactive terminal UI. It shows the playback status, the songs in the current playlist, and information about the current song.
 
 Screenshot:
 
@@ -281,13 +243,17 @@ Keys (defined in `DASH_KEY_MAP` in `src/constants/dash.py`):
 
 ### Lyric board
 
-The lyric board is a floating always-on-top window that shows the current lyric line of the playing song. It starts with the backend (unless the `lyric` config option is off) and follows the backend's playback state (hidden while stopped, optionally hidden while paused via `pause_hide_lyric`). Its font, color, size and screen position are configurable (see the `lyric_*` options above). By default it rests at 40% opacity on a plain opaque backdrop and, when the mouse hovers over it (or within a 30 px ring around it), turns fully opaque with a solid background behind the text (`lyric_bg_color`), so it stays out of the way while you work and sharpens when you need it. Both the hover solidification (`lyric_hover_solid`) and the transparent backdrop (`lyric_trans_bg`) can be turned off.
+The lyric board is a floating always-on-top window that shows the current lyric line of the playing song. It starts with the backend (unless the `lyric` config option is off) and follows the backend's playback state. Its font, color, size and screen position are configurable (see the `lyric_*` options in [docs/configuration.md](docs/configuration.md)). By default it rests at 40% opacity on a plain opaque backdrop and, when the mouse hovers over it, turns fully opaque with a solid background behind the text (`lyric_bg_color`). Both the hover solidification (`lyric_hover_solid`) and the transparent backdrop (`lyric_trans_bg`) can be turned off.
+
+![Floating lyric board](res/lyric_board_screenshot.png)
 
 ### Configure GUI
 
-The configure GUI is a fixed-size tkinter window over the config file. Every option in `CONFIG_SCHEME` gets a row — its name, its value, where that value comes from (a grey `default value` chip or a green `configure file` chip) and an edit button — inside a scrolling list; an option with no value shows a grey `<Empty>` in place of the chip. The mouse wheel scrolls the list while the pointer is over it, `F5` or the refresh button re-reads the options and keeps the scroll position, and `Escape` closes the window. The edit button opens a pop-up (`Edit "<option>"`) showing the option's type, source and description next to an editable value and the `Confirm`, `Unset` and `Cancel` buttons.
+The configure GUI is a fixed-size window over the config file, making the options in [docs/configuration.md](docs/configuration.md) easy to set and unset.
 
-It can read and write either through the backend or directly, toggled with `r` or the button in the top-right corner (green while remote, red while local) — **remote** (the default) sends `config.list` / `config.set` / `config.unset`, so it edits the config file of the machine the backend runs on; **local** does the same in-process, like the CLI's `--direct`, and needs no backend at all. The two routes differ only in whose `config.toml` is written.
+![Configure GUI](res/config_gui_screenshot.png)
+
+It can read and write either through the backend or directly. **remote** sends `config.list` / `config.set` / `config.unset`, so it edits the config file of the machine the backend runs on; **local** does the same in-process, like the CLI's `--direct`, and needs no backend at all. The two routes differ only in whose `config.toml` is written.
 
 It is not spawned with the backend — start it yourself from the repo root:
 
@@ -297,11 +263,11 @@ python -m src.frontend.config_gui
 
 In a portable build, `runtime\python.exe -m src.frontend.config_gui` from the bundle root. It logs to `cascade-config-gui.log`.
 
+Will soon be added as a CLI command.
+
 ## Architecture
 
-- **Backend** (`src/backend/`) — owns the audio engine (`playback/`: `base_engine.py` declares the `BaseEngine` ABC, `engine.py` holds the engine flow shared by both implementations as a mixin, and `vlc_engine.py` / `mini_engine.py` implement the decoding, selected by the `engine` config option; session state, lyrics and cover art live in their own mixins) and the SQLite database (`database/`, split into per-domain mixins), listens on `127.0.0.1:17891` for JSON requests over a socket. Action handlers live in `handlers/` and dispatch through a `ROUTER` table keyed by action name; playback state is held in the `Playback` class and injected into handlers via a `Context`.
-- **Frontends** (`src/frontend/`) — `cli/` (the `cascade` CLI), `hotkey.py` (media key hotkeys), `tray.py` (system tray icon), `dash/` (interactive dashboard), `lyric.py` (floating lyric board), `config_gui/` (configure GUI window). They send action requests to the backend and format responses. All frontends share `client.py` and `song_output.py`.
-- **Protocol** — all communication is JSON over a length-prefixed socket connection. See [docs/protocol.md](docs/protocol.md).
+See [docs/architecture.md](docs/architecture.md) for the backend/frontend layout.
 
 ## Data
 
