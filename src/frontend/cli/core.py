@@ -3,7 +3,6 @@ from pathlib import Path
 import readchar
 from time import sleep
 
-from src.config import CONFIG
 from src.sentinels import SENTINELS
 from src.frontend.client import send_request, test_alive
 from src.process import start, kill
@@ -12,10 +11,15 @@ from src.constants.frontend import ATTACHMENT_REQUIRED_ACTIONS
 from src.config_manager import CONFIG_MANAGER
 from src.frontend.song_output import SongOutput
 from src.utils.escape_code import ESCAPE_CODE as EC
-from src.utils.tui import box
 from src.utils.time_ import format_time
 from .build_parser import build_parser
 from .translate import translate
+from .show_info import (
+    cli_box,
+    show_notifies,
+    show_option_info,
+    show_song_info
+    )
 
 def main():
     is_reboot = False
@@ -26,7 +30,7 @@ def main():
 
     if args['action'] == 'start':
         notifies = _start_backend(CASCADE_DEV=int(args['dev']), CASCADE_CONTINUE=int(args['continue']))[1]
-        _show_notifies(notifies)
+        show_notifies(notifies)
 
     elif args['action'] == 'kill':
         print(f'Killing CASCADE backend processes...')
@@ -114,13 +118,13 @@ def main():
         failed = response.get('failed', [])
         notifies = response.get('notifies', [])
 
-        _show_notifies(notifies)
+        show_notifies(notifies)
 
         if code is None or msg is None:
             print('[Failed]: Invalid response received from CASCADE backend')
 
         elif code == 0:
-            print(_cli_box(f'{EC.bold}{EC.green}[Succeeded]{EC.rs}: {response['msg']}'))
+            print(cli_box(f'{EC.bold}{EC.green}[Succeeded]{EC.rs}: {response['msg']}'))
 
             if action == 'exit' and is_reboot:
                 print('Waiting for backend to fully exit...')
@@ -135,7 +139,7 @@ def main():
                 print('Starting backend...')
                 notifies = _start_backend(CASCADE_DEV=int(args['dev']), CASCADE_CONTINUE=int(args['continue']))[1]
 
-                _show_notifies(notifies)
+                show_notifies(notifies)
 
             elif action == 'lib.add' and isinstance(attachment, list):
                 for add_response in attachment:
@@ -171,29 +175,29 @@ def main():
                         if output.dev:
                             text += '\n\nDEVELOPMENT MODE ON'
 
-                        print(_cli_box(text))
+                        print(cli_box(text))
 
                     elif action == 'list':
-                        _show_song_info(attachment, 'No songs are being played', show_num=True)
+                        show_song_info(attachment, 'No songs are being played', show_num=True)
 
                     elif action == 'lib.info':
-                        _show_song_info(attachment, 
+                        show_song_info(attachment, 
                                         show_tech=True, 
                                         show_aliases=args['show_aliases'],
                                         show_playlists=args['show_playlists'])
 
                     elif action == 'lib.list':
-                        _show_song_info(attachment, 
+                        show_song_info(attachment, 
                                         'No songs in library', 
                                         show_tech=args['show_tech'],
                                         show_aliases=args['show_aliases'], 
                                         show_playlists=args['show_playlists'])
 
                     elif action == 'lib.search':
-                        _show_song_info(attachment, 'No results to be shown')
+                        show_song_info(attachment, 'No results to be shown')
 
                     elif action == 'lib.prune':
-                        _show_song_info(attachment, 'No songs to be shown')
+                        show_song_info(attachment, 'No songs to be shown')
 
                     elif action == 'lib.scan' and args['dry_run']:
                         if len(attachment) > 0:
@@ -215,11 +219,11 @@ def main():
                         for timestamp, text in attachment.get('lyric', []):
                             lines.append(f"[{format_time(timestamp)}] {text.strip().replace('\n', ' \\ ')}")
 
-                        print(_cli_box('\n'.join(lines)))
+                        print(cli_box('\n'.join(lines)))
 
                     elif action == 'lib.playlist.list':
                         if args['playlist'] is not None:
-                            _show_song_info(attachment, 
+                            show_song_info(attachment, 
                                             'Playlist empty',
                                             show_tech=args['show_tech'],
                                             show_aliases=args['show_aliases'],
@@ -233,38 +237,38 @@ def main():
                                 print('No playlists in library')
                     elif action == 'config.list':
                         for option_info in attachment:
-                            _show_option_info(option_info)
+                            show_option_info(option_info)
 
                     elif action == 'config.show':
-                        _show_option_info(attachment)
+                        show_option_info(attachment)
 
                     elif action == 'config.path':
-                        print(_cli_box(attachment))
+                        print(cli_box(attachment))
 
         elif code == 1:
-            print(_cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs}: {response['msg']}'))
+            print(cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs}: {response['msg']}'))
             if is_reboot:
                 print('Failed to exit backend, rebooting aborted')
 
         elif code == 2:
-            print(_cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs} Failed to connect to CASCADE backend. You can try to use the start subcommand to start it'))
+            print(cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs} Failed to connect to CASCADE backend. You can try to use the start subcommand to start it'))
 
         elif code == 3:
-            print(_cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs}: received an unexpected default response code from CASCADE backend which is not to be used under any circumstances. Please report this error'))
+            print(cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs}: received an unexpected default response code from CASCADE backend which is not to be used under any circumstances. Please report this error'))
 
         elif code == 4:
-            print(_cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs}: CASCADE backend is exiting'))
+            print(cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs}: CASCADE backend is exiting'))
 
         elif code == 5:
-            print(_cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs}: Token rejected, authorization failed'))
+            print(cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs}: Token rejected, authorization failed'))
 
         else:
-            print(_cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs}: Unknown response code \"{code}\"'))
+            print(cli_box(f'{EC.bold}{EC.red}[Failed]{EC.rs}: Unknown response code \"{code}\"'))
 
         if len(failed) > 0:
             lines = [f'{EC.red}There are failed actions ({len(failed)}):{EC.rs}\n']
             lines += list(map(lambda x: f'  {x['msg']}', failed))
-            print(_cli_box('\n'.join(lines)))
+            print(cli_box('\n'.join(lines)))
 
         print()
         return code
@@ -286,81 +290,6 @@ def _start_backend(**kwargs):
     elif result is SENTINELS.FAILED_START_BACKEND:
         print(f'Failed to start CASCADE backend. Examine log files for more information')
     return result, notifies
-
-def _cli_box(*args, **kwargs):
-    return box(*args, style=CONFIG.cli_box_style, **kwargs)
-
-def _show_notifies(notifies=None):
-    if notifies is None:
-        notifies = []
-
-    if len(notifies) > 0:
-        lines = [
-            f'Notifies from CASCADE backend ({len(notifies)}):'
-        ]
-        lines += list(map(lambda x: f'  {x}', notifies))
-        print(_cli_box('\n'.join(lines)))
-
-def _show_option_info(info):
-    name = info.get('name', 'N/A')
-    type_ = info.get('type', 'N/A')
-    value = info.get('value', 'N/A')
-    source = info.get('source', 'N/A')
-    default = info.get('default', 'N/A')
-    description = info.get('description', 'No Description')
-    
-    lines = [
-        f'Name: {name}',
-        f'Type: {type_}',
-        f'Value: {value}',
-        f'Source: {source}',
-        f'Default Value: {default}',
-        f'\n\"{description}\"'
-        ]
-    print(_cli_box('\n'.join(lines)))
-
-def _show_song_info(info, empty_msg='No information to be shown', show_aliases=False, show_playlists=False, show_num=False, show_tech=False):
-    if not isinstance(info, (list, tuple)):
-        info = (info,)
-    if len(info) > 0:
-        for i, song in enumerate(info):
-            output = SongOutput(song)
-
-            if show_num:
-                lines = [f'{i+1}. {output.display_name}']
-            else:
-                lines = [f'{output.display_name}']
-
-            lines += [
-                f'\nName: {output.name}',
-                f'Artist: {output.artist}',
-                f'Album: {output.album}',
-                f'\nDuration: {output.duration}',
-            ]
-
-            if show_tech:
-                lines += [
-                    f'\nBitrate: {output.bitrate} kbps',
-                    f'Sample Rate: {output.sample_rate}',
-                    f'Channels: {output.channels}',
-                ]
-
-            lines += [
-                f'\nPath: {output.path}',
-                f'Lyric Path: {output.lyric}',
-                f'Lyric Offset: {output.lyric_offset}',
-                f'\nLibrary ID: {output.lib_id}'
-            ]
-
-            if show_aliases:
-                lines += [f"\nAliases ({output.aliases_num}): {output.aliases}"]
-
-            if show_playlists:
-                lines += [f"\nPlaylists ({output.playlists_num}): {output.playlists}"]
-
-            print(_cli_box('\n'.join(lines)))
-    else:
-        print(empty_msg)
 
 if __name__ == '__main__':
     sys.exit(main())
