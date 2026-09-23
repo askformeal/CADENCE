@@ -24,8 +24,12 @@ COPY_COLOR = 'light blue'
 CONFIRM_COLOR = 'light green'
 CANCEL_COLOR = 'light grey'
 UNSET_COLOR = 'salmon'
+ON_COLOR_BG = "lime"
+ON_COLOR_FG = "black"
+OFF_COLOR_BG = 'red'
+OFF_COLOR_FG = 'white'
 
-BALLOON_BG = 'white'
+BALLOON_BG = '#FFFFE1'
 BALLOON_WRAP = 200
 BALLOON_OFFSET_X = 1
 BALLOON_OFFSET_Y = 1

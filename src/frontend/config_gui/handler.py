@@ -60,6 +60,7 @@ class HandlerMixin:
                 )
 
     def _handle_response(self, response, update=True):
+        logger.info(f'Handle response: {response}')
         if response['code'] == 0:
             if update:
                 self._update_options()

@@ -3,7 +3,7 @@ from src.constants.config import CONFIG_SCHEME
 from src.constants.paths import CONFIG_PATH
 from src.sentinels import SENTINELS
 from src import gen_response
-from src.types import get_type_name
+from src.types import get_type_name, get_type_codename
 from src.utils.misc import open_file
 
 class ConfigManager:
@@ -32,6 +32,7 @@ class ConfigManager:
             }[source]
 
             type_ = get_type_name(CONFIG_SCHEME[name]['type'])
+            type_raw = get_type_codename(CONFIG_SCHEME[name]['type'])
             default = CONFIG_SCHEME[name]['default']
             description = CONFIG_SCHEME[name]['description']
 
@@ -42,6 +43,7 @@ class ConfigManager:
                     'value': value, 
                     'source': source,
                     'type': type_,
+                    'type_raw': type_raw,
                     'default': default, 
                     'description': description
                     }

@@ -93,5 +93,14 @@ def get_type_name(obj):
     else:
         from src.constants.misc import READABLE_TYPE_NAMES
         return READABLE_TYPE_NAMES.get(obj, getattr(obj, '__name__', str(obj)))
+
+def get_type_codename(obj):
+    if isinstance(obj, IterType):
+        return 'iter'
+    elif isinstance(obj, StrChoiceList):
+        return 'choice'
+    else:
+        from src.constants.misc import TYPE_CODENAMES
+        return TYPE_CODENAMES.get(obj, getattr(obj, '__name__', str(obj)))
         
 CONVERTER = Converter()

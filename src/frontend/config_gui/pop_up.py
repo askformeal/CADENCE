@@ -10,7 +10,11 @@ from src.constants.config_gui import (
     FONT_SIZE,
     CONFIRM_COLOR,
     CANCEL_COLOR,
-    UNSET_COLOR
+    UNSET_COLOR,
+    ON_COLOR_BG,
+    ON_COLOR_FG,
+    OFF_COLOR_BG,
+    OFF_COLOR_FG
     )
 
 class Popup(tk.Toplevel):
@@ -19,11 +23,16 @@ class Popup(tk.Toplevel):
 
         self.set_value = master.set_value
         self.unset = master.unset
+        self.balloon = master.balloon
+
         self.name = info['name']
         self.value = info['value']
         self.type_ = info['type']
+        self.type_raw = info['type_raw']
         self.source = info['source']
         self.desc = info['description']
+
+        self.switch_on = False
 
         self.title(f'Edit \"{self.name}\"')
         x = master.winfo_x() + POP_UP_POS_X
@@ -78,13 +87,26 @@ class Popup(tk.Toplevel):
         value_frame.pack(pady=(10, 0), fill='x')
         
         tk.Label(value_frame, text='Value', font=self.font).pack(side='left')
-        self.value_entry = tk.Entry(
-            value_frame, 
-            font=self.font,
-            relief='raised'
-            )
-        self.value_entry.pack(side='right', padx=(20, 10))
-        self.value_entry.insert(tk.END, str(self.value))
+
+        if self.type_raw == 'bool':
+            switch = tk.Button(
+                value_frame,
+                font=self.font,
+                command=lambda *_: self._toggle_switch(switch)
+                )
+            switch.pack(side='right', padx=(20, 10))
+            self.switch_on = self.value
+            self._apply_switch(switch)
+            self._get_val = self._get_switch
+        else:
+            entry = tk.Entry(
+                value_frame, 
+                font=self.font,
+                relief='raised'
+                )
+            entry.pack(side='right', padx=(20, 10))
+            entry.insert(tk.END, str(self.value))
+            self._get_val = entry.get
 
     def _build_source(self):
         source_frame = tk.Frame(self.main_frame)
@@ -176,10 +198,31 @@ class Popup(tk.Toplevel):
             bg=UNSET_COLOR,
             activebackground=UNSET_COLOR
             )
-        unset_button.pack(side='right', padx=(0, 10))
+        unset_button.pack(side='left', padx=(10, 30))
+
+    def _toggle_switch(self, switch):
+        self.switch_on = not self.switch_on
+        self._apply_switch(switch)
+
+    def _apply_switch(self, switch):
+        if self.switch_on:
+            switch.config(
+                text='On', 
+                bg=ON_COLOR_BG,
+                fg=ON_COLOR_FG
+                )
+        else:
+            switch.config(
+                text='Off',
+                bg=OFF_COLOR_BG,
+                fg=OFF_COLOR_FG
+                )
+
+    def _get_switch(self):
+        return str(self.switch_on)
 
     def _on_confirm(self, *_, force=True):
-        value = self.value_entry.get()
+        value = self._get_val()
         if value != str(self.value) or force:
             self.set_value(self.name, value)
         self.destroy()

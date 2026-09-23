@@ -301,7 +301,7 @@ class ConfigGUI(tk.Tk, HandlerMixin):
     def _send_config_request(self, action, **kwargs):
         request = {'action': action, 'source': 'config_gui', 'notify_support': False, **kwargs}
         response = send_request(**request)
-        logger.info(f'Sent request: {request}, response received: {response}')
+        logger.info(f'Sent request: {request}')
         return response
 
     def run(self):

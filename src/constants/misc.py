@@ -19,6 +19,20 @@ READABLE_TYPE_NAMES = {
     CONVERTER.box_style: 'box style',
 }
 
+TYPE_CODENAMES = {
+    str: 'str',
+    int: 'int',
+    bool: 'bool',
+    CONVERTER.boolean: 'bool',
+    CONVERTER.port: 'port',
+    CONVERTER.pos_int: 'pos_int',
+    CONVERTER.non_neg_int: 'no_neg_integer',
+    CONVERTER.timeout: 'pos_float',
+    CONVERTER.percentage: 'percent',
+    CONVERTER.hex_color: 'hex_color',
+    CONVERTER.box_style: 'box_style',
+}
+
 MIN_TIMEOUT = 0.01
 
 WINDOWS_ILLEGAL = r'[<>:"|?*]'
