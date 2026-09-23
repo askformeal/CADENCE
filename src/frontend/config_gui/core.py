@@ -30,14 +30,20 @@ from src.constants.config_gui import (
     COPY_COLOR,
     RESIZE,
     ICON_SIZE,
-    FONT_SIZE
+    FONT_SIZE,
+
+    BALLOON_BG, 
+    BALLOON_WRAP,
+    BALLOON_OFFSET_X,
+    BALLOON_OFFSET_Y,
+    BALLOON_WINDUP,
 )
 from src.config import CONFIG
 from src.config_manager import CONFIG_MANAGER
 from src.frontend.client import send_request
-from .scrolled_frame import ScrolledFrame
+from src.frontend.tkinter_widget.scrolled_frame import ScrolledFrame
+from src.frontend.tkinter_widget.balloon import Balloon
 from .pop_up import Popup
-from .balloon import Balloon
 from .handler import HandlerMixin
 
 class ConfigGUI(tk.Tk, HandlerMixin):
@@ -57,7 +63,14 @@ class ConfigGUI(tk.Tk, HandlerMixin):
         self.remote = CONFIG.config_default_remote
         self.options = {}
 
-        self.balloon = Balloon(self)
+        self.balloon = Balloon(
+            self,
+            bg=BALLOON_BG,
+            wrap_len=BALLOON_WRAP,
+            offset_x=BALLOON_OFFSET_X,
+            offset_y=BALLOON_OFFSET_Y,
+            windup=BALLOON_WINDUP
+            )
 
         self._build_window()
         logger.debug(f'{__name__} initialized')
