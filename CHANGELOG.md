@@ -9,10 +9,21 @@
 > - The environment variables `CADENCE_DEV` / `CADENCE_CONTINUE` are now `CASCADE_DEV` / `CASCADE_CONTINUE`.
 > - The portable build now writes `dist/cascade-<version>/` and a `cascade.cmd` launcher.
 
+### Added
+
+- **A new `config_default_remote` option** (`[config_gui]`, `true` by default) decides whether the configure GUI starts in remote mode; that mode was a hardcoded constant before. Like the service switches it is read once, when the window is created, so setting it inside the GUI takes effect the next time the GUI starts.
+- **The configure GUI answers the mouse.** Hovering a row's name shows the option's description, hovering its value shows the type a converter enforces, and the edit button keeps `Edit "<option>"`. A balloon lands at the widget's bottom-right corner and flips to the opposite side when that would leave the screen, clamped to the screen edge if even the flipped position does not fit. The offset is folded into the anchor before the check, and the size is read with `winfo_reqwidth()` / `winfo_reqheight()` — the balloon window is reused, and a hidden window still reports the size of the *previous* tooltip.
+- **The configure GUI says when there is nothing to list** — `No options available` in the empty pane, with the list no longer reacting to the mouse wheel while it has no rows.
+
 ### Changed
 
+- The configure GUI window is 800x800 at `+300+20` (was 800x900 at `+300+100`).
 - The name follows through everywhere it was spelled out: the package and console-script name, the argparse program name, the tray and lyric-board titles, the dashboard header, the database and log file names, the save-file paths, the start/exit/status messages and the whole documentation.
 - The GitHub repository moved to [`askformeal/CASCADE`](https://github.com/askformeal/CASCADE) — the old URL redirects, and `REPO_LINK`, which the CLI prints in its `--help` epilog, points at the new one.
+
+### Fixed
+
+- A failed refresh in the configure GUI reports the failure in a dialog. The response used to be ignored, so a dead backend left the pane empty without a word.
 
 ## [0.53.1] - 2026-09-20
 

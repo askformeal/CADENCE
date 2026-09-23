@@ -253,7 +253,7 @@ The configure GUI is a fixed-size window over the config file, making the option
 
 ![Configure GUI](res/config_gui_screenshot.png)
 
-It can read and write either through the backend or directly. **remote** sends `config.list` / `config.set` / `config.unset`, so it edits the config file of the machine the backend runs on; **local** does the same in-process, like the CLI's `--direct`, and needs no backend at all. The two routes differ only in whose `config.toml` is written.
+It can read and write either through the backend or directly. **remote** sends `config.list` / `config.set` / `config.unset`, so it edits the config file of the machine the backend runs on; **local** does the same in-process, like the CLI's `--direct`, and needs no backend at all. The two routes differ only in whose `config.toml` is written. It starts in the mode `config_default_remote` selects — `remote` by default — and every row answers the mouse: the option's description on its name, the type a converter enforces on its value.
 
 It is not spawned with the backend — start it yourself from the repo root:
 

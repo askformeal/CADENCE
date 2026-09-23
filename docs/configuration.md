@@ -6,7 +6,7 @@ CASCADE reads its options from a TOML file. The `config` commands that read and 
 
 `%LOCALAPPDATA%\cascade\cascade\config.toml` on Windows (the location is platform-dependent, managed by `platformdirs`). `cascade config path` prints it, and `cascade config open` opens it in the system's default application, creating an empty file if there is none.
 
-Options are grouped into TOML sections — `[network]`, `[service]`, `[playback]`, `[dash]`, `[appearance]` and `[lyric]` — with `username` at the root of the file. `cascade config set` writes each option into its section for you.
+Options are grouped into TOML sections — `[network]`, `[service]`, `[playback]`, `[dash]`, `[appearance]`, `[lyric]` and `[config_gui]` — with `username` at the root of the file. `cascade config set` writes each option into its section for you.
 
 ## Options
 
@@ -50,5 +50,6 @@ Options are grouped into TOML sections — `[network]`, `[service]`, `[playback]
 | `lyric_font_color`                  | `appearance`         | `#797979`                   | Font color of the lyric board (hex)                                                                    |
 | `lyric_bg_color`                    | `appearance`         | `#111111`                   | Solid background color of the lyric board shown on hover (hex)                                         |
 | `lyric_opacity`                     | `appearance`         | `40`                        | Lyric board opacity when not hovered (0~100, 100 = fully opaque)                                       |
+| `config_default_remote`               | `config_gui`           | `true`                        | Start the configure GUI in remote mode                                                                 |
 
-The default value is used when an option is not set or the stored value is invalid. Most options take effect on the next backend start; the timeout / interval / step options are read live on every use.
+The default value is used when an option is not set or the stored value is invalid. Most options take effect on the next backend start; the timeout / interval / step options are read live on every use, and `config_default_remote` on the next configure GUI start.

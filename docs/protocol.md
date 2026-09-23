@@ -91,7 +91,7 @@ Read and modify the configuration file. These actions operate on the options def
 
 #### Options
 
-Options are grouped into TOML sections in `config.toml` — `[network]`, `[service]`, `[playback]`, `[dash]`, `[appearance]` and `[lyric]` — except `username`, which sits at the root of the file. The table below lists every option in the order `config.list` returns them.
+Options are grouped into TOML sections in `config.toml` — `[network]`, `[service]`, `[playback]`, `[dash]`, `[appearance]`, `[lyric]` and `[config_gui]` — except `username`, which sits at the root of the file. The table below lists every option in the order `config.list` returns them.
 
 | Option | Type | Section | Default | Description |
 |---|---|---|---|---|
@@ -135,10 +135,11 @@ Options are grouped into TOML sections in `config.toml` — `[network]`, `[servi
 | `lyric_font_color` | hex color | appearance | `#797979` | Font color of the lyric board (hex) |
 | `lyric_bg_color` | hex color | appearance | `#111111` | Solid background color of the lyric board shown on hover (hex) |
 | `lyric_opacity` | percentage (0~100) | appearance | `40` | Lyric board opacity when not hovered (100 = fully opaque) |
+| `config_default_remote` | boolean | config_gui | `true` | Whether the configure GUI starts in remote mode |
 
 Types are enforced by the converters in `src/types.py`; a value that does not satisfy its type is rejected on `config.set` and falls back to the default when read from a hand-edited file. The default value itself does not go through the converter.
 
-Effective timing differs per option. Every access re-reads the config file, so an option that is consulted while running (the timeouts, `player_timeout`, `pos_memorize_interval`, the dashboard steps) takes effect immediately. What is read once, while something is being built, keeps its value until that component is restarted: the hosts and ports when the backend binds its socket, `engine`, `default_volume`, `default_shuffle`, `default_online_lyric` and `username` when the backend constructs its player, the service switches (`hotkey`, `tray`, `lyric`) when the CLI starts the frontends, and the lyric board's font, size and geometry when its window is created.
+Effective timing differs per option. Every access re-reads the config file, so an option that is consulted while running (the timeouts, `player_timeout`, `pos_memorize_interval`, the dashboard steps) takes effect immediately. What is read once, while something is being built, keeps its value until that component is restarted: the hosts and ports when the backend binds its socket, `engine`, `default_volume`, `default_shuffle`, `default_online_lyric` and `username` when the backend constructs its player, the service switches (`hotkey`, `tray`, `lyric`) when the CLI starts the frontends, the configure GUI's remote flag when its window is created, and the lyric board's font, size and geometry when its window is created.
 
 The CLI can also operate on the config file without the backend, with `cascade config … --direct`; the actions above are the backend-side path, which is what a remote frontend uses.
 
