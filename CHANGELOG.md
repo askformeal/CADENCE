@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## [Unreleased]
+## [0.54.0] - 2026-09-23
 
 > **⚠️ Breaking Changes**
 >
