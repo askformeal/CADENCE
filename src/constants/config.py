@@ -248,4 +248,10 @@ CONFIG_SCHEME = {
         'default': 40,
         'description': 'Lyric board opacity (0~100)'
     },
+    'config_default_remote': {
+        'type': CONVERTER.boolean,
+        'section': 'config_gui',
+        'default': True,
+        'description': 'Whether to enable remote mode for configure GUI by default'
+    }
 }

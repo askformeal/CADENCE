@@ -13,11 +13,12 @@ from src.constants.paths import (
     COPY_PATH_ICON_PATH
     )
 from src.constants.config_gui import (
-    INIT_REMOTE,
     TITLE,
     WIDTH, HEIGHT,
     POS_X, POS_Y,
+
     EDIT_COLOR,
+    NO_OPTION_COLOR,
     VALUE_COLOR,
     DEFAULT_VALUE_COLOR,
     CONFIG_FILE_COLOR,
@@ -31,6 +32,7 @@ from src.constants.config_gui import (
     ICON_SIZE,
     FONT_SIZE
 )
+from src.config import CONFIG
 from src.config_manager import CONFIG_MANAGER
 from src.frontend.client import send_request
 from .scrolled_frame import ScrolledFrame
@@ -52,7 +54,7 @@ class ConfigGUI(tk.Tk, HandlerMixin):
         self.bind('<F5>', self._update_options)
         self.bind('<r>', self._toggle_remote)
 
-        self.remote = INIT_REMOTE
+        self.remote = CONFIG.config_default_remote
         self.options = {}
 
         self.balloon = Balloon(self)
@@ -114,14 +116,14 @@ class ConfigGUI(tk.Tk, HandlerMixin):
         main_frame = tk.Frame(self)
         main_frame.pack(padx=10, pady=10, fill='both', expand=True)
 
-        self.option_scroll = ScrolledFrame(
+        self.option_frame = ScrolledFrame(
             main_frame, 
             relief='groove', 
             bd=3,
             padx=5,
-            pady=5
+            pady=5,
             )
-        self.option_scroll.pack(fill='both', expand=True)
+        self.option_frame.pack(fill='both', expand=True)
 
         self._update_options()
 
@@ -164,8 +166,39 @@ class ConfigGUI(tk.Tk, HandlerMixin):
             response = CONFIG_MANAGER.get_all_option_info()
             info = response.attachment
 
+        self._handle_response(response, update=False)
+
         logger.debug(f'Fetched info of {len(info)} option(s) from {route}')
 
+        no_option_font = tkfont.Font(
+            size=FONT_SIZE + 2,
+            weight='bold'
+        )
+
+        self.options = {}
+        old_yview = self.option_frame.yview()[0]
+        self.option_frame.clear()
+        if len(info) == 0:
+            self.option_frame.lock_scroll = True
+            tk.Label(
+                self.option_frame.frame,
+                text='No options available',
+                font=no_option_font,
+                fg=NO_OPTION_COLOR
+                ).pack(pady=(20,0))
+        else:
+            self.option_frame.lock_scroll = False
+            for option in info:
+                self._build_option(option).pack(fill='x', pady=5)
+
+                name = option['name']
+                self.options[name] = option
+
+        self.option_frame.yview_moveto(old_yview)
+
+        logger.info(f'Updated option(s)')
+
+    def _build_option(self, option):
         font = tkfont.Font(
             size=FONT_SIZE
         )
@@ -174,84 +207,79 @@ class ConfigGUI(tk.Tk, HandlerMixin):
             slant='italic'
         )
 
-        self.options = {}
-        old_yview = self.option_scroll.yview()[0]
-        self.option_scroll.clear()
-        for option in info:
-            name = option['name']
-            value = option['value']
-            source = option['source']
+        name = option['name']
+        value = option['value']
+        source = option['source']
+        type_ = option['type']
+        desc = option['description']
 
-            self.options[name] = option
-
-            option_frame = tk.Frame(
-                self.option_scroll.frame, 
-                relief='solid',
-                bd = 3,
-                padx=10,
-                pady=10,
+        frame = tk.Frame(
+            self.option_frame.frame, 
+            relief='solid',
+            bd = 3,
+            padx=10,
+            pady=10,
+            )
+        
+        name_label = tk.Label(
+            frame,
+            text=name,
+            font=font,
+            padx=3,
+            pady=3
+            )
+        name_label.pack(side='left')
+        self.balloon.bind_widget(name_label, desc)
+        
+        value_label = tk.Label(frame, padx=5, pady=3)
+        value_label.pack(side='left', padx=(20,0))
+        if value == '':
+            value_label.config(
+                text='<Empty>', 
+                font=empty_font,
+                fg='grey',
                 )
-
-            name_label = tk.Label(
-                option_frame,
-                text=name,
+        else:
+            value_label.config(
+                text=str(value),
                 font=font,
-                padx=3,
-                pady=3
-                )
-            name_label.pack(side='left')
+                relief='groove',
+                bd=2,
+                bg=VALUE_COLOR,
+            )
+        self.balloon.bind_widget(value_label, f'Type: {type_}')
+        
+        
+        edit_button = tk.Button(
+            frame,
+            image=self.edit_image,
+            bg=EDIT_COLOR,
+            command=lambda x=name: self._on_edit(x)
+            )
+        
+        edit_button.pack(side='right', padx=(20,10))
+        self.balloon.bind_widget(edit_button, f'Edit \"{name}\"')
+        
+        
+        if source == 'default value':
+            source_bg = DEFAULT_VALUE_COLOR
+        elif source == 'configure file':
+            source_bg = CONFIG_FILE_COLOR
+        else:
+            source_bg = INVALID_SOURCE_COLOR
+        
+        source_label = tk.Label(
+            frame,
+            text=source.capitalize(),
+            font=font,
+            relief='sunken',
+            bg=source_bg,
+            padx=3,
+            pady=3
+            )
+        source_label.pack(side='right', padx=(20,0))
 
-            value_label = tk.Label(option_frame, padx=5, pady=3)
-            value_label.pack(side='left', padx=(20,0))
-            if value == '':
-                value_label.config(
-                    text='<Empty>', 
-                    font=empty_font,
-                    fg='grey',
-                    )
-            else:
-                value_label.config(
-                    text=str(value),
-                    font=font,
-                    relief='groove',
-                    bd=2,
-                    bg=VALUE_COLOR,
-                )
-
-                
-            edit_button = tk.Button(
-                option_frame,
-                image=self.edit_image,
-                bg=EDIT_COLOR,
-                command=lambda x=name: self._on_edit(x)
-                )
-
-            edit_button.pack(side='right', padx=(20,10))
-            self.balloon.bind_widget(edit_button, f'Edit \"{name}\"')
-
-            option_frame.pack(fill='x', pady=5)
-
-            if source == 'default value':
-                source_bg = DEFAULT_VALUE_COLOR
-            elif source == 'configure file':
-                source_bg = CONFIG_FILE_COLOR
-            else:
-                source_bg = INVALID_SOURCE_COLOR
-
-            source_label = tk.Label(
-                option_frame,
-                text=source.capitalize(),
-                font=font,
-                relief='sunken',
-                bg=source_bg,
-                padx=3,
-                pady=3
-                )
-            source_label.pack(side='right', padx=(20,0))
-
-        self.option_scroll.yview_moveto(old_yview)
-
-        logger.info(f'Updated option(s)')
+        return frame        
 
     def _on_edit(self, name):
         info = self.options[name]

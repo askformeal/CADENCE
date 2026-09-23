@@ -11,7 +11,6 @@ class ScrolledFrame(tk.Frame):
         self.canvas = tk.Canvas(self, highlightthickness=0)
         self.canvas.pack(side='left', fill='both', expand=True)
 
-
         self.frame = tk.Frame(self.canvas)
         self.window = self.canvas.create_window(0, 0, window=self.frame, anchor='nw')
 
@@ -24,6 +23,8 @@ class ScrolledFrame(tk.Frame):
         self.bind_all('<MouseWheel>', self._on_scroll)
         self.bind_all('<Button-5>', self._on_scroll)
         self.bind_all('<Button-4>', self._on_scroll)
+
+        self.lock_scroll = False
 
     def yview(self):
         return self.canvas.yview()
@@ -44,20 +45,21 @@ class ScrolledFrame(tk.Frame):
         self.canvas.itemconfig(self.window, width=event.width)
 
     def _on_scroll(self, event):
-        x_left = self.winfo_rootx()
-        x_right = x_left + self.winfo_width()
-        y_up = self.winfo_rooty()
-        y_down = y_up + self.winfo_height()
-        pointer_x, pointer_y = self.winfo_pointerxy()
+        if not self.lock_scroll:
+            x_left = self.winfo_rootx()
+            x_right = x_left + self.winfo_width()
+            y_up = self.winfo_rooty()
+            y_down = y_up + self.winfo_height()
+            pointer_x, pointer_y = self.winfo_pointerxy()
 
-        if pointer_x in range(x_left, x_right+1) and pointer_y in range(y_up, y_down+1):
-            if event.num == 4:
-                step = -1
-            elif event.num == 5:
-                step = 1
-            elif event.delta > 0:
-                step = -1
-            else:
-                step = 1
+            if pointer_x in range(x_left, x_right+1) and pointer_y in range(y_up, y_down+1):
+                if event.num == 4:
+                    step = -1
+                elif event.num == 5:
+                    step = 1
+                elif event.delta > 0:
+                    step = -1
+                else:
+                    step = 1
 
-            self.canvas.yview_scroll(step, 'units')
+                self.canvas.yview_scroll(step, 'units')

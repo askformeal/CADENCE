@@ -1,15 +1,15 @@
-INIT_REMOTE = True
 TITLE = 'CASCADE Configure'
 WIDTH = 800
-HEIGHT = 900
+HEIGHT = 800
 POS_X = 300
-POS_Y = 100
+POS_Y = 20
 RESIZE = (False, False)
 ICON_SIZE = (32, 32)
 
 FONT_SIZE = 20
 
 EDIT_COLOR = 'light blue'
+NO_OPTION_COLOR = 'red'
 VALUE_COLOR = 'grey85'
 DEFAULT_VALUE_COLOR = 'grey87'
 CONFIG_FILE_COLOR = 'lime'
