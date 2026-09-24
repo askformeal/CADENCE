@@ -149,10 +149,11 @@ If a song's lyric is slightly out of sync with the audio, you can shift it with 
 | `cascade config show <option>`        | Show information of an option                                                                |
 | `cascade config set <option> <value>` | Write an option to the config file (`--overwrite-corrupt` to replace a corrupted file)     |
 | `cascade config unset <option>`       | Remove an option from the config file (falls back to default)                                |
+| `cascade config gui`                  | Open the configure GUI                                                                        |
 | `cascade config open`                 | Open the config file with the system's default application (creates an empty one if missing) |
 | `cascade config path`                 | Show the path of the config file                                                             |
 
-`config` commands accept `-d/--direct` to bypass the backend and edit the config file locally (works when the backend is not running, but cannot edit config files of remote backends).
+`config` commands accept `-d/--direct` to bypass the backend and edit the config file locally (works when the backend is not running, but cannot edit config files of remote backends). Its opposite, `--no-direct`, forces the backend route back on; passing neither leaves the choice to the command — for `config gui` that is the `config_default_remote` option.
 
 See [docs/configuration.md](docs/configuration.md) for the config file and every option.
 
@@ -255,15 +256,13 @@ The configure GUI is a fixed-size window over the config file, making the option
 
 It can read and write either through the backend or directly. **remote** sends `config.list` / `config.set` / `config.unset`, so it edits the config file of the machine the backend runs on; **local** does the same in-process, like the CLI's `--direct`, and needs no backend at all. The two routes differ only in whose `config.toml` is written. It starts in the mode `config_default_remote` selects — `remote` by default — and every row answers the mouse: the option's description on its name, the type a converter enforces on its value.
 
-It is not spawned with the backend — start it yourself from the repo root:
+It is not spawned with the backend — start it yourself with `cascade config gui`, which takes `-d/--direct` / `--no-direct` to pick the initial mode and overrides `config_default_remote` for that launch. From a repo root it can also be started as a module:
 
 ```bash
 python -m src.frontend.config_gui
 ```
 
 In a portable build, `runtime\python.exe -m src.frontend.config_gui` from the bundle root. It logs to `cascade-config-gui.log`.
-
-Will soon be added as a CLI command.
 
 ## Architecture
 

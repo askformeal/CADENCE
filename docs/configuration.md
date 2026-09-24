@@ -1,6 +1,6 @@
 # Configuration
 
-CASCADE reads its options from a TOML file. The `config` commands that read and write it — `list`, `show`, `set`, `unset`, `open` and `path`, plus `-d/--direct` — are listed in the [README](../README.md#configuration). The same options can be edited in a window instead — see the [configure GUI](../README.md#configure-gui).
+CASCADE reads its options from a TOML file. The `config` commands that read and write it — `list`, `show`, `set`, `unset`, `open`, `path` and `gui`, plus `-d/--direct` — are listed in the [README](../README.md#configuration). The same options can be edited in a window instead — see the [configure GUI](../README.md#configure-gui).
 
 ## Config file
 

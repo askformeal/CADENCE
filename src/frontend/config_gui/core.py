@@ -47,7 +47,7 @@ from .pop_up import Popup
 from .handler import HandlerMixin
 
 class ConfigGUI(tk.Tk, HandlerMixin):
-    def __init__(self):
+    def __init__(self, direct=None):
         super().__init__()
         self.withdraw()
 
@@ -60,7 +60,11 @@ class ConfigGUI(tk.Tk, HandlerMixin):
         self.bind('<F5>', self._update_options)
         self.bind('<r>', self._toggle_remote)
 
-        self.remote = CONFIG.config_default_remote
+        if direct is None:
+            self.remote = CONFIG.config_default_remote
+        else:
+            self.remote = not direct
+
         self.options = {}
 
         self.balloon = Balloon(

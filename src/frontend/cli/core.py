@@ -28,6 +28,30 @@ def main():
     args = vars(parser.parse_args())
     args = translate(args)
 
+    if args.get('meta_action', None) is not None:
+        args['lib_action'] = f"{args['lib_action']}.{args['meta_action']}"
+        del args['meta_action']
+    
+    if args.get('alias_action', None) is not None:
+        args['lib_action'] = f"{args['lib_action']}.{args['alias_action']}"
+        del args['alias_action']
+    
+    if args.get('lyric_action', None) is not None:
+        args['lib_action'] = f"{args['lib_action']}.{args['lyric_action']}"
+        del args['lyric_action']
+    
+    if args.get('playlist_action', None) is not None:
+        args['lib_action'] = f"{args['lib_action']}.{args['playlist_action']}"
+        del args['playlist_action']
+    
+    if args.get('lib_action', None) is not None:
+        args['action'] = f"{args['action']}.{args['lib_action']}"
+        del args['lib_action']
+    
+    if args.get('config_action', None) is not None:
+        args['action'] = f"{args['action']}.{args['config_action']}"
+        del args['config_action']
+
     if args['action'] == 'start':
         notifies = _start_backend(CASCADE_DEV=int(args['dev']), CASCADE_CONTINUE=int(args['continue']))[1]
         show_notifies(notifies)
@@ -50,30 +74,13 @@ def main():
         from src.frontend.dash.core import Dash
         Dash().run()
 
+    elif args['action'] == 'config.gui':
+        from src.frontend.config_gui.core import ConfigGUI
+        ConfigGUI(args['direct']).run()
+
     else:
-        if args.get('meta_action', None) is not None:
-            args['lib_action'] = f"{args['lib_action']}.{args['meta_action']}"
-            del args['meta_action']
-
-        if args.get('alias_action', None) is not None:
-            args['lib_action'] = f"{args['lib_action']}.{args['alias_action']}"
-            del args['alias_action']
-
-        if args.get('lyric_action', None) is not None:
-            args['lib_action'] = f"{args['lib_action']}.{args['lyric_action']}"
-            del args['lyric_action']
-
-        if args.get('playlist_action', None) is not None:
-            args['lib_action'] = f"{args['lib_action']}.{args['playlist_action']}"
-            del args['playlist_action']
-
-        if args.get('lib_action', None) is not None:
-            args['action'] = f"{args['action']}.{args['lib_action']}"
-            del args['lib_action']
-
-        if args.get('config_action', None) is not None:
-            args['action'] = f"{args['action']}.{args['config_action']}"
-            del args['config_action']
+        if 'direct' in args.keys() and args['direct'] is None:
+            args['direct'] = False
 
         if args['action'] == 'reboot':
             args['action'] = 'exit'
@@ -107,6 +114,8 @@ def main():
                 response = CONFIG_MANAGER.get_path()
             response = dict(response)
         else:
+            if 'direct' in args.keys():
+                del args['direct']
             response = send_request(**_wrap_request(args))
 
 # -------------------------------------- Post-response --------------------------------------

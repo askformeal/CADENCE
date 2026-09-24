@@ -141,7 +141,7 @@ Types are enforced by the converters in `src/types.py`; a value that does not sa
 
 Effective timing differs per option. Every access re-reads the config file, so an option that is consulted while running (the timeouts, `player_timeout`, `pos_memorize_interval`, the dashboard steps) takes effect immediately. What is read once, while something is being built, keeps its value until that component is restarted: the hosts and ports when the backend binds its socket, `engine`, `default_volume`, `default_shuffle`, `default_online_lyric` and `username` when the backend constructs its player, the service switches (`hotkey`, `tray`, `lyric`) when the CLI starts the frontends, the configure GUI's remote flag when its window is created, and the lyric board's font, size and geometry when its window is created.
 
-The CLI can also operate on the config file without the backend, with `cascade config … --direct`; the actions above are the backend-side path, which is what a remote frontend uses.
+The CLI can also operate on the config file without the backend, with `cascade config … --direct`; the actions above are the backend-side path, which is what a remote frontend uses, and `--no-direct` selects it explicitly.
 
 #### config.list
 

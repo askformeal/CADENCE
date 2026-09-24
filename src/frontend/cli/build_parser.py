@@ -203,7 +203,12 @@ def build_parser():
     config_parser = command_sub.add_parser('config', help='Manage configuration')
     config_sub = config_parser.add_subparsers(dest='config_action', required=True)
     config_parent = argparse.ArgumentParser(add_help=False)
-    config_parent.add_argument('-d', '--direct', action='store_true', help='Bypass CASCADE backend and operate on local configure file directly')
+    config_parent.add_argument(
+        '-d', '--direct', 
+        action=argparse.BooleanOptionalAction, 
+        default=None,
+        help='Bypass CASCADE backend and operate on local configure file directly'
+        )
 
     config_list_parser = config_sub.add_parser('list', parents=[config_parent], help='Show information all options')
 
@@ -217,6 +222,8 @@ def build_parser():
 
     config_unset_parser = config_sub.add_parser('unset', parents=[config_parent], help='Remove the setting of an option from configure file and fallback to default value')
     config_unset_parser.add_argument('option', type=str, help='Option to unset')
+    
+    config_gui_parser = config_sub.add_parser('gui', parents=[config_parent], help='Open configure GUI')
 
     config_open_parser = config_sub.add_parser('open', parents=[config_parent], help='Open configure file with system\'s default application')
 

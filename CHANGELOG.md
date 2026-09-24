@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## [Unreleased]
+
+### Added
+
+- **The configure GUI is a CLI command now** — `cascade config gui` opens the window that until now could only be started as `python -m src.frontend.config_gui`. It takes `-d/--direct` / `--no-direct` to pick the route it starts on: `--direct` opens it in local mode, `--no-direct` in remote mode, and passing neither keeps honouring `config_default_remote`.
+- **`-d/--direct` became a three-state switch** — `-d/--direct` / `--no-direct`, neither of which is forced to a default. The CLI used to give the flag a `false` default, so "force the backend route" and "no opinion" were the same value and the configure GUI could not tell them apart; leaving it unset is what lets `config gui` fall back to `config_default_remote`.
+
+### Fixed
+
+- The CLI no longer forwards its own `-d/--direct` switch to the backend. It used to travel with every `config` request as a stray key, so a backend that took the remote route logged `Unexpected key(s) received: {'direct'}` for each one.
+
 ## [0.54.0] - 2026-09-23
 
 > **⚠️ Breaking Changes**
