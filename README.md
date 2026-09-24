@@ -256,11 +256,7 @@ The configure GUI is a fixed-size window over the config file, making the option
 
 It can read and write either through the backend or directly. **remote** sends `config.list` / `config.set` / `config.unset`, so it edits the config file of the machine the backend runs on; **local** does the same in-process, like the CLI's `--direct`, and needs no backend at all. The two routes differ only in whose `config.toml` is written. It starts in the mode `config_default_remote` selects — `remote` by default — and every row answers the mouse: the option's description on its name, the type a converter enforces on its value.
 
-It is not spawned with the backend — start it yourself with `cascade config gui`, which takes `-d/--direct` / `--no-direct` to pick the initial mode and overrides `config_default_remote` for that launch. From a repo root it can also be started as a module:
-
-```bash
-python -m src.frontend.config_gui
-```
+It is not spawned with the backend — start it yourself with `cascade config gui`, which takes `-d/--direct` / `--no-direct` to pick the initial mode and overrides `config_default_remote` for that launch.
 
 In a portable build, `runtime\python.exe -m src.frontend.config_gui` from the bundle root. It logs to `cascade-config-gui.log`.
 
