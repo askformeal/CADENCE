@@ -6,6 +6,7 @@ from src.constants.paths import ICON_PATH
 from src.constants.config_gui import (
     POP_UP_POS_X, 
     POP_UP_POS_Y, 
+    TYPE_WRAP_LEN,
     DESC_WRAP_LEN,
     FONT_SIZE,
     CONFIRM_COLOR,
@@ -16,13 +17,14 @@ from src.constants.config_gui import (
     OFF_COLOR_BG,
     OFF_COLOR_FG
     )
+from src.utils.misc import squeeze
 
 class Popup(tk.Toplevel):
     def __init__(self, master, info):
         super().__init__(master=master)
 
         self.set_value = master.set_value
-        self.unset = master.unset
+        self.unset_option = master.unset
         self.balloon = master.balloon
 
         self.name = info['name']
@@ -43,6 +45,7 @@ class Popup(tk.Toplevel):
         self.iconbitmap(ICON_PATH)
         self.bind('<Escape>', lambda *_: self.destroy())
         self.bind('<Return>', lambda *_: self._on_confirm(force=False))
+        self.bind('<Delete>', self._unset)
 
         self.transient(self.master)
         self.wait_visibility()
@@ -109,6 +112,31 @@ class Popup(tk.Toplevel):
             menu.pack(side='right', padx=(20, 10))
             var.set(self.value)
             self._get_val = var.get
+        elif self.type_raw == 'percent':
+            scale_font = tkfont.Font(
+                size=FONT_SIZE-3,
+                slant='italic',
+            )
+            scale = tk.Scale(
+                value_frame,
+                font=scale_font,
+                length=200,
+                from_=0,
+                to=100,
+                tickinterval=25,
+                orient='horizontal',
+            )
+            scale.pack(side='right', padx=(0, 5))
+            
+            self.bind('<Left>', lambda *_: self._nudge_scale(scale, -1))
+            self.bind('<Right>', lambda *_: self._nudge_scale(scale, 1))
+            self.bind('<Control-Left>', lambda *_: self._nudge_scale(scale, -5))
+            self.bind('<Control-Right>', lambda *_: self._nudge_scale(scale, 5))
+            self.bind('<Shift-Left>', lambda *_: self._nudge_scale(scale, -20))
+            self.bind('<Shift-Right>', lambda *_: self._nudge_scale(scale, 20))
+            
+            scale.set(self.value)
+            self._get_val = lambda: str(scale.get())
         else:
             entry = tk.Entry(
                 value_frame, 
@@ -151,6 +179,8 @@ class Popup(tk.Toplevel):
             type_frame, 
             text=self.type_.capitalize(),
             font=self.font,
+            wraplength=TYPE_WRAP_LEN,
+            justify='left',
             relief='groove',
             bd=2,
             padx=3,
@@ -190,6 +220,7 @@ class Popup(tk.Toplevel):
             activebackground=CONFIRM_COLOR
             )
         confirm_button.pack(side='right')
+        self.balloon.bind_widget(confirm_button, 'Apply modify (Enter)')
         
         cancel_button = tk.Button(
             button_frame, 
@@ -200,6 +231,7 @@ class Popup(tk.Toplevel):
             activebackground=CANCEL_COLOR
             )
         cancel_button.pack(side='right', padx=(0, 10))
+        self.balloon.bind_widget(cancel_button, 'Abandon modify (Esc)')
 
         unset_button = tk.Button(
             button_frame, 
@@ -210,6 +242,7 @@ class Popup(tk.Toplevel):
             activebackground=UNSET_COLOR
             )
         unset_button.pack(side='left', padx=(10, 30))
+        self.balloon.bind_widget(unset_button, 'Unset option (Del)')
 
     def _toggle_switch(self, switch):
         self.switch_on = not self.switch_on
@@ -232,6 +265,10 @@ class Popup(tk.Toplevel):
     def _get_switch(self):
         return str(self.switch_on)
 
+    def _nudge_scale(self, scale, step):
+        number = scale.get()
+        scale.set(squeeze(number + step, 100, 0))
+
     def _on_confirm(self, *_, force=True):
         value = self._get_val()
         if value != str(self.value) or force:
@@ -239,5 +276,5 @@ class Popup(tk.Toplevel):
         self.destroy()
 
     def _unset(self, *_):
-        self.unset(self.name)
+        self.unset_option(self.name)
         self.destroy()

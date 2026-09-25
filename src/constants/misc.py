@@ -16,7 +16,6 @@ READABLE_TYPE_NAMES = {
     CONVERTER.timeout: 'positive float',
     CONVERTER.percentage: 'percentage number',
     CONVERTER.hex_color: 'hex color',
-    CONVERTER.box_style: 'box style',
 }
 
 TYPE_CODENAMES = {
@@ -30,7 +29,6 @@ TYPE_CODENAMES = {
     CONVERTER.timeout: 'pos_float',
     CONVERTER.percentage: 'percent',
     CONVERTER.hex_color: 'hex_color',
-    CONVERTER.box_style: 'box_style',
 }
 
 MIN_TIMEOUT = 0.01

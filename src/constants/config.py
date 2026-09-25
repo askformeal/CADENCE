@@ -1,10 +1,14 @@
 from src.sentinels import SENTINELS
 from src.types import CONVERTER, StrChoiceList
+from .misc import BOX_STYLES
 
 # dunno if scheme is the right name
 # each option name must be unique
 # "type" will be called to convert the value. raise ValueError if invalid
 # default value will not go through type converter. make sure they are valid
+
+box_style_names = StrChoiceList(tuple(BOX_STYLES.keys()))
+
 CONFIG_SCHEME = {
     'username': {
         'type': str,
@@ -145,13 +149,13 @@ CONFIG_SCHEME = {
         'description': 'Whether to use escape characters'
     },
     'cli_box_style': {
-        'type': CONVERTER.box_style,
+        'type': box_style_names,
         'section': 'appearance',
         'default': 'rounded',
         'description': 'Box style of CLI'
     },
     'dash_box_style': {
-        'type': CONVERTER.box_style,
+        'type': box_style_names,
         'section': 'appearance',
         'default': 'rounded',
         'description': 'Box style of dashboard'

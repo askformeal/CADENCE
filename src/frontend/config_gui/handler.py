@@ -39,7 +39,7 @@ class HandlerMixin:
 
         self._handle_response(response, update=False)
 
-    def copy_path(self):
+    def copy_path(self, *_):
         logger.info(f'Copy config file path')
         if self.remote:
             response = self._send_config_request('config.path')

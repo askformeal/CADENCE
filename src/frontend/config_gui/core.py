@@ -59,6 +59,7 @@ class ConfigGUI(tk.Tk, HandlerMixin):
         self.bind('<Escape>', lambda *_: self.destroy())
         self.bind('<F5>', self._update_options)
         self.bind('<r>', self._toggle_remote)
+        self.bind('<Control-c>', self.copy_path)
 
         if direct is None:
             self.remote = CONFIG.config_default_remote
@@ -125,10 +126,10 @@ class ConfigGUI(tk.Tk, HandlerMixin):
         self.open_button.pack(side='left', padx=(20, 0))
         self.copy_button.pack(side='left', padx=(20, 0))
 
-        self.balloon.bind_widget(self.remote_button, 'Toggle remote mode')
-        self.balloon.bind_widget(self.refresh_button, 'Refresh')
+        self.balloon.bind_widget(self.remote_button, 'Toggle remote mode (r)')
+        self.balloon.bind_widget(self.refresh_button, 'Refresh (F5)')
         self.balloon.bind_widget(self.open_button, 'Open configure file')
-        self.balloon.bind_widget(self.copy_button, 'Copy configure file path')
+        self.balloon.bind_widget(self.copy_button, 'Copy configure file path (Ctrl+C)')
 
         main_frame = tk.Frame(self)
         main_frame.pack(padx=10, pady=10, fill='both', expand=True)

@@ -57,14 +57,6 @@ class Converter:
         else:
             return value
 
-    def box_style(self, value):
-        value = str(value)
-        from src.constants.misc import BOX_STYLES
-        if value not in BOX_STYLES.keys():
-            raise ValueError
-        else:
-            return value
-
     def percentage(self, value):
         value = int(value)
 

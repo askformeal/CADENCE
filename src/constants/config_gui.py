@@ -38,4 +38,5 @@ BALLOON_WINDUP = 500
 POP_UP_POS_X = 100 # relative to pos of master window
 POP_UP_POS_Y = 100
 
+TYPE_WRAP_LEN = 500
 DESC_WRAP_LEN = 500
