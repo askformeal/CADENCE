@@ -30,6 +30,7 @@ class Popup(tk.Toplevel):
         self.type_ = info['type']
         self.type_raw = info['type_raw']
         self.source = info['source']
+        self.choices = info['choices']
         self.desc = info['description']
 
         self.switch_on = False
@@ -98,6 +99,16 @@ class Popup(tk.Toplevel):
             self.switch_on = self.value
             self._apply_switch(switch)
             self._get_val = self._get_switch
+        elif self.type_raw == 'choice':
+            var = tk.StringVar()
+            menu = tk.OptionMenu(
+                value_frame,
+                var,
+                *self.choices
+            )
+            menu.pack(side='right', padx=(20, 10))
+            var.set(self.value)
+            self._get_val = var.get
         else:
             entry = tk.Entry(
                 value_frame, 

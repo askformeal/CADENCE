@@ -35,6 +35,10 @@ class ConfigManager:
             type_raw = get_type_codename(CONFIG_SCHEME[name]['type'])
             default = CONFIG_SCHEME[name]['default']
             description = CONFIG_SCHEME[name]['description']
+            if type_raw == 'choice':
+                choices = CONFIG_SCHEME[name]['type'].choices
+            else:
+                choices = []
 
             response = gen_response.Success(
                 f'Got value of {name}', 
@@ -44,7 +48,8 @@ class ConfigManager:
                     'source': source,
                     'type': type_,
                     'type_raw': type_raw,
-                    'default': default, 
+                    'default': default,
+                    'choices': choices,
                     'description': description
                     }
                 )
