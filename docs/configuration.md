@@ -1,12 +1,8 @@
 # Configuration
 
-CASCADE reads its options from a TOML file. The `config` commands that read and write it — `list`, `show`, `set`, `unset`, `open`, `path` and `gui`, plus `-d/--direct` — are listed in the [README](../README.md#configuration). The same options can be edited in a window instead — see the [configure GUI](../README.md#configure-gui).
+## Config file path
 
-## Config file
-
-`%LOCALAPPDATA%\cascade\cascade\config.toml` on Windows (the location is platform-dependent, managed by `platformdirs`). `cascade config path` prints it, and `cascade config open` opens it in the system's default application, creating an empty file if there is none.
-
-Options are grouped into TOML sections — `[network]`, `[service]`, `[playback]`, `[dash]`, `[appearance]`, `[lyric]` and `[config_gui]` — with `username` at the root of the file. `cascade config set` writes each option into its section for you.
+`%LOCALAPPDATA%\cascade\cascade\config.toml` on Windows
 
 ## Options
 

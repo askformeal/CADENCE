@@ -1,28 +1,40 @@
+from src.utils.time_ import format_time
 from .empty import DASH_EMPTY as EMPTY
 
 class InfoMixin:
     def gen_info_text(self):
+        if self.snapshot.bitrate is EMPTY:
+            bitrate = EMPTY
+        else:
+            bitrate = f'{self.snapshot.bitrate/1000:.10g} kbps'
+
         if self.snapshot.aliases is EMPTY:
             aliases = EMPTY
         else:
             aliases = '\n  '.join(self.snapshot.aliases)
+
+        if self.snapshot.duration is EMPTY:
+            duration = EMPTY
+        else:
+            duration = format_time(self.snapshot.duration)
 
         if self.snapshot.added_playlists is EMPTY:
             playlists = EMPTY
         else:
             playlists = '\n  '.join(self.snapshot.added_playlists)
 
+
         lines = [
             'Information\n',
             f'Library ID: {self.snapshot.lib_id}',
             '',
-            f'Duration: {self.snapshot.duration}',
+            f'Duration: {duration}',
             '',
             f'Name: {self.snapshot.meta_name}',
             f'Artist: {self.snapshot.artist}',
             f'Album: {self.snapshot.album}',
             '',
-            f'Bitrate: {self.snapshot.bitrate} kbps',
+            f'Bitrate: {bitrate}',
             f'Sample Rate: {self.snapshot.sample_rate}',
             f'Channels: {self.snapshot.channels}',
             '',
