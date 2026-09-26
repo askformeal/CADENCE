@@ -12,13 +12,13 @@ Retrieves collections of mechanically-represented wave data from persistent stor
 
 This is my biggest and best project so far. Check out my other repos and you'll see why. I wanted to build something with a separate backend-frontend structure, then I came up with the music player idea. 
 
-The original name of this project was CADENCE, which stands for **C**ommand-line **A**udio **D**ecoding **E**gine with **N**avigation and **C**ontinuous **E**xecution, but later I realized there's already another Cadence on market. So I was forced to change the name into what it is now, even though the other Cadence name isn't nearly as cool as mine.
+The original name of this project was CADENCE, which stands for **C**ommand-line **A**udio **D**ecoding **E**gine with **N**avigation and **C**ontinuous **E**xecution, but later I realized there's already another Cadence on the market. So I was forced to change the name into what it is now, even though the other Cadence name isn't nearly as cool as mine.
 
 I'm not a professional programmer, and programming is more of a hobby to me. Don't hold back on any kind of feedback!
 
 Wiki coming soon.
 
-P.S. I'm not from an English-speaking country, so feel free for feedback on the English too.
+P.S. I'm not from an English-speaking country, so feel free to give feedback on my English too.
 
 ---
 
