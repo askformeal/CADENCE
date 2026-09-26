@@ -11,8 +11,8 @@ Retrieves collections of mechanically-represented wave data from persistent stor
 ## Features
 
 - Control your playback from the command line
-- Memorized playback position — resume where you left off
-- Shuffle & Loop mode — Random or repeat
+- Memorized playback position - resume where you left off
+- Shuffle & Loop mode - Random or repeat
 - Volume and mute control
 - Media key control
 - Tray icon + TUI
@@ -28,7 +28,7 @@ Retrieves collections of mechanically-represented wave data from persistent stor
 
 ## Installation
 
-### Option A — pip (recommended)
+### Option A - pip (recommended)
 
 Install straight from the repository (needs `git`):
 
@@ -54,15 +54,15 @@ python -m src
 
 **With the `vlc` engine you must install [VLC](https://www.videolan.org/vlc/) yourself; the default `miniaudio` engine needs none.**
 
-### Option B — portable build (`build.sh`)
+### Option B - portable build (`build.sh`)
 
 ```bash
 bash build.sh          # on Windows: from git-bash
 ```
 
-Builds a self-contained folder (plus a `.zip`) into `dist/cascade-<version>/`, bundling a standalone CPython runtime, all dependencies, **and the VLC runtime** (a GUI-free subset — see `VLC_SRC` in `build.sh`). Launch with `cascade.cmd` in the bundle root; it can be copied to another machine and run as-is.
+Builds a self-contained folder (plus a `.zip`) into `dist/cascade-<version>/`, bundling a standalone CPython runtime, all dependencies, **and the VLC runtime** (a GUI-free subset - see `VLC_SRC` in `build.sh`). Launch with `cascade.cmd` in the bundle root; it can be copied to another machine and run as-is.
 
-**No VLC installation needed** — the bundle ships its own.
+**No VLC installation needed** - the bundle ships its own.
 
 ## CLI commands
 
@@ -148,7 +148,7 @@ You can reference a song by one of its aliases, its library ID or its file path.
 | `cascade config open`                 | Open the config file with the system's default application (creates an empty one if missing) |
 | `cascade config path`                 | Show the path of the config file                                                             |
 
-`config` commands accept `-d/--direct` to bypass the backend and edit the config file locally (works when the backend is not running, but cannot edit config files of remote backends). Its opposite, `--no-direct`, forces the backend route back on; passing neither leaves the choice to the command — for `config gui` that is the `config_default_remote` option.
+`config` commands accept `-d/--direct` to bypass the backend and edit the config file locally (works when the backend is not running, but cannot edit config files of remote backends). Its opposite, `--no-direct`, forces the backend route back on; passing neither leaves the choice to the command - for `config gui` that is the `config_default_remote` option.
 
 > If you try to open the config file while connected to a remote backend, the file will be opened on the remote machine
 
@@ -261,8 +261,8 @@ The portable package contains the runtime itself and will set the environment va
 ## Data persistence
 
 - Database: `%LOCALAPPDATA%\cascade\cascade\cascade.db` (Windows)
-- Dev database: `%LOCALAPPDATA%\cascade\cascade\cascade-dev.db` (Windows) — used when the backend is started with `--dev`
-- Audio formats: FLAC, MP3, WAV, and other common formats (see `AUDIO_EXTENSIONS` in `src/constants/misc.py`) — which of them actually decode depends on the engine ([Audio engines](#audio-engines))
+- Dev database: `%LOCALAPPDATA%\cascade\cascade\cascade-dev.db` (Windows) - used when the backend is started with `--dev`
+- Audio formats: FLAC, MP3, WAV, and other common formats (see `AUDIO_EXTENSIONS` in `src/constants/misc.py`) - which of them actually decode depends on the engine ([Audio engines](#audio-engines))
 
 ## Logs
 
