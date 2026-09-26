@@ -8,48 +8,48 @@ Retrieves collections of mechanically-represented wave data from persistent stor
 
 (CLI music player. Lives in the terminal.)
 
+---
+
+This is my biggest and best project so far. Check out my other repos and you'll see why. I wanted to build something with a separate backend-frontend structure, then I came up with the music player idea. 
+
+The original name of this project was CADENCE, which stands for **C**ommand-line **A**udio **D**ecoding **E**gine with **N**avigation and **C**ontinuous **E**xecution, but later I realized there's already another Cadence on market. So I was forced to change the name into what it is now, even though the other Cadence name isn't nearly as cool as mine.
+
+I'm not a professional programmer, and programming is more of a hobby to me. Don't hold back on any kind of feedback!
+
+Wiki coming soon.
+
+P.S. I'm not from an English-speaking country, so feel free for feedback on the English too.
+
+---
+
 ## Highlights
 
 - Daemon backend running in the background - control your playback across terminals
 - Automatic online lyric 
 - Remote control
-- Pluggable audio engine: VLC / miniaudio
+- Choose from TWO audio engines: VLC / miniaudio
 
 ## Dependencies
 
 - Python 3.12+
-- VLC media player (if you want to use the VLC engine)
+- VLC media player (already included in releases)
 - [Third-party packages](requirements.in)
 
 ## Installation
 
-### Option A - pip (recommended)
-
-Install straight from the repository (needs `git`):
+### Pip
 
 ```bash
 pip install git+https://github.com/askformeal/CASCADE.git
 ```
 
-Or from a downloaded copy, from the project directory:
-
-```bash
-git clone https://github.com/askformeal/CASCADE.git
-cd CASCADE
-pip install .
-```
-
-**With the `vlc` engine you must install [VLC](https://www.videolan.org/vlc/) yourself; the default `miniaudio` engine needs none.**
-
-### Option B - portable build (`build.sh`)
+### Build from source
 
 ```bash
 bash build.sh          # on Windows: from git-bash
 ```
 
-Builds a self-contained folder (plus a `.zip`) into `dist/cascade-<version>/`, bundling a standalone CPython runtime, all dependencies, **and the VLC runtime** (a GUI-free subset - see `VLC_SRC` in `build.sh`). Launch with `cascade.cmd` in the bundle root; it can be copied to another machine and run as-is.
-
-**No VLC installation needed** - the bundle ships its own.
+**I never spent much effort on the building script, so I recommend pip.**
 
 ## Screenshots
 
@@ -80,7 +80,7 @@ Builds a self-contained folder (plus a `.zip`) into `dist/cascade-<version>/`, b
 ╰──────────────────────────────────────┴────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────╯
 ```
 
-(Yep, that's Sabaton you are seeing)
+(Yep, that's Sabaton you are seeing there)
 
 ### Floating lyric
 
