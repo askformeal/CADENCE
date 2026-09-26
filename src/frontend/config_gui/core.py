@@ -10,7 +10,9 @@ from src.constants.paths import (
     REFRESH_ICON_PATH,
     EDIT_ICON_PATH,
     OPEN_FILE_ICON_PATH,
-    COPY_PATH_ICON_PATH
+    COPY_PATH_ICON_PATH,
+    COLOR_BLACK_ICON_PATH,
+    COLOR_WHITE_ICON_PATH,
     )
 from src.constants.config_gui import (
     TITLE,
@@ -89,6 +91,8 @@ class ConfigGUI(tk.Tk, HandlerMixin):
         self.edit_image = self._get_icon(EDIT_ICON_PATH)
         self.open_image = self._get_icon(OPEN_FILE_ICON_PATH)
         self.copy_image = self._get_icon(COPY_PATH_ICON_PATH)
+        self.color_black_image = self._get_icon(COLOR_BLACK_ICON_PATH)
+        self.color_white_image = self._get_icon(COLOR_WHITE_ICON_PATH)
 
         self.remote_button = tk.Button(
             button_frame,
@@ -272,6 +276,7 @@ class ConfigGUI(tk.Tk, HandlerMixin):
             frame,
             image=self.edit_image,
             bg=EDIT_COLOR,
+            activebackground=EDIT_COLOR,
             command=lambda x=name: self._on_edit(x)
             )
         

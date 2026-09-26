@@ -11,17 +11,14 @@ from src.constants.config_gui import (
     FONT_SIZE,
     CONFIRM_COLOR,
     CANCEL_COLOR,
-    UNSET_COLOR,
-    ON_COLOR_BG,
-    ON_COLOR_FG,
-    OFF_COLOR_BG,
-    OFF_COLOR_FG
+    UNSET_COLOR
     )
-from src.utils.misc import squeeze
+from .editor import EditorMixin
 
-class Popup(tk.Toplevel):
+class Popup(tk.Toplevel, EditorMixin):
     def __init__(self, master, info):
         super().__init__(master=master)
+        self.withdraw()
 
         self.set_value = master.set_value
         self.unset_option = master.unset
@@ -48,11 +45,11 @@ class Popup(tk.Toplevel):
         self.bind('<Delete>', self._unset)
 
         self.transient(self.master)
-        self.wait_visibility()
         self.grab_set()
         self.focus_set()
 
         self._build_window()
+        self.deiconify()
         logger.debug('Pop-up Window pop up')
 
     def _build_window(self):
@@ -93,59 +90,19 @@ class Popup(tk.Toplevel):
         tk.Label(value_frame, text='Value', font=self.font).pack(side='left')
 
         if self.type_raw == 'bool':
-            switch = tk.Button(
-                value_frame,
-                font=self.font,
-                command=lambda *_: self._toggle_switch(switch)
-                )
-            switch.pack(side='right', padx=(20, 10))
-            self.switch_on = self.value
-            self._apply_switch(switch)
-            self._get_val = self._get_switch
+            self.build_bool_editor(value_frame)
+
         elif self.type_raw == 'choice':
-            var = tk.StringVar()
-            menu = tk.OptionMenu(
-                value_frame,
-                var,
-                *self.choices
-            )
-            menu.pack(side='right', padx=(20, 10))
-            var.set(self.value)
-            self._get_val = var.get
+            self.build_choice_editor(value_frame)
+
         elif self.type_raw == 'percent':
-            scale_font = tkfont.Font(
-                size=FONT_SIZE-3,
-                slant='italic',
-            )
-            scale = tk.Scale(
-                value_frame,
-                font=scale_font,
-                length=200,
-                from_=0,
-                to=100,
-                tickinterval=25,
-                orient='horizontal',
-            )
-            scale.pack(side='right', padx=(0, 5))
-            
-            self.bind('<Left>', lambda *_: self._nudge_scale(scale, -1))
-            self.bind('<Right>', lambda *_: self._nudge_scale(scale, 1))
-            self.bind('<Control-Left>', lambda *_: self._nudge_scale(scale, -5))
-            self.bind('<Control-Right>', lambda *_: self._nudge_scale(scale, 5))
-            self.bind('<Shift-Left>', lambda *_: self._nudge_scale(scale, -20))
-            self.bind('<Shift-Right>', lambda *_: self._nudge_scale(scale, 20))
-            
-            scale.set(self.value)
-            self._get_val = lambda: str(scale.get())
+            self.build_percent_editor(value_frame)
+
+        elif self.type_raw == 'hex_color':
+            self.build_color_editor(value_frame)
+
         else:
-            entry = tk.Entry(
-                value_frame, 
-                font=self.font,
-                relief='raised'
-                )
-            entry.pack(side='right', padx=(20, 10))
-            entry.insert(tk.END, str(self.value))
-            self._get_val = entry.get
+            self.build_entry_editor(value_frame)
 
     def _build_source(self):
         source_frame = tk.Frame(self.main_frame)
@@ -244,33 +201,8 @@ class Popup(tk.Toplevel):
         unset_button.pack(side='left', padx=(10, 30))
         self.balloon.bind_widget(unset_button, 'Unset option (Del)')
 
-    def _toggle_switch(self, switch):
-        self.switch_on = not self.switch_on
-        self._apply_switch(switch)
-
-    def _apply_switch(self, switch):
-        if self.switch_on:
-            switch.config(
-                text='On', 
-                bg=ON_COLOR_BG,
-                fg=ON_COLOR_FG
-                )
-        else:
-            switch.config(
-                text='Off',
-                bg=OFF_COLOR_BG,
-                fg=OFF_COLOR_FG
-                )
-
-    def _get_switch(self):
-        return str(self.switch_on)
-
-    def _nudge_scale(self, scale, step):
-        number = scale.get()
-        scale.set(squeeze(number + step, 100, 0))
-
     def _on_confirm(self, *_, force=True):
-        value = self._get_val()
+        value = self.get_val()
         if value != str(self.value) or force:
             self.set_value(self.name, value)
         self.destroy()

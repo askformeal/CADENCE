@@ -71,6 +71,17 @@ def hex_color_to_dec(color):
     num = int(color, 16)
     return num
 
+def hex_color2rgb(color):
+    red = int(color[1:3], 16)
+    green = int(color[3:5], 16)
+    blue = int(color[5:7], 16)
+
+    return red, green, blue
+
+def hex_color_gray(color):
+    red, green, blue = hex_color2rgb(color)
+    return round(0.299 * red + 0.587 * green + 0.114 * blue)
+
 def sort_songs(info):
     return sorted(info, key=lambda x: Path(x['path']).name.lower())
 

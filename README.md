@@ -295,11 +295,11 @@ See [TODO.md](TODO.md) for planned features.
 
 ## Credits
 
-Icon: [Cadence icons created by Three musketeers - Flaticon](https://www.flaticon.com/free-icons/cadence)
+Icon: [Cadence icons created by Three musketeers - Flaticon](https://www.flaticon.com/free-icon/musical_16496971)
 
-Lyric icon: [Lyrics icons created by Aranagraphics - Flaticon](https://www.flaticon.com/free-icons/lyrics)
+Lyric icon: [Lyrics icons created by Aranagraphics - Flaticon](https://www.flaticon.com/free-icon/document_10305758)
 
-Cover placeholder: [Image-placeholder icons created by Graphics Plazza - Flaticon](https://www.flaticon.com/free-icons/image-placeholder)
+Cover placeholder: [Image-placeholder icons created by Graphics Plazza - Flaticon](https://www.flaticon.com/free-icon/image_9261181)
 
 Uicons by [Flaticon](https://www.flaticon.com/uicons)
 

@@ -14,6 +14,8 @@ REFRESH_ICON_PATH = get_res('refresh.png')
 EDIT_ICON_PATH = get_res('edit.png')
 OPEN_FILE_ICON_PATH = get_res('open_file.png')
 COPY_PATH_ICON_PATH = get_res('copy.png')
+COLOR_BLACK_ICON_PATH = get_res('color_black.png')
+COLOR_WHITE_ICON_PATH = get_res('color_white.png')
 
 dirs = PlatformDirs('cascade', ensure_exists=True)
 
