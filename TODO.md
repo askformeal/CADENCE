@@ -63,6 +63,7 @@
 - [X] Reverse playback sequence
 - [X] Dual audio engine: miniaudio + VLC
 - [X] GUI configure editor
+- [X] Add a wiki
 - [ ] HTTP frontend
 - [ ] GUI frontend
 - [ ] Audio visualization
